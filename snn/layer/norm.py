@@ -3,6 +3,7 @@ import torch.nn as nn
 import torch.nn.functional as F
 from timm.models.layers.helpers import to_2tuple
 
+from snn.nvtx import nvtx_range
 
 class Spiking_LayerNorm(nn.Module):
     def __init__(self,dim,T,step):
@@ -38,22 +39,23 @@ class Spiking_LayerNorm(nn.Module):
         self.t = 0
         
     def forward(self,input):
-        output = []
-        input = input.reshape(torch.Size([self.T, input.shape[0]//self.T]) + input.shape[1:])
-        # print("input.sum(dim=0).abs().mean()",input.sum(dim=0).abs().mean(), "after layernorm:", self.layernorm(input.sum(dim=0)).abs().mean())
-        for t in range(self.T):
-            self.X = input[t] + self.X
-            if t < self.step:
-                Y = self.layernorm(self.X)*self.biasAllocator[t]
-            else:
-                Y = self.layernorm(self.X)
-            if self.Y_pre is not None:
-                Y_pre = self.Y_pre.detach().clone()
-            else:
-                Y_pre = 0.0
-            self.Y_pre = Y
-            output.append(Y - Y_pre)
-        return torch.cat(output, dim=0)
+        with nvtx_range("snn.layer.norm.Spiking_LayerNorm.forward"):
+            output = []
+            input = input.reshape(torch.Size([self.T, input.shape[0]//self.T]) + input.shape[1:])
+            # print("input.sum(dim=0).abs().mean()",input.sum(dim=0).abs().mean(), "after layernorm:", self.layernorm(input.sum(dim=0)).abs().mean())
+            for t in range(self.T):
+                self.X = input[t] + self.X
+                if t < self.step:
+                    Y = self.layernorm(self.X)*self.biasAllocator[t]
+                else:
+                    Y = self.layernorm(self.X)
+                if self.Y_pre is not None:
+                    Y_pre = self.Y_pre.detach().clone()
+                else:
+                    Y_pre = 0.0
+                self.Y_pre = Y
+                output.append(Y - Y_pre)
+            return torch.cat(output, dim=0)
 
 class MyBatchNorm1d_SS(nn.BatchNorm1d):
     def __init__(self, dim, **kwargs):
@@ -69,34 +71,35 @@ class MyBatchNorm1d_SS(nn.BatchNorm1d):
         self.t = 0
     
     def forward(self,x):
-        # self.training = False
-        input_shape = len(x.shape)
-        if input_shape == 4:
-            B,H,N,C = x.shape
-            x = x.reshape(B*H,N,C)
-        if input_shape == 2:
-            x = x.unsqueeze(1)
-        x = x.transpose(1,2)
-        # if self.spike:
-        #     print("before mybatchnorm1d:",x.reshape(torch.Size([self.T,x.shape[0]//self.T]) + x.shape[1:]).sum(dim=0).abs().mean())
-        # else:
-        #     print("before mybatchnorm1d:",x.abs().mean())
-        self.t = self.t + 1
-        if self.t <= self.step:
-            x = F.batch_norm(x,self.running_mean,self.running_var,self.weight,self.bias,self.training,self.momentum,self.eps)
-        else:
-            x = F.batch_norm(x,torch.zeros_like(self.running_mean),self.running_var,self.weight,torch.zeros_like(self.bias),self.training,self.momentum,self.eps)
-        # if self.spike:
-        #     print("after mybatchnorm1d:",x.reshape(torch.Size([self.T,x.shape[0]//self.T]) + x.shape[1:]).sum(dim=0).abs().mean())
-        # else:
-        #     print("after mybatchnorm1d:",x.abs().mean())
-        x = x.transpose(1,2)
-        if input_shape == 2:
-            x = x.squeeze(1)
-        if input_shape == 4:
-            x = x.reshape(B,H,N,C)
-        # print("self.running_mean",self.running_mean.abs().mean())
-        return x
+        with nvtx_range("snn.layer.norm.MyBatchNorm1d_SS.forward"):
+            # self.training = False
+            input_shape = len(x.shape)
+            if input_shape == 4:
+                B,H,N,C = x.shape
+                x = x.reshape(B*H,N,C)
+            if input_shape == 2:
+                x = x.unsqueeze(1)
+            x = x.transpose(1,2)
+            # if self.spike:
+            #     print("before mybatchnorm1d:",x.reshape(torch.Size([self.T,x.shape[0]//self.T]) + x.shape[1:]).sum(dim=0).abs().mean())
+            # else:
+            #     print("before mybatchnorm1d:",x.abs().mean())
+            self.t = self.t + 1
+            if self.t <= self.step:
+                x = F.batch_norm(x,self.running_mean,self.running_var,self.weight,self.bias,self.training,self.momentum,self.eps)
+            else:
+                x = F.batch_norm(x,torch.zeros_like(self.running_mean),self.running_var,self.weight,torch.zeros_like(self.bias),self.training,self.momentum,self.eps)
+            # if self.spike:
+            #     print("after mybatchnorm1d:",x.reshape(torch.Size([self.T,x.shape[0]//self.T]) + x.shape[1:]).sum(dim=0).abs().mean())
+            # else:
+            #     print("after mybatchnorm1d:",x.abs().mean())
+            x = x.transpose(1,2)
+            if input_shape == 2:
+                x = x.squeeze(1)
+            if input_shape == 4:
+                x = x.reshape(B,H,N,C)
+            # print("self.running_mean",self.running_mean.abs().mean())
+            return x
 
 class MyBatchNorm1d(nn.BatchNorm1d):
     def __init__(self, dim, **kwargs):
@@ -108,38 +111,39 @@ class MyBatchNorm1d(nn.BatchNorm1d):
         self.eps = 1e-5
     
     def forward(self,x):
-        # self.training = False
-        input_shape = len(x.shape)
-        if input_shape == 4:
-            B,H,N,C = x.shape
-            x = x.reshape(B*H,N,C)
-        if input_shape == 2:
-            x = x.unsqueeze(1)
-        x = x.transpose(1,2)
-        # if self.spike:
-        #     print("before mybatchnorm1d:",x.reshape(torch.Size([self.T,x.shape[0]//self.T]) + x.shape[1:]).sum(dim=0).abs().mean())
-        # else:
-        #     print("before mybatchnorm1d:",x.abs().mean())
-        if not self.spike:
-            x = F.batch_norm(x,self.running_mean,self.running_var,self.weight,self.bias,self.training,self.momentum,self.eps)
-        else:
-            Fd = x.shape[0]
-            if self.step >= self.T:
-                x = F.batch_norm(x,self.running_mean,self.running_var,self.weight,self.bias,False,self.momentum,self.eps)
+        with nvtx_range("snn.layer.norm.MyBatchNorm1d.forward"):
+            # self.training = False
+            input_shape = len(x.shape)
+            if input_shape == 4:
+                B,H,N,C = x.shape
+                x = x.reshape(B*H,N,C)
+            if input_shape == 2:
+                x = x.unsqueeze(1)
+            x = x.transpose(1,2)
+            # if self.spike:
+            #     print("before mybatchnorm1d:",x.reshape(torch.Size([self.T,x.shape[0]//self.T]) + x.shape[1:]).sum(dim=0).abs().mean())
+            # else:
+            #     print("before mybatchnorm1d:",x.abs().mean())
+            if not self.spike:
+                x = F.batch_norm(x,self.running_mean,self.running_var,self.weight,self.bias,self.training,self.momentum,self.eps)
             else:
-                x = torch.cat([F.batch_norm(x[:int(Fd*(self.step/self.T))],self.running_mean,self.running_var,self.weight,self.bias,False,self.momentum,self.eps), \
-                            F.batch_norm(x[int(Fd*(self.step/self.T)):],torch.zeros_like(self.running_mean),self.running_var,self.weight,torch.zeros_like(self.bias),False,self.momentum,self.eps)])
-        # if self.spike:
-        #     print("after mybatchnorm1d:",x.reshape(torch.Size([self.T,x.shape[0]//self.T]) + x.shape[1:]).sum(dim=0).abs().mean())
-        # else:
-        #     print("after mybatchnorm1d:",x.abs().mean())
-        x = x.transpose(1,2)
-        if input_shape == 2:
-            x = x.squeeze(1)
-        if input_shape == 4:
-            x = x.reshape(B,H,N,C)
-        # print("self.running_mean",self.running_mean.abs().mean())
-        return x
+                Fd = x.shape[0]
+                if self.step >= self.T:
+                    x = F.batch_norm(x,self.running_mean,self.running_var,self.weight,self.bias,False,self.momentum,self.eps)
+                else:
+                    x = torch.cat([F.batch_norm(x[:int(Fd*(self.step/self.T))],self.running_mean,self.running_var,self.weight,self.bias,False,self.momentum,self.eps), \
+                                F.batch_norm(x[int(Fd*(self.step/self.T)):],torch.zeros_like(self.running_mean),self.running_var,self.weight,torch.zeros_like(self.bias),False,self.momentum,self.eps)])
+            # if self.spike:
+            #     print("after mybatchnorm1d:",x.reshape(torch.Size([self.T,x.shape[0]//self.T]) + x.shape[1:]).sum(dim=0).abs().mean())
+            # else:
+            #     print("after mybatchnorm1d:",x.abs().mean())
+            x = x.transpose(1,2)
+            if input_shape == 2:
+                x = x.squeeze(1)
+            if input_shape == 4:
+                x = x.reshape(B,H,N,C)
+            # print("self.running_mean",self.running_mean.abs().mean())
+            return x
 
 class LN2BNorm(nn.Module):
     def __init__(self, dim, eps=1e-6):
@@ -155,22 +159,23 @@ class LN2BNorm(nn.Module):
         self.eps = eps
         
     def forward(self,x):
-        out_LN = F.layer_norm(x, (self.dim,), self.weight, self.bias)
-        out_Identity = x + 0.0
-        input_shape = len(x.shape)
-        if input_shape == 4:
-            B,H,N,C = x.shape
-            x = x.reshape(B*H,N,C)
-        if input_shape == 2:
-            x = x.unsqueeze(1)
-        x = x.transpose(1,2)
-        out_BN = F.batch_norm(x,self.running_mean,self.running_var,self.weight,self.bias,self.training,self.momentum,self.eps)
-        out_BN = out_BN.transpose(1,2)
-        if input_shape == 2:
-            out_BN = out_BN.squeeze(1)
-        if input_shape == 4:
-            out_BN = out_BN.reshape(B,H,N,C)
-        return out_LN*self.Lambda + out_BN*(1 - self.Lambda)
+        with nvtx_range("snn.layer.norm.LN2BNorm.forward"):
+            out_LN = F.layer_norm(x, (self.dim,), self.weight, self.bias)
+            out_Identity = x + 0.0
+            input_shape = len(x.shape)
+            if input_shape == 4:
+                B,H,N,C = x.shape
+                x = x.reshape(B*H,N,C)
+            if input_shape == 2:
+                x = x.unsqueeze(1)
+            x = x.transpose(1,2)
+            out_BN = F.batch_norm(x,self.running_mean,self.running_var,self.weight,self.bias,self.training,self.momentum,self.eps)
+            out_BN = out_BN.transpose(1,2)
+            if input_shape == 2:
+                out_BN = out_BN.squeeze(1)
+            if input_shape == 4:
+                out_BN = out_BN.reshape(B,H,N,C)
+            return out_LN*self.Lambda + out_BN*(1 - self.Lambda)
 
 class MLP_BN(nn.Module):
     """ MLP as used in Vision Transformer, MLP-Mixer and related networks
@@ -189,12 +194,13 @@ class MLP_BN(nn.Module):
         self.name = "MLP"
 
     def forward(self, x):
-        x = self.fc1(x)
-        x = self.act(x)
-        x = self.drop1(x)
-        x = self.fc2(x)
-        x = self.drop2(x)
-        return x
+        with nvtx_range("snn.layer.norm.MLP_BN.forward"):
+            x = self.fc1(x)
+            x = self.act(x)
+            x = self.drop1(x)
+            x = self.fc2(x)
+            x = self.drop2(x)
+            return x
 
 class MyLayerNorm(nn.Module):
     def __init__(self, dim, eps=1e-6):
@@ -210,18 +216,19 @@ class MyLayerNorm(nn.Module):
         self.eps = 1e-6
     
     def forward(self,x):        
-        if self.training:
-            if self.running_mean is None:
-                self.running_mean = nn.Parameter((1-self.momentum) * x.mean([-1], keepdim=True),requires_grad=False)
-                self.running_var = nn.Parameter((1-self.momentum) * x.var([-1], keepdim=True),requires_grad=False)
+        with nvtx_range("snn.layer.norm.MyLayerNorm.forward"):
+            if self.training:
+                if self.running_mean is None:
+                    self.running_mean = nn.Parameter((1-self.momentum) * x.mean([-1], keepdim=True),requires_grad=False)
+                    self.running_var = nn.Parameter((1-self.momentum) * x.var([-1], keepdim=True),requires_grad=False)
+                else:
+                    self.running_mean.data = (1-self.momentum) * x.mean([-1], keepdim=True) + self.momentum * self.running_mean # mean: [1, max_len, 1]
+                    self.running_var.data = (1-self.momentum) * x.var([-1], keepdim=True) + self.momentum * self.running_var # std: [1, max_len, 1]
+                return self.weight * (x - self.running_mean) / (self.running_var + self.eps) + self.bias
             else:
-                self.running_mean.data = (1-self.momentum) * x.mean([-1], keepdim=True) + self.momentum * self.running_mean # mean: [1, max_len, 1]
-                self.running_var.data = (1-self.momentum) * x.var([-1], keepdim=True) + self.momentum * self.running_var # std: [1, max_len, 1]
-            return self.weight * (x - self.running_mean) / (self.running_var + self.eps) + self.bias
-        else:
-            # if self.running_mean is None:
-            self.running_mean = nn.Parameter(x.mean([-1], keepdim=True),requires_grad=False)
-            self.running_var = nn.Parameter(x.var([-1], keepdim=True),requires_grad=False)
-            running_mean = self.running_mean
-            running_var = self.running_var
-            return self.weight * (x) / (running_var + self.eps).sqrt() + self.bias    
+                # if self.running_mean is None:
+                self.running_mean = nn.Parameter(x.mean([-1], keepdim=True),requires_grad=False)
+                self.running_var = nn.Parameter(x.var([-1], keepdim=True),requires_grad=False)
+                running_mean = self.running_mean
+                running_var = self.running_var
+                return self.weight * (x) / (running_var + self.eps).sqrt() + self.bias

@@ -2,6 +2,8 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 
+from snn.nvtx import nvtx_range
+
 
 class spiking_softmax(nn.Module):
     def __init__(self,step,T):
@@ -34,33 +36,34 @@ class spiking_softmax(nn.Module):
         self.t = 0
     
     def forward(self, input):
-        ori_shape = input.shape
-        # 维度重塑
-        input = input.reshape(torch.Size([self.T, input.shape[0]//self.T]) + input.shape[1:])
-        
-        # 累加操作
-        input = torch.cumsum(input, dim=0)
-        
-        # 【修改部分开始】
-        # 使用列表收集每一时刻的结果，避免原位修改(in-place)导致的梯度报错
-        processed_input = []
-        limit = min(self.step, self.T)
-        
-        for i in range(self.T):
-            if i < limit:
-                # 对前 step 个时间步进行加权（非原位操作）
-                processed_input.append(input[i] * self.biasAllocator[i])
-            else:
-                # 其他时间步保持不变
-                processed_input.append(input[i])
-        
-        # 将列表重新堆叠回张量
-        input = torch.stack(processed_input, dim=0)
-        # 【修改部分结束】
+        with nvtx_range("snn.layer.softmax.spiking_softmax.forward"):
+            ori_shape = input.shape
+            # 维度重塑
+            input = input.reshape(torch.Size([self.T, input.shape[0]//self.T]) + input.shape[1:])
 
-        output = F.softmax(input, dim=-1)  
-        
-        # 差分操作 (这里保持原样，prepend的处理是安全的)
-        output = torch.diff(output, dim=0, prepend=(output[0]*0.0).unsqueeze(0))
-        
-        return output.reshape(ori_shape)
+            # 累加操作
+            input = torch.cumsum(input, dim=0)
+
+            # 【修改部分开始】
+            # 使用列表收集每一时刻的结果，避免原位修改(in-place)导致的梯度报错
+            processed_input = []
+            limit = min(self.step, self.T)
+
+            for i in range(self.T):
+                if i < limit:
+                    # 对前 step 个时间步进行加权（非原位操作）
+                    processed_input.append(input[i] * self.biasAllocator[i])
+                else:
+                    # 其他时间步保持不变
+                    processed_input.append(input[i])
+
+            # 将列表重新堆叠回张量
+            input = torch.stack(processed_input, dim=0)
+            # 【修改部分结束】
+
+            output = F.softmax(input, dim=-1)
+
+            # 差分操作 (这里保持原样，prepend的处理是安全的)
+            output = torch.diff(output, dim=0, prepend=(output[0]*0.0).unsqueeze(0))
+
+            return output.reshape(ori_shape)

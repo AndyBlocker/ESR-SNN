@@ -6,6 +6,7 @@ import torch.nn as nn
 import torch.nn.functional as F
 
 import glo
+from snn.nvtx import nvtx_range
 from snn.layer import (
     DyHT,
     DyHT_ReLU,
@@ -212,77 +213,79 @@ class SNNWrapper(nn.Module):
                 self._replace_weight(child)
 
     def forward(self,x, verbose=False):
-        accu = None
-        count1 = 0
-        accu_per_timestep = []
-        output_per_timestep = []
-        # print("self.bit",self.bit)
-        # x = x*(2**self.bit-1)+0.0
-        if self.visualize:
-            self.hook_mid_feature()
-        if self.Encoding_type == "rate":
-            self.mean = 0.0
-            self.std  = 0.0
-            x = get_subtensors(x,self.mean,self.std,sample_grain=self.step)        
-            if self.cfg.model.count("vit") > 0:        
-                self.model.pos_embed.data = self.model.pos_embed/self.step
-                self.model.cls_token.data = self.model.cls_token/self.step
-            # print("x.shape",x.shape)
-        while(1):
-            self.finish_judger.reset_network_finish_flag()
-            self.finish_judger.judge_finish(self)
-            network_finish = self.finish_judger.network_finish
-            # print(f"===================Timestep: {count1}===================")
-            if (count1 > 0 and network_finish) or count1 >= self.T:
-                self.max_T = max(count1, self.max_T)
-                break
-            # if self.neuron_type.count("QFFS") != -1 or self.neuron_type == 'ST-BIF':
-            if (self.Encoding_type == "analog" and self.model_name.count("vit") > 0 and count1 > 0) or (self.Encoding_type == "rate" and self.model_name.count("vit") > 0 and count1 >= self.step):
-                self.model.pos_embed.data = self.model.pos_embed*0.0
-                self.model.cls_token.data = self.model.cls_token*0.0
-            elif self.cfg.model.count("swin") > 0:
-                self.model.pos_drop.p = 0
+        with nvtx_range("snn.wrapper.ss.SNNWrapper.forward"):
+            accu = None
+            count1 = 0
+            accu_per_timestep = []
+            output_per_timestep = []
+            # print("self.bit",self.bit)
+            # x = x*(2**self.bit-1)+0.0
+            if self.visualize:
+                self.hook_mid_feature()
             if self.Encoding_type == "rate":
-                if count1 < x.shape[0]:
-                    input = x[count1]
+                self.mean = 0.0
+                self.std  = 0.0
+                x = get_subtensors(x,self.mean,self.std,sample_grain=self.step)
+                if self.cfg.model.count("vit") > 0:
+                    self.model.pos_embed.data = self.model.pos_embed/self.step
+                    self.model.cls_token.data = self.model.cls_token/self.step
+                # print("x.shape",x.shape)
+            while(1):
+                self.finish_judger.reset_network_finish_flag()
+                self.finish_judger.judge_finish(self)
+                network_finish = self.finish_judger.network_finish
+                # print(f"===================Timestep: {count1}===================")
+                if (count1 > 0 and network_finish) or count1 >= self.T:
+                    self.max_T = max(count1, self.max_T)
+                    break
+                # if self.neuron_type.count("QFFS") != -1 or self.neuron_type == 'ST-BIF':
+                if (self.Encoding_type == "analog" and self.model_name.count("vit") > 0 and count1 > 0) or (self.Encoding_type == "rate" and self.model_name.count("vit") > 0 and count1 >= self.step):
+                    self.model.pos_embed.data = self.model.pos_embed*0.0
+                    self.model.cls_token.data = self.model.cls_token*0.0
+                elif self.cfg.model.count("swin") > 0:
+                    self.model.pos_drop.p = 0
+                if self.Encoding_type == "rate":
+                    if count1 < x.shape[0]:
+                        input = x[count1]
+                    else:
+                        input = torch.zeros(x[0].shape).to(x.device)
                 else:
-                    input = torch.zeros(x[0].shape).to(x.device)            
-            else:
-                if count1 == 0:
-                    input = x
-                else:
-                    input = torch.zeros(x.shape).to(x.device)
-            # elif self.neuron_type == 'IF':
-            #     input = x
-            # else:
-            #     print("No implementation of neuron type:",self.neuron_type)
-            #     sys.exit(0)
-            
-            output = self.model(input)
-            # print(count1,output[0,0:100])
-            # print(count1,"output",torch.abs(output.sum()))
-            
-            if count1 == 0:
-                accu = output + 0.0
-            else:
-                accu = accu + output
-            if verbose:
-                accu_per_timestep.append(accu)
-                output_per_timestep.append(output)
-            # print("accu",accu.sum(),"output",output.sum())
-            count1 = count1 + 1
-            if count1 % 100 == 0:
-                print(count1)
+                    if count1 == 0:
+                        input = x
+                    else:
+                        input = torch.zeros(x.shape).to(x.device)
+                # elif self.neuron_type == 'IF':
+                #     input = x
+                # else:
+                #     print("No implementation of neuron type:",self.neuron_type)
+                #     sys.exit(0)
 
-        # print("verbose",verbose)
-        # print("\nTime Step:",count1)
-        if self.visualize:
-            self.get_mid_feature()
-            torch.save(self.feature_list,"model_blocks11_norm2.pth")
-            torch.save(self.input_feature_list,"model_blocks11_norm2_input.pth")
-        if verbose:
-            accu_per_timestep = torch.stack(accu_per_timestep,dim=0)
-            output_per_timestep = torch.stack(output_per_timestep,dim=0)
-            return accu,count1,output_per_timestep,accu_per_timestep
-        else:
-            return accu,count1
+                with nvtx_range("snn.wrapper.ss.SNNWrapper.step"):
+                    output = self.model(input)
+                # print(count1,output[0,0:100])
+                # print(count1,"output",torch.abs(output.sum()))
+
+                if count1 == 0:
+                    accu = output + 0.0
+                else:
+                    accu = accu + output
+                if verbose:
+                    accu_per_timestep.append(accu)
+                    output_per_timestep.append(output)
+                # print("accu",accu.sum(),"output",output.sum())
+                count1 = count1 + 1
+                if count1 % 100 == 0:
+                    print(count1)
+
+            # print("verbose",verbose)
+            # print("\nTime Step:",count1)
+            if self.visualize:
+                self.get_mid_feature()
+                torch.save(self.feature_list,"model_blocks11_norm2.pth")
+                torch.save(self.input_feature_list,"model_blocks11_norm2_input.pth")
+            if verbose:
+                accu_per_timestep = torch.stack(accu_per_timestep,dim=0)
+                output_per_timestep = torch.stack(output_per_timestep,dim=0)
+                return accu,count1,output_per_timestep,accu_per_timestep
+            else:
+                return accu,count1

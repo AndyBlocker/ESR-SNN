@@ -2,6 +2,8 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 
+from snn.nvtx import nvtx_range
+
 
 class spiking_dyt(nn.Module):
     def __init__(self,dyt,step,T):
@@ -27,18 +29,19 @@ class spiking_dyt(nn.Module):
         self.t = 0
     
     def forward(self,input):
-        # ori_shape = input.shape
-        # input = input.reshape(torch.Size([self.T, input.shape[0]//self.T]) + input.shape[1:])
-        # self.X = torch.cumsum(input, dim=0) - input
-        # Y = self.gamma * torch.sinh(self.alpha * input) / (torch.cosh(self.alpha*self.X) * torch.cosh(self.alpha*(input + self.X))) + self.beta/self.T
-        # return Y.reshape(ori_shape)
-        ori_shape = input.shape
-        input = input.reshape(torch.Size([self.T, input.shape[0]//self.T]) + input.shape[1:])
-        input = torch.cumsum(input, dim=0)
-        output = self.dyt(input)
-        output = torch.diff(output,dim=0,prepend=(output[0]*0.0).unsqueeze(0))
-        output[:self.step] = output[:self.step] + self.beta/self.step
-        return output.reshape(ori_shape)
+        with nvtx_range("snn.layer.dyt.spiking_dyt.forward"):
+            # ori_shape = input.shape
+            # input = input.reshape(torch.Size([self.T, input.shape[0]//self.T]) + input.shape[1:])
+            # self.X = torch.cumsum(input, dim=0) - input
+            # Y = self.gamma * torch.sinh(self.alpha * input) / (torch.cosh(self.alpha*self.X) * torch.cosh(self.alpha*(input + self.X))) + self.beta/self.T
+            # return Y.reshape(ori_shape)
+            ori_shape = input.shape
+            input = input.reshape(torch.Size([self.T, input.shape[0]//self.T]) + input.shape[1:])
+            input = torch.cumsum(input, dim=0)
+            output = self.dyt(input)
+            output = torch.diff(output,dim=0,prepend=(output[0]*0.0).unsqueeze(0))
+            output[:self.step] = output[:self.step] + self.beta/self.step
+            return output.reshape(ori_shape)
 
 class DyT(nn.Module):
     def __init__(self, C, init_alpha=0.5):
@@ -48,8 +51,9 @@ class DyT(nn.Module):
         self.beta = nn.Parameter(torch.tensor(torch.zeros(C)))
 
     def forward(self,x):
-        x = torch.tanh(self.alpha*x)
-        return self.gamma * x + self.beta
+        with nvtx_range("snn.layer.dyt.DyT.forward"):
+            x = torch.tanh(self.alpha*x)
+            return self.gamma * x + self.beta
 
 class DyHT_ReLU(nn.Module):
     def __init__(self, C, init_alpha=0.5):
@@ -59,13 +63,13 @@ class DyHT_ReLU(nn.Module):
         self.beta = nn.Parameter(torch.tensor(torch.zeros(C)))
 
     def forward(self,x):
-        # B = x.shape[0]
-        # print("QANN INPUT DyHT.abs().mean()",x.abs().mean())
-        x = (torch.nn.functional.hardtanh(self.alpha*x + self.beta, min_val=0.0, max_val=1.0))
-        # print("QANN DyHT.abs().mean()",x.abs().mean())
-        # print("self.gamma min",self.gamma.min(),"self.gamma max",self.gamma.max())
-        
-        return x * self.gamma
+        with nvtx_range("snn.layer.dyt.DyHT_ReLU.forward"):
+            # B = x.shape[0]
+            # print("QANN INPUT DyHT.abs().mean()",x.abs().mean())
+            x = (torch.nn.functional.hardtanh(self.alpha*x + self.beta, min_val=0.0, max_val=1.0))
+            # print("QANN DyHT.abs().mean()",x.abs().mean())
+            # print("self.gamma min",self.gamma.min(),"self.gamma max",self.gamma.max())
+            return x * self.gamma
 
 class DyHT_Softmax(nn.Module):
     def __init__(self, H, init_alpha=1.0):
@@ -81,17 +85,17 @@ class DyHT_Softmax(nn.Module):
         return f"DyHT_Softmax(self.H={self.H}, alpha_init_value={self.alpha_init_value})"
 
     def forward(self,x):
-        # x = x.permute(0,2,3,1) # B,N,N,H
-        N = x.shape[-1]
+        with nvtx_range("snn.layer.dyt.DyHT_Softmax.forward"):
+            # x = x.permute(0,2,3,1) # B,N,N,H
+            N = x.shape[-1]
 
-        # print(self.alpha.mean().item())
-        alpha = self.alpha.view(1,self.H,1,1)
-        x = torch.clip(torch.relu(x*alpha/N), 0.0, 1.0)
-        # x = torch.clip(x, 0.0, 1.0)
-                
-        # x = x.permute(0,3,1,2) # B,H,N,N
-        
-        return x
+            # print(self.alpha.mean().item())
+            alpha = self.alpha.view(1,self.H,1,1)
+            x = torch.clip(torch.relu(x*alpha/N), 0.0, 1.0)
+            # x = torch.clip(x, 0.0, 1.0)
+
+            # x = x.permute(0,3,1,2) # B,H,N,N
+            return x
 
 class DyHT(nn.Module):
     def __init__(self, C, init_alpha=0.5):
@@ -101,13 +105,13 @@ class DyHT(nn.Module):
         self.beta = nn.Parameter(torch.tensor(torch.zeros(C)))
 
     def forward(self,x):
-        # B = x.shape[0]
-        # print("QANN INPUT DyHT.abs().mean()",x.abs().mean())
-        x = torch.nn.functional.hardtanh(self.alpha*x + self.beta, min_val=-1.0, max_val=1.0)
-        # print("QANN DyHT.abs().mean()",x.abs().mean())
-        # print("self.gamma min",self.gamma.min(),"self.gamma max",self.gamma.max())
-        
-        return x * self.gamma
+        with nvtx_range("snn.layer.dyt.DyHT.forward"):
+            # B = x.shape[0]
+            # print("QANN INPUT DyHT.abs().mean()",x.abs().mean())
+            x = torch.nn.functional.hardtanh(self.alpha*x + self.beta, min_val=-1.0, max_val=1.0)
+            # print("QANN DyHT.abs().mean()",x.abs().mean())
+            # print("self.gamma min",self.gamma.min(),"self.gamma max",self.gamma.max())
+            return x * self.gamma
 
 class SDyHT_SS(nn.Module):
     def __init__(self, C, init_alpha=0.25):
@@ -125,11 +129,12 @@ class SDyHT_SS(nn.Module):
         self.t = 0
     
     def forward(self,x):
-        self.t = self.t + 1
-        x = self.alpha * self.gamma * x
-        if self.t <= self.step:
-            x = x + self.beta * self.gamma/self.step
-        return x
+        with nvtx_range("snn.layer.dyt.SDyHT_SS.forward"):
+            self.t = self.t + 1
+            x = self.alpha * self.gamma * x
+            if self.t <= self.step:
+                x = x + self.beta * self.gamma/self.step
+            return x
 
 class SDyHT(nn.Module):
     def __init__(self, C, init_alpha=0.25, step=3, T=32):
@@ -160,32 +165,31 @@ class SDyHT(nn.Module):
         return f"SDyHT(self.gamma={self.gamma.data[0]})"
 
     def forward(self,x):
-        effect_T = min(self.T, self.param_number)
-        biasAllocator = torch.cat([1 - torch.sum(self.biasAllocator,dim=0,keepdim=True), self.biasAllocator], dim=0)[:effect_T]
-        if x.dim() == 3:
-            B,N,C = x.shape
-            # print("SNN INPUT DyHT.abs().mean()",x.reshape(32,8,-1).sum(dim=0).abs().mean())
-            x = x.reshape(self.T,B//self.T,N,C)
-            x = self.alpha * self.gamma * x
-            bias_term = biasAllocator.view(-1, 1, 1, 1) * self.gamma * self.beta.view(1, 1, 1, -1)
-            x = torch.cat([
-                x[:effect_T] + bias_term,
-                x[effect_T:]
-            ], dim=0)
-            x = x.reshape(B,N,C)
-            # print("SNN DyHT.abs().mean()",x.reshape(32,8,-1).sum(dim=0).abs().mean())
-        else:
-            B,C = x.shape
-            # print("SNN INPUT DyHT.abs().mean()",x.reshape(32,8,-1).sum(dim=0).abs().mean())
-            x = x.reshape(self.T,B//self.T,C)
-            x = self.alpha * self.gamma * x
-            bias_term = biasAllocator.view(-1, 1, 1) * self.gamma * self.beta.view(1, 1, -1)
-            x = torch.cat([
-                x[:effect_T] + bias_term,
-                x[effect_T:]
-            ], dim=0)
-            x = x.reshape(B,C)
-        
-        # print("self.beta",self.beta.data)        
-        
-        return x
+        with nvtx_range("snn.layer.dyt.SDyHT.forward"):
+            effect_T = min(self.T, self.param_number)
+            biasAllocator = torch.cat([1 - torch.sum(self.biasAllocator,dim=0,keepdim=True), self.biasAllocator], dim=0)[:effect_T]
+            if x.dim() == 3:
+                B,N,C = x.shape
+                # print("SNN INPUT DyHT.abs().mean()",x.reshape(32,8,-1).sum(dim=0).abs().mean())
+                x = x.reshape(self.T,B//self.T,N,C)
+                x = self.alpha * self.gamma * x
+                bias_term = biasAllocator.view(-1, 1, 1, 1) * self.gamma * self.beta.view(1, 1, 1, -1)
+                x = torch.cat([
+                    x[:effect_T] + bias_term,
+                    x[effect_T:]
+                ], dim=0)
+                x = x.reshape(B,N,C)
+                # print("SNN DyHT.abs().mean()",x.reshape(32,8,-1).sum(dim=0).abs().mean())
+            else:
+                B,C = x.shape
+                # print("SNN INPUT DyHT.abs().mean()",x.reshape(32,8,-1).sum(dim=0).abs().mean())
+                x = x.reshape(self.T,B//self.T,C)
+                x = self.alpha * self.gamma * x
+                bias_term = biasAllocator.view(-1, 1, 1) * self.gamma * self.beta.view(1, 1, -1)
+                x = torch.cat([
+                    x[:effect_T] + bias_term,
+                    x[effect_T:]
+                ], dim=0)
+                x = x.reshape(B,C)
+            # print("self.beta",self.beta.data)
+            return x

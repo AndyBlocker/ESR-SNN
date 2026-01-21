@@ -6,6 +6,7 @@ import torch.nn as nn
 import torch.nn.functional as F
 
 import glo
+from snn.nvtx import nvtx_range
 from snn.layer import (
     DyHT,
     DyHT_ReLU,
@@ -239,44 +240,46 @@ class SNNWrapper_MS(nn.Module):
                 self._replace_weight(child)
 
     def forward(self,x, verbose=False):
-        if self.cfg.dataset == "dvs128":
-            input = x.transpose(0,1)/self.T
-        else:
-            input = get_subtensors(x,0.0,0.0,sample_grain=self.step, time_step=self.T)
-        # input = input * self.step
-        if self.cfg.model.count("vit") > 0:
-            self.model.pos_embed.data = self.model.pos_embed/self.step
-            self.model.cls_token.data = self.model.cls_token/self.step
-        elif self.cfg.model.count("swin") > 0:
-            self.model.pos_drop.p = 0
-        T,B,C,H,W = input.shape
-        # biasAllocator = torch.cat([1 - torch.sum(self.biasAllocator,dim=0,keepdim=True), self.biasAllocator], dim=0)
-        # input = torch.cat([input[0].unsqueeze(0) * biasAllocator.reshape(-1,1,1,1,1), input[self.param_number:]], dim=0)
-        
-        input = input.reshape(T*B,C,H,W)
-        output = self.model(input)
-        output = output.reshape(torch.Size([T,B]) + output.shape[1:])
-        
-        if not self.training:
-            print(output.abs().sum(dim=[-1,-2]))
-        
-        accu_per_t = []
-        accu = 0.0
-        self.reset()
-        if verbose == True:
-            for t in range(T):
-                accu = accu + output[t]
-                prob = torch.max(F.softmax(accu, dim=1), dim=1)[0]
-                # if t == 0:
-                #     if prob > self.confident_thr[0]:
-                #         for i in range(t,T):
-                #             accu_per_t.append(accu + 0.0)                        
-                #         break
-                # else:
-                if prob > self.confident_thr[1]:
-                    for i in range(t,T):
-                        accu_per_t.append(accu + 0.0)                        
-                    break
-                accu_per_t.append(accu + 0.0)
-            return accu, t+1, output, torch.stack(accu_per_t,dim=0)
-        return output.sum(dim=0), self.T
+        with nvtx_range("snn.wrapper.ms.SNNWrapper_MS.forward"):
+            if self.cfg.dataset == "dvs128":
+                input = x.transpose(0,1)/self.T
+            else:
+                input = get_subtensors(x,0.0,0.0,sample_grain=self.step, time_step=self.T)
+            # input = input * self.step
+            if self.cfg.model.count("vit") > 0:
+                self.model.pos_embed.data = self.model.pos_embed/self.step
+                self.model.cls_token.data = self.model.cls_token/self.step
+            elif self.cfg.model.count("swin") > 0:
+                self.model.pos_drop.p = 0
+            T,B,C,H,W = input.shape
+            # biasAllocator = torch.cat([1 - torch.sum(self.biasAllocator,dim=0,keepdim=True), self.biasAllocator], dim=0)
+            # input = torch.cat([input[0].unsqueeze(0) * biasAllocator.reshape(-1,1,1,1,1), input[self.param_number:]], dim=0)
+
+            input = input.reshape(T*B,C,H,W)
+            with nvtx_range("snn.wrapper.ms.SNNWrapper_MS.model"):
+                output = self.model(input)
+            output = output.reshape(torch.Size([T,B]) + output.shape[1:])
+
+            if not self.training:
+                print(output.abs().sum(dim=[-1,-2]))
+
+            accu_per_t = []
+            accu = 0.0
+            self.reset()
+            if verbose == True:
+                for t in range(T):
+                    accu = accu + output[t]
+                    prob = torch.max(F.softmax(accu, dim=1), dim=1)[0]
+                    # if t == 0:
+                    #     if prob > self.confident_thr[0]:
+                    #         for i in range(t,T):
+                    #             accu_per_t.append(accu + 0.0)                        
+                    #         break
+                    # else:
+                    if prob > self.confident_thr[1]:
+                        for i in range(t,T):
+                            accu_per_t.append(accu + 0.0)
+                        break
+                    accu_per_t.append(accu + 0.0)
+                return accu, t+1, output, torch.stack(accu_per_t,dim=0)
+            return output.sum(dim=0), self.T

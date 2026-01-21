@@ -1,6 +1,7 @@
 import torch
 import torch.nn as nn
 
+from snn.nvtx import nvtx_range
 
 class IFNeuron(nn.Module):
     def __init__(self,q_threshold,level,sym=False):
@@ -35,36 +36,36 @@ class IFNeuron(nn.Module):
         self.neg_spike_position = None
 
     def forward(self,input):
-        x = input/self.q_threshold
-        if (not torch.is_tensor(x)) and x == 0.0 and (not torch.is_tensor(self.cur_output)) and self.cur_output == 0.0:
-            self.is_work = False
-            return x*self.q_threshold
-        
-        if not torch.is_tensor(self.cur_output):
-            self.cur_output = torch.zeros(x.shape,dtype=x.dtype).to(x.device)
-            self.acc_q = torch.zeros(x.shape,dtype=torch.float32).to(x.device)
-            self.q = torch.zeros(x.shape,dtype=torch.float32).to(x.device) + 0.5
+        with nvtx_range("snn.layer.if_neuron.IFNeuron.forward"):
+            x = input/self.q_threshold
+            if (not torch.is_tensor(x)) and x == 0.0 and (not torch.is_tensor(self.cur_output)) and self.cur_output == 0.0:
+                self.is_work = False
+                return x*self.q_threshold
 
-        self.is_work = True
-        
-        self.q = self.q + (x.detach() if torch.is_tensor(x) else x)
-        self.acc_q = torch.round(self.acc_q)
+            if not torch.is_tensor(self.cur_output):
+                self.cur_output = torch.zeros(x.shape,dtype=x.dtype).to(x.device)
+                self.acc_q = torch.zeros(x.shape,dtype=torch.float32).to(x.device)
+                self.q = torch.zeros(x.shape,dtype=torch.float32).to(x.device) + 0.5
 
-        spike_position = (self.q - 1 >= 0) & (self.acc_q < self.pos_max)
-        neg_spike_position = (self.q < -self.eps) & (self.acc_q > self.neg_min)
+            self.is_work = True
 
-        self.cur_output[:] = 0
-        self.cur_output[spike_position] = 1
-        self.cur_output[neg_spike_position] = -1
+            self.q = self.q + (x.detach() if torch.is_tensor(x) else x)
+            self.acc_q = torch.round(self.acc_q)
 
-        self.acc_q = self.acc_q + self.cur_output
-        self.q[spike_position] = self.q[spike_position] - 1
-        self.q[neg_spike_position] = self.q[neg_spike_position] + 1
+            spike_position = (self.q - 1 >= 0) & (self.acc_q < self.pos_max)
+            neg_spike_position = (self.q < -self.eps) & (self.acc_q > self.neg_min)
 
-        # print((x == 0).all(), (self.cur_output==0).all())
-        if (x == 0).all() and (self.cur_output==0).all():
-            self.is_work = False
-        
-        # print("self.cur_output",self.cur_output)
-        
-        return self.cur_output*self.q_threshold
+            self.cur_output[:] = 0
+            self.cur_output[spike_position] = 1
+            self.cur_output[neg_spike_position] = -1
+
+            self.acc_q = self.acc_q + self.cur_output
+            self.q[spike_position] = self.q[spike_position] - 1
+            self.q[neg_spike_position] = self.q[neg_spike_position] + 1
+
+            # print((x == 0).all(), (self.cur_output==0).all())
+            if (x == 0).all() and (self.cur_output==0).all():
+                self.is_work = False
+
+            # print("self.cur_output",self.cur_output)
+            return self.cur_output*self.q_threshold

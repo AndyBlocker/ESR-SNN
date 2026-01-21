@@ -3,6 +3,7 @@ import torch.nn as nn
 
 from timm.models.layers.helpers import to_2tuple
 from timm.models.layers.trace_utils import _assert
+from snn.nvtx import nvtx_range
 
 
 class PatchEmbedConv(nn.Module):
@@ -41,34 +42,35 @@ class PatchEmbedConv(nn.Module):
         self.norm = norm_layer(embed_dim) if norm_layer else nn.Identity()
 
     def forward(self, x):
-        B, C, H, W = x.shape
-        _assert(H == self.img_size[0], f"Input image height ({H}) doesn't match model ({self.img_size[0]}).")
-        _assert(W == self.img_size[1], f"Input image width ({W}) doesn't match model ({self.img_size[1]}).")
+        with nvtx_range("snn.layer.embed.PatchEmbedConv.forward"):
+            B, C, H, W = x.shape
+            _assert(H == self.img_size[0], f"Input image height ({H}) doesn't match model ({self.img_size[0]}).")
+            _assert(W == self.img_size[1], f"Input image width ({W}) doesn't match model ({self.img_size[1]}).")
 
-        x = self.proj_conv(x).reshape(B, self.embed_dim//2, H * W).transpose(1,2).contiguous()
-        x = self.proj_bn(x).transpose(1,2).reshape(B, self.embed_dim//2, H, W).contiguous()
-        x = self.proj_maxpool(x)
-        x = self.proj_ReLU(x)
-        
-        x_feat = x + 0.0
-        x = self.proj1_conv(x).reshape(B, self.embed_dim, (H//2) * (W//2)).transpose(1,2).contiguous()
-        x = self.proj1_bn(x).transpose(1,2).reshape(B, self.embed_dim, H//2, W//2).contiguous()
-        x = self.proj1_maxpool(x)
-        x = self.proj1_ReLU(x)
+            x = self.proj_conv(x).reshape(B, self.embed_dim//2, H * W).transpose(1,2).contiguous()
+            x = self.proj_bn(x).transpose(1,2).reshape(B, self.embed_dim//2, H, W).contiguous()
+            x = self.proj_maxpool(x)
+            x = self.proj_ReLU(x)
 
-        x = self.proj2_conv(x).reshape(B, self.embed_dim, (H//4) * (W//4)).transpose(1,2).contiguous()
-        x = self.proj2_bn(x).transpose(1,2).reshape(B, self.embed_dim, H//4, W//4).contiguous()
+            x_feat = x + 0.0
+            x = self.proj1_conv(x).reshape(B, self.embed_dim, (H//2) * (W//2)).transpose(1,2).contiguous()
+            x = self.proj1_bn(x).transpose(1,2).reshape(B, self.embed_dim, H//2, W//2).contiguous()
+            x = self.proj1_maxpool(x)
+            x = self.proj1_ReLU(x)
 
-        x_feat = self.proj_res_conv(x_feat).reshape(B, self.embed_dim, (H//4) * (W//4)).transpose(1,2).contiguous()
-        x_feat = self.proj_res_bn(x_feat).transpose(1,2).reshape(B, self.embed_dim, H//4, W//4).contiguous()
+            x = self.proj2_conv(x).reshape(B, self.embed_dim, (H//4) * (W//4)).transpose(1,2).contiguous()
+            x = self.proj2_bn(x).transpose(1,2).reshape(B, self.embed_dim, H//4, W//4).contiguous()
 
-        x = self.proj_res_ReLU(x + x_feat)    
-    
-        if self.flatten:
-            x = x.flatten(2).transpose(1, 2)  # BCHW -> BNC
+            x_feat = self.proj_res_conv(x_feat).reshape(B, self.embed_dim, (H//4) * (W//4)).transpose(1,2).contiguous()
+            x_feat = self.proj_res_bn(x_feat).transpose(1,2).reshape(B, self.embed_dim, H//4, W//4).contiguous()
 
-        x = self.norm(x)
-        return x
+            x = self.proj_res_ReLU(x + x_feat)
+
+            if self.flatten:
+                x = x.flatten(2).transpose(1, 2)  # BCHW -> BNC
+
+            x = self.norm(x)
+            return x
 
 class PatchMergingConv(nn.Module):
     r""" Patch Merging Layer.
@@ -99,24 +101,25 @@ class PatchMergingConv(nn.Module):
         """
         x: B, H*W, C
         """
-        H, W = self.input_resolution
-        B, L, C = x.shape
-        _assert(L == H * W, "input feature has wrong size")
-        _assert(H % 2 == 0 and W % 2 == 0, f"x size ({H}*{W}) are not even.")
+        with nvtx_range("snn.layer.embed.PatchMergingConv.forward"):
+            H, W = self.input_resolution
+            B, L, C = x.shape
+            _assert(L == H * W, "input feature has wrong size")
+            _assert(H % 2 == 0 and W % 2 == 0, f"x size ({H}*{W}) are not even.")
 
-        x = x.view(B, H, W, C).permute(0, 3, 1, 2).contiguous()  # B C H W
-        x_feat = x + 0.0
+            x = x.view(B, H, W, C).permute(0, 3, 1, 2).contiguous()  # B C H W
+            x_feat = x + 0.0
 
-        x = self.proj1_conv(x).reshape(B, C, H * W).transpose(1,2).contiguous()
-        x = self.proj1_bn(x).transpose(1,2).reshape(B, C, H, W).contiguous()
-        x = self.proj1_maxpool(x)
-        x = self.proj1_ReLU(x)
+            x = self.proj1_conv(x).reshape(B, C, H * W).transpose(1,2).contiguous()
+            x = self.proj1_bn(x).transpose(1,2).reshape(B, C, H, W).contiguous()
+            x = self.proj1_maxpool(x)
+            x = self.proj1_ReLU(x)
 
-        x = self.proj2_conv(x).reshape(B, 2*C, (H//2) * (W//2)).transpose(1,2).contiguous()
-        x = self.proj2_bn(x).transpose(1,2).reshape(B, 2*C, H//2, W//2).contiguous()
+            x = self.proj2_conv(x).reshape(B, 2*C, (H//2) * (W//2)).transpose(1,2).contiguous()
+            x = self.proj2_bn(x).transpose(1,2).reshape(B, 2*C, H//2, W//2).contiguous()
 
-        x_feat = self.proj_res_conv(x_feat).reshape(B, 2*C, (H//2) * (W//2)).transpose(1,2).contiguous()
-        x_feat = self.proj_res_bn(x_feat).transpose(1,2).reshape(B, 2*C, H//2, W//2).contiguous()
+            x_feat = self.proj_res_conv(x_feat).reshape(B, 2*C, (H//2) * (W//2)).transpose(1,2).contiguous()
+            x_feat = self.proj_res_bn(x_feat).transpose(1,2).reshape(B, 2*C, H//2, W//2).contiguous()
 
-        x = self.proj_res_ReLU(x_feat + x)
-        return x.reshape(B, 2*C, (H//2) * (W//2)).transpose(1,2).contiguous()
+            x = self.proj_res_ReLU(x_feat + x)
+            return x.reshape(B, 2*C, (H//2) * (W//2)).transpose(1,2).contiguous()

@@ -2,6 +2,7 @@ import torch
 import torch.nn as nn
 
 from neuron_cupy.cuda_operator import ST_BIFNodeATGF_MS_CUDA
+from snn.nvtx import nvtx_range
 
 
 class ST_BIFNeuron_MS(nn.Module):
@@ -64,56 +65,57 @@ class ST_BIFNeuron_MS(nn.Module):
             self.acc_q = 0.0
 
     def forward(self,input):
-        N = input.shape[0]
-        ori_shape = input.shape
-        # print("self.q_threshold",self.q_threshold.data.item())
+        with nvtx_range("snn.layer.st_bifneuron_ms.ST_BIFNeuron_MS.forward"):
+            N = input.shape[0]
+            ori_shape = input.shape
+            # print("self.q_threshold",self.q_threshold.data.item())
 
-        input = input.reshape(torch.Size([int((self.T)),N//int((self.T))]) + input.shape[1:])
-        # print("ST_BIFNeuron_MS input.sum(dim=0).abs().mean()",input.sum(dim=0).abs().mean(),input.dtype)            
-        # print("ST_BIFNeuron_MS input.abs().mean()",input.abs().mean(),input.dtype)            
-        
-        effect_T = min(self.T, self.param_number)
-        biasAllocator = torch.cat([1 - torch.sum(self.biasAllocator,dim=0,keepdim=True), self.biasAllocator], dim=0)[:effect_T]
-        # print(biasAllocator)
+            input = input.reshape(torch.Size([int((self.T)),N//int((self.T))]) + input.shape[1:])
+            # print("ST_BIFNeuron_MS input.sum(dim=0).abs().mean()",input.sum(dim=0).abs().mean(),input.dtype)
+            # print("ST_BIFNeuron_MS input.abs().mean()",input.abs().mean(),input.dtype)
 
-        if len(input.shape) == 4:
-            bias_term = biasAllocator.view(-1, 1, 1, 1) * self.bias_channel.view(1, 1, 1, -1)
-            # print(self.biasAllocator.shape, biasAllocator.shape, bias_term.shape)
-            input = torch.cat([
-                input[:effect_T] + bias_term,
-                input[effect_T:]
-            ], dim=0)
-        elif len(input.shape) == 5:
-            if input.shape[-1] != input.shape[-2]:
-                T1,B1,Head1,N1,C1 = input.shape
+            effect_T = min(self.T, self.param_number)
+            biasAllocator = torch.cat([1 - torch.sum(self.biasAllocator,dim=0,keepdim=True), self.biasAllocator], dim=0)[:effect_T]
+            # print(biasAllocator)
+
+            if len(input.shape) == 4:
                 bias_term = biasAllocator.view(-1, 1, 1, 1) * self.bias_channel.view(1, 1, 1, -1)
-                input = input.transpose(2,3).reshape(T1,B1,N1,C1*Head1)
+                # print(self.biasAllocator.shape, biasAllocator.shape, bias_term.shape)
                 input = torch.cat([
                     input[:effect_T] + bias_term,
                     input[effect_T:]
                 ], dim=0)
-                input = input.reshape(T1,B1,N1,Head1,C1).transpose(2,3)
+            elif len(input.shape) == 5:
+                if input.shape[-1] != input.shape[-2]:
+                    T1,B1,Head1,N1,C1 = input.shape
+                    bias_term = biasAllocator.view(-1, 1, 1, 1) * self.bias_channel.view(1, 1, 1, -1)
+                    input = input.transpose(2,3).reshape(T1,B1,N1,C1*Head1)
+                    input = torch.cat([
+                        input[:effect_T] + bias_term,
+                        input[effect_T:]
+                    ], dim=0)
+                    input = input.reshape(T1,B1,N1,Head1,C1).transpose(2,3)
 
-        input = input / self.q_threshold
-        spike_seq, v_seq, T_seq = ST_BIFNodeATGF_MS_CUDA.apply(input.flatten(2), torch.tensor(1.0).to(input.device), self.pos_max, self.neg_min, self.prefire)
-        # self.q = v
-        # print(self.q[self.q>0].mean())
-        if self.need_spike_tracer:
-            self.acc_q = T_seq.reshape(ori_shape)
-        # print("ST_BIFNeuron_MS output.abs().mean()",(spike_seq*self.q_threshold).abs().mean(),input.dtype)            
-        # print("ST_BIFNeuron_MS output.sum(dim=0).abs().mean()",(spike_seq*self.q_threshold).sum(dim=0).abs().mean(),spike_seq.dtype)
-        spike_seq = spike_seq.reshape(ori_shape)
-        if len(input.shape) == 4 and self.suppress_over_fire:
-            spike_seq_1 = spike_seq.reshape(torch.Size([int((self.T)),N//int((self.T))]) + spike_seq.shape[1:])
-            # print(spike_seq_1.shape)
-            # self.overfireLoss = (spike_seq_1.abs().sum(dim=0) - spike_seq_1.sum(dim=0).abs()).sum() * 1e-5
-            # if len(spike_seq.shape) == 3:
-            #     # print(spike_seq.shape)
-            #     channel_dist = (spike_seq).abs().mean(dim=1)
-            #     mask = channel_dist < 1.0 * channel_dist.mean(dim=1,keepdim=True)
-            #     # print(channel_dist.max(), channel_dist.min(), channel_dist.mean())
-            #     self.overfireLoss = (channel_dist * mask).sum() * 2e-5
-            self.overfireLoss = spike_seq.abs().sum() / spike_seq.numel()
-            # self.overfireLoss = spike_seq[6:].abs().sum() * 1e-6
+            input = input / self.q_threshold
+            spike_seq, v_seq, T_seq = ST_BIFNodeATGF_MS_CUDA.apply(input.flatten(2), torch.tensor(1.0).to(input.device), self.pos_max, self.neg_min, self.prefire)
+            # self.q = v
+            # print(self.q[self.q>0].mean())
+            if self.need_spike_tracer:
+                self.acc_q = T_seq.reshape(ori_shape)
+            # print("ST_BIFNeuron_MS output.abs().mean()",(spike_seq*self.q_threshold).abs().mean(),input.dtype)
+            # print("ST_BIFNeuron_MS output.sum(dim=0).abs().mean()",(spike_seq*self.q_threshold).sum(dim=0).abs().mean(),spike_seq.dtype)
+            spike_seq = spike_seq.reshape(ori_shape)
+            if len(input.shape) == 4 and self.suppress_over_fire:
+                spike_seq_1 = spike_seq.reshape(torch.Size([int((self.T)),N//int((self.T))]) + spike_seq.shape[1:])
+                # print(spike_seq_1.shape)
+                # self.overfireLoss = (spike_seq_1.abs().sum(dim=0) - spike_seq_1.sum(dim=0).abs()).sum() * 1e-5
+                # if len(spike_seq.shape) == 3:
+                #     # print(spike_seq.shape)
+                #     channel_dist = (spike_seq).abs().mean(dim=1)
+                #     mask = channel_dist < 1.0 * channel_dist.mean(dim=1,keepdim=True)
+                #     # print(channel_dist.max(), channel_dist.min(), channel_dist.mean())
+                #     self.overfireLoss = (channel_dist * mask).sum() * 2e-5
+                self.overfireLoss = spike_seq.abs().sum() / spike_seq.numel()
+                # self.overfireLoss = spike_seq[6:].abs().sum() * 1e-6
 
-        return spike_seq*self.q_threshold
+            return spike_seq*self.q_threshold

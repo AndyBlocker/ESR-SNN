@@ -5,6 +5,7 @@ import torch.nn.functional as F
 from torch.utils.checkpoint import checkpoint
 
 from .utils import grad_scale, floor_pass, clip
+from snn.nvtx import nvtx_range
 
 
 class MyQuan(nn.Module):
@@ -111,108 +112,111 @@ class MyQuan(nn.Module):
           x_before: 加完 bias、reshape 之后、量化之前的激活（debug 用）
           q_int: clamp 后的“整数域”值（debug 用）
         """
-        dtype = x.dtype
-        device = x.device
+        with nvtx_range("snn.layer.quant.MyQuan._quant_core"):
+            dtype = x.dtype
+            device = x.device
 
-        # 范围 cast 到 x 的 dtype，避免 dtype 提升到 FP32
-        min_val = self.neg_min_buf.to(device).to(dtype)
-        max_val = self.pos_max_buf.to(device).to(dtype)
+            # 范围 cast 到 x 的 dtype，避免 dtype 提升到 FP32
+            min_val = self.neg_min_buf.to(device).to(dtype)
+            max_val = self.pos_max_buf.to(device).to(dtype)
 
-        # LSQ 的 grad scale：用 python float，完全不进计算图
-        Q = float(abs(self.pos_max))
-        s_grad_scale = 1.0 / math.sqrt(Q * x.numel())
+            # LSQ 的 grad scale：用 python float，完全不进计算图
+            Q = float(abs(self.pos_max))
+            s_grad_scale = 1.0 / math.sqrt(Q * x.numel())
 
-        # grad_scale 返回的本质还是 self.s / self.bias_channel，只是带了自定义梯度
-        # 这里显式 cast 到 x 的 dtype，避免激活被抬到 FP32
-        s_scale = grad_scale(self.s, s_grad_scale).to(dtype)
-        bias_scale = grad_scale(self.bias_channel, s_grad_scale).to(dtype)
+            # grad_scale 返回的本质还是 self.s / self.bias_channel，只是带了自定义梯度
+            # 这里显式 cast 到 x 的 dtype，避免激活被抬到 FP32
+            s_scale = grad_scale(self.s, s_grad_scale).to(dtype)
+            bias_scale = grad_scale(self.bias_channel, s_grad_scale).to(dtype)
 
-        # 加通道 bias
-        if x.dim() == 3:
-            x_q = x + bias_scale.view(1, 1, -1)
-        elif x.dim() == 4 and x.shape[-1] != x.shape[-2]:
-            B, Head, N, C = x.shape
-            tmp = x.transpose(1, 2).reshape(B, N, Head * C) \
-                  + bias_scale.view(1, 1, -1)
-            x_q = tmp.reshape(B, N, Head, C).transpose(1, 2)
-        else:
-            x_q = x
+            # 加通道 bias
+            if x.dim() == 3:
+                x_q = x + bias_scale.view(1, 1, -1)
+            elif x.dim() == 4 and x.shape[-1] != x.shape[-2]:
+                B, Head, N, C = x.shape
+                tmp = x.transpose(1, 2).reshape(B, N, Head * C) \
+                      + bias_scale.view(1, 1, -1)
+                x_q = tmp.reshape(B, N, Head, C).transpose(1, 2)
+            else:
+                x_q = x
 
-        # 用乘以 1/s_scale 替代除法，少一个大张量中间结果
-        inv_s = 1.0 / s_scale
-        q = floor_pass(x_q * inv_s + 0.5)
+            # 用乘以 1/s_scale 替代除法，少一个大张量中间结果
+            inv_s = 1.0 / s_scale
+            q = floor_pass(x_q * inv_s + 0.5)
 
-        q_clamped = torch.clamp(q, min=min_val, max=max_val)
-        # print("clamp min_val:",min_val, "max_val", max_val)
-        output = q_clamped * s_scale
+            q_clamped = torch.clamp(q, min=min_val, max=max_val)
+            # print("clamp min_val:",min_val, "max_val", max_val)
+            output = q_clamped * s_scale
 
-        return output, x_q, q_clamped
+            return output, x_q, q_clamped
 
     # ---------------------- 真正的 forward 实现 ---------------------- #
     def _forward_impl(self, x):
-        input_dtype = x.dtype
+        with nvtx_range("snn.layer.quant.MyQuan._forward_impl"):
+            input_dtype = x.dtype
 
-        # level >= 512：保持原行为，不量化
-        if self.pos_max == 'full':
-            return x
-
-        # 1. 初始化 s（只在第一次训练时做一次）
-        if self.training and self.init_state == 0:
-            if input_dtype == torch.float16:
-                x_init = x.to(torch.bfloat16)
-            else:
-                x_init = x
-            did_init = self._init_scale(x_init)
-            if did_init:
+            # level >= 512：保持原行为，不量化
+            if self.pos_max == 'full':
                 return x
 
-        # 2. 正式量化
-        if self.training and input_dtype == torch.float16:
-            # 和你原来一样：FP16 训练时内部用 BF16 计算，避免溢出
-            with torch.amp.autocast(device_type='cuda',
-                                    dtype=torch.bfloat16,
-                                    enabled=True):
-                x_bf16 = x.to(torch.bfloat16)
-                out_bf16, x_before, q_int = self._quant_core(x_bf16)
-            output = out_bf16.to(input_dtype)
-        else:
-            # 推理 or 非 FP16 的情况，用当前 dtype 计算
-            output_raw, x_before, q_int = self._quant_core(x)
-            output = output_raw.to(input_dtype)
+            # 1. 初始化 s（只在第一次训练时做一次）
+            if self.training and self.init_state == 0:
+                if input_dtype == torch.float16:
+                    x_init = x.to(torch.bfloat16)
+                else:
+                    x_init = x
+                did_init = self._init_scale(x_init)
+                if did_init:
+                    return x
 
-        # 3. TensorBoard 统计（不进计算图）
-        if self.debug and self.tfwriter is not None:
-            with torch.no_grad():
-                self.tfwriter.add_histogram(
-                    tag="before_quan/" + self.name + "_data",
-                    values=x_before.detach().cpu(),
-                    global_step=self.global_step
-                )
-                self.tfwriter.add_histogram(
-                    tag="after_quan/" + self.name + "_data",
-                    values=q_int.detach().cpu(),
-                    global_step=self.global_step
-                )
+            # 2. 正式量化
+            if self.training and input_dtype == torch.float16:
+                # 和你原来一样：FP16 训练时内部用 BF16 计算，避免溢出
+                with torch.amp.autocast(device_type='cuda',
+                                        dtype=torch.bfloat16,
+                                        enabled=True):
+                    x_bf16 = x.to(torch.bfloat16)
+                    out_bf16, x_before, q_int = self._quant_core(x_bf16)
+                output = out_bf16.to(input_dtype)
+            else:
+                # 推理 or 非 FP16 的情况，用当前 dtype 计算
+                output_raw, x_before, q_int = self._quant_core(x)
+                output = output_raw.to(input_dtype)
 
-            self.debug = False
-            self.tfwriter = None
-            self.name = ""
-            self.global_step = 0.0
+            # 3. TensorBoard 统计（不进计算图）
+            if self.debug and self.tfwriter is not None:
+                with torch.no_grad():
+                    self.tfwriter.add_histogram(
+                        tag="before_quan/" + self.name + "_data",
+                        values=x_before.detach().cpu(),
+                        global_step=self.global_step
+                    )
+                    self.tfwriter.add_histogram(
+                        tag="after_quan/" + self.name + "_data",
+                        values=q_int.detach().cpu(),
+                        global_step=self.global_step
+                    )
 
-        # 4. 额外 loss（和原逻辑等价）
-        if self.cal_loss:
-            s_val = self.s.detach().to(output.dtype)
-            self.l1_loss = (output.abs() / s_val).sum() * 1e-8
+                self.debug = False
+                self.tfwriter = None
+                self.name = ""
+                self.global_step = 0.0
 
-        return output
+            # 4. 额外 loss（和原逻辑等价）
+            if self.cal_loss:
+                s_val = self.s.detach().to(output.dtype)
+                self.l1_loss = (output.abs() / s_val).sum() * 1e-8
+
+            return output
 
     # ---------------------- 对外 forward：加可选 checkpoint ---------------------- #
     def forward(self, x):
-        # checkpoint 只在训练时有意义
-        if self.use_checkpoint and self.training:
-            return checkpoint(self._forward_impl, x)
-        else:
-            return self._forward_impl(x)
+        with nvtx_range("snn.layer.quant.MyQuan.forward"):
+            # checkpoint 只在训练时有意义
+            if self.use_checkpoint and self.training:
+                return checkpoint(self._forward_impl, x)
+            else:
+                return self._forward_impl(x)
 
 class MyQuanRound(nn.Module):
     def __init__(self,level,sym = False, **kwargs):
@@ -258,47 +262,48 @@ class MyQuanRound(nn.Module):
         self.global_step = global_step
 
     def forward(self, x):
-        input_detype = x.dtype
-        if self.pos_max == 'full':
-            return x
-        if str(self.neg_min.device) == 'cpu':
-            self.neg_min = self.neg_min.to(x.device)
-        if str(self.pos_max.device) == 'cpu':
-            self.pos_max = self.pos_max.to(x.device)
-        min_val = self.neg_min
-        max_val = self.pos_max
+        with nvtx_range("snn.layer.quant.MyQuanRound.forward"):
+            input_detype = x.dtype
+            if self.pos_max == 'full':
+                return x
+            if str(self.neg_min.device) == 'cpu':
+                self.neg_min = self.neg_min.to(x.device)
+            if str(self.pos_max.device) == 'cpu':
+                self.pos_max = self.pos_max.to(x.device)
+            min_val = self.neg_min
+            max_val = self.pos_max
 
-        # according to LSQ, the grad scale should be proportional to sqrt(1/(quantize_state*neuron_number))
-        s_grad_scale = 1.0 / ((max_val.detach().abs().mean() * x.numel()) ** 0.5)
+            # according to LSQ, the grad scale should be proportional to sqrt(1/(quantize_state*neuron_number))
+            s_grad_scale = 1.0 / ((max_val.detach().abs().mean() * x.numel()) ** 0.5)
 
-        if self.init_state == 0 and self.training:
-            self.s.data = (torch.tensor(x.detach().abs().mean() * 2 / (self.pos_max ** 0.5)).cuda() if self.sym \
-                            else torch.tensor(x.detach().abs().mean() * 4 / (self.pos_max ** 0.5)).cuda())
-            self.init_state += 1
-            print("myquanRound init")
-            return x
+            if self.init_state == 0 and self.training:
+                self.s.data = (torch.tensor(x.detach().abs().mean() * 2 / (self.pos_max ** 0.5)).cuda() if self.sym \
+                                else torch.tensor(x.detach().abs().mean() * 4 / (self.pos_max ** 0.5)).cuda())
+                self.init_state += 1
+                print("myquanRound init")
+                return x
 
-        self.s.data = min(torch.tensor(1/self.pos_max,device=x.device), self.s.data)
-        s_scale = grad_scale(self.s, s_grad_scale)
-        output = torch.clamp(torch.round(x/s_scale), min=min_val, max=max_val)*s_scale
+            self.s.data = min(torch.tensor(1/self.pos_max,device=x.device), self.s.data)
+            s_scale = grad_scale(self.s, s_grad_scale)
+            output = torch.clamp(torch.round(x/s_scale), min=min_val, max=max_val)*s_scale
 
-        if self.debug and self.tfwriter is not None:
-            self.tfwriter.add_histogram(tag="before_quan/".format(s_scale.item())+self.name+'_data', values=(x).detach().cpu(), global_step=self.global_step)
-            self.tfwriter.add_histogram(tag="after_quan/".format(s_scale.item())+self.name+'_data', values=((torch.clamp(floor_pass(x/s_scale + 0.5), min=min_val, max=max_val))).detach().cpu(), global_step=self.global_step)
-            self.debug = False
-            self.tfwriter = None
-            self.name = ""
-            self.global_step = 0.0
+            if self.debug and self.tfwriter is not None:
+                self.tfwriter.add_histogram(tag="before_quan/".format(s_scale.item())+self.name+'_data', values=(x).detach().cpu(), global_step=self.global_step)
+                self.tfwriter.add_histogram(tag="after_quan/".format(s_scale.item())+self.name+'_data', values=((torch.clamp(floor_pass(x/s_scale + 0.5), min=min_val, max=max_val))).detach().cpu(), global_step=self.global_step)
+                self.debug = False
+                self.tfwriter = None
+                self.name = ""
+                self.global_step = 0.0
 
-        output = output.to(input_detype)
-        # print("MyQuan output.abs().mean()",output.abs().mean(),output.dtype)
+            output = output.to(input_detype)
+            # print("MyQuan output.abs().mean()",output.abs().mean(),output.dtype)
 
-        # x_abs = torch.abs(output)/self.s
-        # self.l2_loss = l2_loss1 + (x_abs - (1/147)*x_abs*x_abs*x_abs).sum()
-        # self.absvalue = (torch.abs(output)/self.s).sum()
-        # output = floor_pass(x/s_scale)*s_scale
-        # print(output.abs().mean(), self.s.data.item())
-        return output
+            # x_abs = torch.abs(output)/self.s
+            # self.l2_loss = l2_loss1 + (x_abs - (1/147)*x_abs*x_abs*x_abs).sum()
+            # self.absvalue = (torch.abs(output)/self.s).sum()
+            # output = floor_pass(x/s_scale)*s_scale
+            # print(output.abs().mean(), self.s.data.item())
+            return output
 
 class QuanConv2d(torch.nn.Conv2d):
     def __init__(self, m: torch.nn.Conv2d, quan_w_fn=None):
@@ -320,8 +325,9 @@ class QuanConv2d(torch.nn.Conv2d):
             self.bias = None
 
     def forward(self, x):
-        quantized_weight = self.quan_w_fn(self.weight)
-        return self._conv_forward(x, quantized_weight, self.bias)
+        with nvtx_range("snn.layer.quant.QuanConv2d.forward"):
+            quantized_weight = self.quan_w_fn(self.weight)
+            return self._conv_forward(x, quantized_weight, self.bias)
 
 class QuanLinear(torch.nn.Linear):
     def __init__(self, m: torch.nn.Linear, quan_w_fn=None):
@@ -336,5 +342,6 @@ class QuanLinear(torch.nn.Linear):
             self.bias = torch.nn.Parameter(m.bias.detach())
 
     def forward(self, x):
-        quantized_weight = self.quan_w_fn(self.weight)
-        return torch.nn.functional.linear(x, quantized_weight, self.bias)
+        with nvtx_range("snn.layer.quant.QuanLinear.forward"):
+            quantized_weight = self.quan_w_fn(self.weight)
+            return torch.nn.functional.linear(x, quantized_weight, self.bias)

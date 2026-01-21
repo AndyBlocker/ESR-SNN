@@ -5,6 +5,7 @@ import torch.nn as nn
 
 from timm.models.layers import trunc_normal_
 
+from snn.nvtx import nvtx_range
 from .quant import MyQuan
 from .softmax import spiking_softmax
 from .attention import AttentionMulti, AttentionMulti1
@@ -72,50 +73,51 @@ class WindowAttention_no_softmax(nn.Module):
             x: input features with shape of (num_windows*B, N, C)
             mask: (0/-inf) mask with shape of (num_windows, Wh*Ww, Wh*Ww) or None
         """
-        B_, N, C = x.shape
-        qkv = self.qkv(x).reshape(B_, N, 3, self.num_heads, C // self.num_heads).permute(2, 0, 3, 1, 4)
-        # if torch.isnan(qkv).any():
-        #     print(f"{self.name}.qkv: NAN!!!!")
+        with nvtx_range("snn.layer.window_attention.WindowAttention_no_softmax.forward"):
+            B_, N, C = x.shape
+            qkv = self.qkv(x).reshape(B_, N, 3, self.num_heads, C // self.num_heads).permute(2, 0, 3, 1, 4)
+            # if torch.isnan(qkv).any():
+            #     print(f"{self.name}.qkv: NAN!!!!")
 
-        q, k, v = qkv.unbind(0)  # make torchscript happy (cannot use tensor as tuple)
-        # q = torch.clamp(q,min=-6.0,max=6.0)
-        # k = torch.clamp(k,min=-6.0,max=6.0)
-        # v = torch.clamp(v,min=-6.0,max=6.0)
+            q, k, v = qkv.unbind(0)  # make torchscript happy (cannot use tensor as tuple)
+            # q = torch.clamp(q,min=-6.0,max=6.0)
+            # k = torch.clamp(k,min=-6.0,max=6.0)
+            # v = torch.clamp(v,min=-6.0,max=6.0)
 
-        # print("q",self.name, q.abs().max())
-        # print("k",self.name, k.abs().max())
-        # print("v",self.name, v.abs().max())
-        q = q * self.scale
-        attn = (q @ k.transpose(-2, -1))
-        # if torch.isnan(attn).any():
-        #     print(f"{self.name}.attn: NAN!!!!")
-        # print("attn1.abs()",self.name, attn.abs().max())
+            # print("q",self.name, q.abs().max())
+            # print("k",self.name, k.abs().max())
+            # print("v",self.name, v.abs().max())
+            q = q * self.scale
+            attn = (q @ k.transpose(-2, -1))
+            # if torch.isnan(attn).any():
+            #     print(f"{self.name}.attn: NAN!!!!")
+            # print("attn1.abs()",self.name, attn.abs().max())
 
-        relative_position_bias = self.relative_position_bias_table[self.relative_position_index.view(-1)].view(
-            self.window_size[0] * self.window_size[1], self.window_size[0] * self.window_size[1], -1)  # Wh*Ww,Wh*Ww,nH
-        relative_position_bias = relative_position_bias.permute(2, 0, 1).contiguous()  # nH, Wh*Ww, Wh*Ww
-        attn = attn + relative_position_bias.unsqueeze(0)
+            relative_position_bias = self.relative_position_bias_table[self.relative_position_index.view(-1)].view(
+                self.window_size[0] * self.window_size[1], self.window_size[0] * self.window_size[1], -1)  # Wh*Ww,Wh*Ww,nH
+            relative_position_bias = relative_position_bias.permute(2, 0, 1).contiguous()  # nH, Wh*Ww, Wh*Ww
+            attn = attn + relative_position_bias.unsqueeze(0)
 
-        if mask is not None:
-            nW = mask.shape[0]
-            attn = attn.view(B_ // nW, nW, self.num_heads, N, N) + mask.unsqueeze(1).unsqueeze(0)
-            attn = attn.view(-1, self.num_heads, N, N)
-        # if torch.isnan(attn).any():
-        #     print(f"{self.name}.attn_after_softmax: NAN!!!!")
+            if mask is not None:
+                nW = mask.shape[0]
+                attn = attn.view(B_ // nW, nW, self.num_heads, N, N) + mask.unsqueeze(1).unsqueeze(0)
+                attn = attn.view(-1, self.num_heads, N, N)
+            # if torch.isnan(attn).any():
+            #     print(f"{self.name}.attn_after_softmax: NAN!!!!")
 
-        attn = self.attn_drop(attn)
-        # print("attn2.abs()",self.name, attn.abs().max())
+            attn = self.attn_drop(attn)
+            # print("attn2.abs()",self.name, attn.abs().max())
 
-        attn = torch.clamp(attn/N, max=0.99, min=-0.01)
+            attn = torch.clamp(attn/N, max=0.99, min=-0.01)
 
-        # print("attn3",self.name, attn.abs().max())
-        x = (attn @ v).transpose(1, 2).reshape(B_, N, C)
-        x = self.proj(x)
-        x = self.proj_drop(x)
-        # if torch.isnan(x).any():
-        #     print(f"{self.name}.proj: NAN!!!!")
-        
-        return x
+            # print("attn3",self.name, attn.abs().max())
+            x = (attn @ v).transpose(1, 2).reshape(B_, N, C)
+            x = self.proj(x)
+            x = self.proj_drop(x)
+            # if torch.isnan(x).any():
+            #     print(f"{self.name}.proj: NAN!!!!")
+
+            return x
 
 class QWindowAttention(nn.Module):
     r""" Window based multi-head self attention (W-MSA) module with relative position bias.
@@ -179,45 +181,46 @@ class QWindowAttention(nn.Module):
             x: input features with shape of (num_windows*B, N, C)
             mask: (0/-inf) mask with shape of (num_windows, Wh*Ww, Wh*Ww) or None
         """
-        B_, N, C = x.shape
-        qkv = self.qkv(x).reshape(B_, N, 3, self.num_heads, C // self.num_heads).permute(2, 0, 3, 1, 4)
-        q, k, v = qkv.unbind(0)  # make torchscript happy (cannot use tensor as tuple)
-        q = self.quan_q(q)
-        k = self.quan_k(k)
-        v = self.quan_v(v)
+        with nvtx_range("snn.layer.window_attention.QWindowAttention.forward"):
+            B_, N, C = x.shape
+            qkv = self.qkv(x).reshape(B_, N, 3, self.num_heads, C // self.num_heads).permute(2, 0, 3, 1, 4)
+            q, k, v = qkv.unbind(0)  # make torchscript happy (cannot use tensor as tuple)
+            q = self.quan_q(q)
+            k = self.quan_k(k)
+            v = self.quan_v(v)
 
-        q = q * self.scale
-        attn = (q @ k.transpose(-2, -1))
-        # print("attn",attn.abs().mean())
+            q = q * self.scale
+            attn = (q @ k.transpose(-2, -1))
+            # print("attn",attn.abs().mean())
 
-        relative_position_bias = self.relative_position_bias_table[self.relative_position_index.view(-1)].view(
-            self.window_size[0] * self.window_size[1], self.window_size[0] * self.window_size[1], -1)  # Wh*Ww,Wh*Ww,nH
-        relative_position_bias = relative_position_bias.permute(2, 0, 1).contiguous()  # nH, Wh*Ww, Wh*Ww
-        # print(attn.shape,relative_position_bias.unsqueeze(0).shape)
-        attn = attn + relative_position_bias.unsqueeze(0)
-        # print("relative_position_bias",attn.abs().mean())
+            relative_position_bias = self.relative_position_bias_table[self.relative_position_index.view(-1)].view(
+                self.window_size[0] * self.window_size[1], self.window_size[0] * self.window_size[1], -1)  # Wh*Ww,Wh*Ww,nH
+            relative_position_bias = relative_position_bias.permute(2, 0, 1).contiguous()  # nH, Wh*Ww, Wh*Ww
+            # print(attn.shape,relative_position_bias.unsqueeze(0).shape)
+            attn = attn + relative_position_bias.unsqueeze(0)
+            # print("relative_position_bias",attn.abs().mean())
 
-        if mask is not None:
-            nW = mask.shape[0]
-            attn = attn.view(B_ // nW, nW, self.num_heads, N, N) + mask.unsqueeze(1).unsqueeze(0)
-            attn = attn.view(-1, self.num_heads, N, N)
-        # print("softmax std",attn.abs().std())
-        if self.init == False and self.training:
-            attn = torch.clamp(attn/N, max=0.99, min=-0.01)
-            attn = self.attn_softmax_quan(attn)
-            self.init = True
-            print("QAttention_without_softmax init")
-        else:
-            attn = self.attn_softmax_quan(attn/(N))
+            if mask is not None:
+                nW = mask.shape[0]
+                attn = attn.view(B_ // nW, nW, self.num_heads, N, N) + mask.unsqueeze(1).unsqueeze(0)
+                attn = attn.view(-1, self.num_heads, N, N)
+            # print("softmax std",attn.abs().std())
+            if self.init == False and self.training:
+                attn = torch.clamp(attn/N, max=0.99, min=-0.01)
+                attn = self.attn_softmax_quan(attn)
+                self.init = True
+                print("QAttention_without_softmax init")
+            else:
+                attn = self.attn_softmax_quan(attn/(N))
 
-        attn = self.attn_drop(attn)
+            attn = self.attn_drop(attn)
 
-        x = (attn @ v).transpose(1, 2).reshape(B_, N, C)
-        x = self.after_attn_quan(x)
-        x = self.proj(x)
-        x = self.proj_drop(x)
-        # x = self.quan_proj(x)
-        return x
+            x = (attn @ v).transpose(1, 2).reshape(B_, N, C)
+            x = self.after_attn_quan(x)
+            x = self.proj(x)
+            x = self.proj_drop(x)
+            # x = self.quan_proj(x)
+            return x
 
 class SWindowAttention(nn.Module):
     r""" Window based multi-head self attention (W-MSA) module with relative position bias.
@@ -298,56 +301,57 @@ class SWindowAttention(nn.Module):
             x: input features with shape of (num_windows*B, N, C)
             mask: (0/-inf) mask with shape of (num_windows, Wh*Ww, Wh*Ww) or None
         """
-        B_, N, C = x.shape
-        qkv = self.qkv(x).reshape(B_, N, 3, self.num_heads, C // self.num_heads).permute(2, 0, 3, 1, 4)
-        q, k, v = qkv.unbind(0)  # make torchscript happy (cannot use tensor as tuple)
-        q = self.q_IF(q)
-        k = self.k_IF(k)
-        v = self.v_IF(v)
-        # print("======================q,k,v======================")
+        with nvtx_range("snn.layer.window_attention.SWindowAttention.forward"):
+            B_, N, C = x.shape
+            qkv = self.qkv(x).reshape(B_, N, 3, self.num_heads, C // self.num_heads).permute(2, 0, 3, 1, 4)
+            q, k, v = qkv.unbind(0)  # make torchscript happy (cannot use tensor as tuple)
+            q = self.q_IF(q)
+            k = self.k_IF(k)
+            v = self.v_IF(v)
+            # print("======================q,k,v======================")
 
-        q = q * self.scale
-        q_acc = self.q_IF.acc_q * self.scale * self.q_IF.q_threshold
-        # attn = (q @ k.transpose(-2, -1))
-        attn = self.attn_multi(q,k,q_acc - q.detach(),self.k_IF.acc_q*self.k_IF.q_threshold - k.detach())
-        # attn1 = attn.reshape(torch.Size([self.T, B_//self.T]) + attn.shape[1:])
-        # print("SNN multi",attn1.sum(dim=0).abs().mean())
+            q = q * self.scale
+            q_acc = self.q_IF.acc_q * self.scale * self.q_IF.q_threshold
+            # attn = (q @ k.transpose(-2, -1))
+            attn = self.attn_multi(q,k,q_acc - q.detach(),self.k_IF.acc_q*self.k_IF.q_threshold - k.detach())
+            # attn1 = attn.reshape(torch.Size([self.T, B_//self.T]) + attn.shape[1:])
+            # print("SNN multi",attn1.sum(dim=0).abs().mean())
 
-        relative_position_bias = self.relative_position_bias_table[self.relative_position_index.view(-1)].view(
-            self.window_size[0] * self.window_size[1], self.window_size[0] * self.window_size[1], -1)  # Wh*Ww,Wh*Ww,nH
-        relative_position_bias = relative_position_bias.permute(2, 0, 1).contiguous()  # nH, Wh*Ww, Wh*Ww
-        attn = attn.reshape(torch.Size([self.T, B_//self.T]) + attn.shape[1:])
-        for t in range(self.T):
-            if t < self.step:
-                attn[t] = attn[t] + relative_position_bias.unsqueeze(0)/self.step
-                # print(attn[t].shape,relative_position_bias.unsqueeze(0).shape)
-        attn = attn.reshape(torch.Size([attn.shape[0]*attn.shape[1]]) + attn.shape[2:])
-        # attn = attn + relative_position_bias.unsqueeze(0)
+            relative_position_bias = self.relative_position_bias_table[self.relative_position_index.view(-1)].view(
+                self.window_size[0] * self.window_size[1], self.window_size[0] * self.window_size[1], -1)  # Wh*Ww,Wh*Ww,nH
+            relative_position_bias = relative_position_bias.permute(2, 0, 1).contiguous()  # nH, Wh*Ww, Wh*Ww
+            attn = attn.reshape(torch.Size([self.T, B_//self.T]) + attn.shape[1:])
+            for t in range(self.T):
+                if t < self.step:
+                    attn[t] = attn[t] + relative_position_bias.unsqueeze(0)/self.step
+                    # print(attn[t].shape,relative_position_bias.unsqueeze(0).shape)
+            attn = attn.reshape(torch.Size([attn.shape[0]*attn.shape[1]]) + attn.shape[2:])
+            # attn = attn + relative_position_bias.unsqueeze(0)
 
-        # attn1 = attn.reshape(torch.Size([self.T, B_//self.T]) + attn.shape[1:])
-        # print("SNN relative_position_bias",attn1.sum(dim=0).abs().mean())
-        if mask is not None:
-            nW = mask.shape[0]
-            attn = attn.view(B_ // nW, nW, self.num_heads, N, N) + mask.unsqueeze(1).unsqueeze(0)
-            attn = attn.view(-1, self.num_heads, N, N)
-        #     attn = self.Ssoftmax(attn)
-        # else:
-        #     attn = self.Ssoftmax(attn)
-        
-        # attn1 = attn.reshape(torch.Size([self.T, B_//self.T]) + attn.shape[1:])
-        # print("Ssoftmax std",attn1.sum(dim=0).abs().std())
-        attn = self.attn_softmax_IF(attn/N)
+            # attn1 = attn.reshape(torch.Size([self.T, B_//self.T]) + attn.shape[1:])
+            # print("SNN relative_position_bias",attn1.sum(dim=0).abs().mean())
+            if mask is not None:
+                nW = mask.shape[0]
+                attn = attn.view(B_ // nW, nW, self.num_heads, N, N) + mask.unsqueeze(1).unsqueeze(0)
+                attn = attn.view(-1, self.num_heads, N, N)
+            #     attn = self.Ssoftmax(attn)
+            # else:
+            #     attn = self.Ssoftmax(attn)
 
-        attn = self.attn_drop(attn)
+            # attn1 = attn.reshape(torch.Size([self.T, B_//self.T]) + attn.shape[1:])
+            # print("Ssoftmax std",attn1.sum(dim=0).abs().std())
+            attn = self.attn_softmax_IF(attn/N)
 
-        # x = (attn @ v).transpose(1, 2).reshape(B_, N, C)
-        x = self.attn_multi1(attn,v,(self.attn_softmax_IF.acc_q*self.attn_softmax_IF.q_threshold - attn.detach()),(self.v_IF.acc_q*self.v_IF.q_threshold - v.detach())).transpose(1, 2).reshape(B_, N, C)
-        x = self.after_attn_IF(x)
-        # print("======================after_attn_IF======================")
-        x = self.proj(x)
-        x = self.proj_drop(x)
-        # x = self.proj_IF(x)
-        return x
+            attn = self.attn_drop(attn)
+
+            # x = (attn @ v).transpose(1, 2).reshape(B_, N, C)
+            x = self.attn_multi1(attn,v,(self.attn_softmax_IF.acc_q*self.attn_softmax_IF.q_threshold - attn.detach()),(self.v_IF.acc_q*self.v_IF.q_threshold - v.detach())).transpose(1, 2).reshape(B_, N, C)
+            x = self.after_attn_IF(x)
+            # print("======================after_attn_IF======================")
+            x = self.proj(x)
+            x = self.proj_drop(x)
+            # x = self.proj_IF(x)
+            return x
 
 class SWindowAttention_SS(nn.Module):
     r""" Window based multi-head self attention (W-MSA) module with relative position bias.
@@ -429,48 +433,49 @@ class SWindowAttention_SS(nn.Module):
             x: input features with shape of (num_windows*B, N, C)
             mask: (0/-inf) mask with shape of (num_windows, Wh*Ww, Wh*Ww) or None
         """
-        self.t = self.t + 1
-        B_, N, C = x.shape
-        qkv = self.qkv(x).reshape(B_, N, 3, self.num_heads, C // self.num_heads).permute(2, 0, 3, 1, 4)
-        q, k, v = qkv.unbind(0)  # make torchscript happy (cannot use tensor as tuple)
-        q = self.q_IF(q)
-        k = self.k_IF(k)
-        v = self.v_IF(v)
-        # print("======================q,k,v======================")
+        with nvtx_range("snn.layer.window_attention.SWindowAttention_SS.forward"):
+            self.t = self.t + 1
+            B_, N, C = x.shape
+            qkv = self.qkv(x).reshape(B_, N, 3, self.num_heads, C // self.num_heads).permute(2, 0, 3, 1, 4)
+            q, k, v = qkv.unbind(0)  # make torchscript happy (cannot use tensor as tuple)
+            q = self.q_IF(q)
+            k = self.k_IF(k)
+            v = self.v_IF(v)
+            # print("======================q,k,v======================")
 
-        q = q * self.scale
-        q_acc = self.q_IF.acc_q * self.scale * self.q_IF.q_threshold
-        # attn = (q @ k.transpose(-2, -1))
-        attn = self.attn_multi(q,k,q_acc - q.detach(),self.k_IF.acc_q*self.k_IF.q_threshold - k.detach())
-        # attn1 = attn.reshape(torch.Size([self.T, B_//self.T]) + attn.shape[1:])
-        # print("SNN multi",attn1.sum(dim=0).abs().mean())
+            q = q * self.scale
+            q_acc = self.q_IF.acc_q * self.scale * self.q_IF.q_threshold
+            # attn = (q @ k.transpose(-2, -1))
+            attn = self.attn_multi(q,k,q_acc - q.detach(),self.k_IF.acc_q*self.k_IF.q_threshold - k.detach())
+            # attn1 = attn.reshape(torch.Size([self.T, B_//self.T]) + attn.shape[1:])
+            # print("SNN multi",attn1.sum(dim=0).abs().mean())
 
-        relative_position_bias = self.relative_position_bias_table[self.relative_position_index.view(-1)].view(
-            self.window_size[0] * self.window_size[1], self.window_size[0] * self.window_size[1], -1)  # Wh*Ww,Wh*Ww,nH
-        relative_position_bias = relative_position_bias.permute(2, 0, 1).contiguous()  # nH, Wh*Ww, Wh*Ww
-        if self.t <= self.step:
-            attn = attn + relative_position_bias.unsqueeze(0)/self.step
-        # attn1 = attn.reshape(torch.Size([self.T, B_//self.T]) + attn.shape[1:])
-        # print("SNN relative_position_bias",attn1.sum(dim=0).abs().mean())
-        if mask is not None:
-            nW = mask.shape[0]
-            attn = attn.view(B_ // nW, nW, self.num_heads, N, N) + mask.unsqueeze(1).unsqueeze(0)
-            attn = attn.view(-1, self.num_heads, N, N)
-        #     attn = self.Ssoftmax(attn)
-        # else:
-        #     attn = self.Ssoftmax(attn)
-        
-        # attn1 = attn.reshape(torch.Size([self.T, B_//self.T]) + attn.shape[1:])
-        # print("Ssoftmax std",attn1.sum(dim=0).abs().std())
-        attn = self.attn_softmax_IF(attn/N)
+            relative_position_bias = self.relative_position_bias_table[self.relative_position_index.view(-1)].view(
+                self.window_size[0] * self.window_size[1], self.window_size[0] * self.window_size[1], -1)  # Wh*Ww,Wh*Ww,nH
+            relative_position_bias = relative_position_bias.permute(2, 0, 1).contiguous()  # nH, Wh*Ww, Wh*Ww
+            if self.t <= self.step:
+                attn = attn + relative_position_bias.unsqueeze(0)/self.step
+            # attn1 = attn.reshape(torch.Size([self.T, B_//self.T]) + attn.shape[1:])
+            # print("SNN relative_position_bias",attn1.sum(dim=0).abs().mean())
+            if mask is not None:
+                nW = mask.shape[0]
+                attn = attn.view(B_ // nW, nW, self.num_heads, N, N) + mask.unsqueeze(1).unsqueeze(0)
+                attn = attn.view(-1, self.num_heads, N, N)
+            #     attn = self.Ssoftmax(attn)
+            # else:
+            #     attn = self.Ssoftmax(attn)
 
-        attn = self.attn_drop(attn)
+            # attn1 = attn.reshape(torch.Size([self.T, B_//self.T]) + attn.shape[1:])
+            # print("Ssoftmax std",attn1.sum(dim=0).abs().std())
+            attn = self.attn_softmax_IF(attn/N)
 
-        # x = (attn @ v).transpose(1, 2).reshape(B_, N, C)
-        x = self.attn_multi1(attn,v,(self.attn_softmax_IF.acc_q*self.attn_softmax_IF.q_threshold - attn.detach()),(self.v_IF.acc_q*self.v_IF.q_threshold - v.detach())).transpose(1, 2).reshape(B_, N, C)
-        x = self.after_attn_IF(x)
-        # print("======================after_attn_IF======================")
-        x = self.proj(x)
-        x = self.proj_drop(x)
-        # x = self.proj_IF(x)
-        return x
+            attn = self.attn_drop(attn)
+
+            # x = (attn @ v).transpose(1, 2).reshape(B_, N, C)
+            x = self.attn_multi1(attn,v,(self.attn_softmax_IF.acc_q*self.attn_softmax_IF.q_threshold - attn.detach()),(self.v_IF.acc_q*self.v_IF.q_threshold - v.detach())).transpose(1, 2).reshape(B_, N, C)
+            x = self.after_attn_IF(x)
+            # print("======================after_attn_IF======================")
+            x = self.proj(x)
+            x = self.proj_drop(x)
+            # x = self.proj_IF(x)
+            return x
