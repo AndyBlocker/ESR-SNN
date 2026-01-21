@@ -1,3 +1,4 @@
+import math
 import torch
 
 from snn.layer import (
@@ -44,7 +45,7 @@ def get_subtensors(tensor, mean, std, sample_grain=255, time_step=4):
         return tensor.new_zeros((0,) + tensor.shape)
     scaled = tensor / sample_grain
     accu = tensor.new_zeros((time_step,) + tensor.shape)
-    valid = min(time_step, int(sample_grain))
+    valid = min(time_step, int(math.ceil(sample_grain)))
     if valid > 0:
         accu[:valid] = scaled
     return accu

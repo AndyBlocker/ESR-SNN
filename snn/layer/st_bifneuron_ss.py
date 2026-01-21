@@ -90,6 +90,7 @@ class ST_BIFNeuron_SS(nn.Module):
         self.t = 0
         self.init_state = 0
         self.init_batch = 20
+        self._t_buf = None
 
     # def __repr__(self):
     #         return f"ST_BIFNeuron_SS(level={self.level}, sym={self.sym}, pos_max={self.pos_max}, neg_min={self.neg_min}, q_threshold={self.q_threshold})"
@@ -100,6 +101,13 @@ class ST_BIFNeuron_SS(nn.Module):
         self.acc_q = 0.0
         self.t = 0
         self.init_state = 0
+        if self._t_buf is not None:
+            self._t_buf.zero_()
+
+    def _get_t_buf(self, device):
+        if self._t_buf is None or self._t_buf.device != device:
+            self._t_buf = torch.zeros((), device=device, dtype=torch.int64)
+        return self._t_buf
 
     def forward(self,input):
         with nvtx_range("snn.layer.st_bifneuron_ss.ST_BIFNeuron_SS.forward"):
@@ -127,6 +135,8 @@ class ST_BIFNeuron_SS(nn.Module):
 
             # s_scale = grad_scale(self.q_threshold, s_grad_scale)
             self.t = self.t + 1
+            t_buf = self._get_t_buf(input.device)
+            t_buf.fill_(self.t)
             if ST_BIFNodeATGF_SS_CUDA is not None and input.is_cuda:
                 spikes, self.q, self.acc_q = ST_BIFNodeATGF_SS_CUDA.apply(
                     input,
@@ -135,7 +145,7 @@ class ST_BIFNeuron_SS(nn.Module):
                     self.q_threshold,
                     self.pos_max,
                     self.neg_min,
-                    torch.tensor(self.t),
+                    t_buf,
                 )
             else:
                 spikes, self.q, self.acc_q = ST_BIFNodeATGF_SS.apply(
@@ -145,7 +155,7 @@ class ST_BIFNeuron_SS(nn.Module):
                     self.q_threshold,
                     self.pos_max,
                     self.neg_min,
-                    torch.tensor(self.t),
+                    t_buf,
                 )
 
             return spikes * self.q_threshold
