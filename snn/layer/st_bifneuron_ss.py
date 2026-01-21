@@ -159,3 +159,24 @@ class ST_BIFNeuron_SS(nn.Module):
                 )
 
             return spikes * self.q_threshold
+
+
+class ST_BIFNeuron_SS_Torch(ST_BIFNeuron_SS):
+    def forward(self, input):
+        with nvtx_range("snn.layer.st_bifneuron_ss.ST_BIFNeuron_SS_Torch.forward"):
+            if not torch.is_tensor(self.q) and not torch.is_tensor(self.acc_q):
+                self.q = input * 0.0 + 0.5 * self.q_threshold
+                self.acc_q = input * 0.0
+
+            self.t = self.t + 1
+            H_t = self.q + input
+            spike_condition = (H_t >= self.q_threshold) & (self.acc_q - self.pos_max < 0)
+            neg_spike_condition = (H_t < 0) & (self.acc_q - self.neg_min > 0)
+
+            one = H_t.new_ones(())
+            zero = H_t.new_zeros(())
+            spike = torch.where(spike_condition, one, torch.where(neg_spike_condition, -one, zero))
+
+            self.q = H_t - self.q_threshold * spike
+            self.acc_q = self.acc_q + spike
+            return spike * self.q_threshold

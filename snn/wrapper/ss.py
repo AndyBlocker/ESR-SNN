@@ -28,6 +28,7 @@ from snn.layer import (
     SpikeMaxPooling_SS,
     Spiking_LayerNorm_SS,
     ST_BIFNeuron_SS,
+    ST_BIFNeuron_SS_Torch,
     SWindowAttention_SS,
     save_module_inout,
     spiking_dyt,
@@ -52,6 +53,8 @@ class SNNWrapper(nn.Module):
         self.level = kwargs["level"]
         self.step = self.level//2 - 1
         self.neuron_type = kwargs["neuron_type"]
+        self.neuron_impl = kwargs.get("neuron_impl", "auto")
+        self.neuron_layer = ST_BIFNeuron_SS_Torch if self.neuron_impl == "torch" else ST_BIFNeuron_SS
         self.model = ann_model
         self.model.patch_embed.spike = True
         self.kwargs = kwargs
@@ -138,18 +141,18 @@ class SNNWrapper(nn.Module):
         for name, child in children:
             is_need = False
             if isinstance(child, QAttention):
-                SAttn = SAttention(dim=child.num_heads*child.head_dim,num_heads=child.num_heads,level=self.level,is_softmax=self.is_softmax,neuron_layer=ST_BIFNeuron_SS,T=self.T)
+                SAttn = SAttention(dim=child.num_heads*child.head_dim,num_heads=child.num_heads,level=self.level,is_softmax=self.is_softmax,neuron_layer=self.neuron_layer,T=self.T)
                 attn_convert_QAttention_SS(QAttn=child,SAttn=SAttn,level=self.level,neuron_type = self.neuron_type, T=self.T)
                 model._modules[name] = SAttn
                 is_need = True
             elif isinstance(child, QAttention_without_softmax):
-                SAttn = SAttention_without_softmax_SS(dim=child.num_heads*child.head_dim,num_heads=child.num_heads,level=self.level,is_softmax=self.is_softmax,neuron_layer=ST_BIFNeuron_SS,T=self.T)
+                SAttn = SAttention_without_softmax_SS(dim=child.num_heads*child.head_dim,num_heads=child.num_heads,level=self.level,is_softmax=self.is_softmax,neuron_layer=self.neuron_layer,T=self.T)
                 attn_convert_SS(QAttn=child,SAttn=SAttn,level=self.level,neuron_type = self.neuron_type, T=self.T)
                 model._modules[name] = SAttn
                 is_need = True
             elif isinstance(child, QWindowAttention):
                 # self.blockNum = self.blockNum + 1/24
-                SAttn = SWindowAttention_SS(dim=child.num_heads*child.head_dim, window_size=child.window_size,num_heads=child.num_heads,level=self.level,neuron_layer=ST_BIFNeuron_SS,T=self.T,step=self.step)
+                SAttn = SWindowAttention_SS(dim=child.num_heads*child.head_dim, window_size=child.window_size,num_heads=child.num_heads,level=self.level,neuron_layer=self.neuron_layer,T=self.T,step=self.step)
                 attn_convert_Swin_SS(QAttn=child,SAttn=SAttn,level=self.level,neuron_type = self.neuron_type, T=self.T, suppress_over_fire=False, step=self.step)
                 # SAttn.attn_softmax_IF.prefire.data = torch.tensor(self.blockNum*0.2)
                 model._modules[name] = SAttn
@@ -201,7 +204,7 @@ class SNNWrapper(nn.Module):
                 # model._modules[name].register_full_backward_hook(modify_gradient_for_spiking_layernorm_softmax(self.T))
                 is_need = True
             elif isinstance(child, MyQuan):
-                neurons = ST_BIFNeuron_SS(q_threshold = torch.tensor(1.0),sym=child.sym,level = self.level, T=self.T)
+                neurons = self.neuron_layer(q_threshold = torch.tensor(1.0),sym=child.sym,level = self.level, T=self.T)
                 neurons.q_threshold.data = min(child.s.data, child.s_max.data)
                 neurons.level = self.level
                 neurons.pos_max = child.pos_max_buf

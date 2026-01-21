@@ -219,7 +219,7 @@ class SAttention(nn.Module):
         self.neuron_layer = neuron_layer
         self.level = level
         self.is_softmax = is_softmax
-        self.is_single_step = neuron_layer is ST_BIFNeuron_SS
+        self.is_single_step = issubclass(neuron_layer, ST_BIFNeuron_SS) if isinstance(neuron_layer, type) else isinstance(neuron_layer, ST_BIFNeuron_SS)
 
         self.qkv = nn.Linear(dim, dim * 3, bias=qkv_bias)
         self.q_IF = self.neuron_layer(q_threshold=torch.tensor(1.0),level=self.level,sym=True, need_spike_tracer=True, T=T, C=dim)

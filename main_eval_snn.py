@@ -12,7 +12,6 @@
 import argparse
 import inspect
 import os
-from copy import deepcopy
 from functools import partial
 
 import numpy as np
@@ -27,7 +26,7 @@ import util.misc as misc
 from util.datasets import build_dataset
 from util.pos_embed import interpolate_pos_embed
 from snn.layer import DyHT, DyHT_ReLU, DyT, MyBatchNorm1d, MyLayerNorm, cal_overfire_loss
-from snn.wrapper import add_bn_in_mlp, add_convEmbed, myquan_replace, remove_softmax, SNNWrapper_MS
+from snn.wrapper import add_bn_in_mlp, add_convEmbed, myquan_replace, remove_softmax, SNNWrapper
 from PowerNorm import MaskPowerNorm
 
 
@@ -318,6 +317,7 @@ def evaluate(data_loader, model, device, snn_aug, args, profiler=None):
     model.eval()
     total_num = 0
     correct_per_timestep = None
+    correct_per_timestep_sum = None
     max_T = 0
 
     for batch in metric_logger.log_every(data_loader, 1, header):
@@ -350,14 +350,17 @@ def evaluate(data_loader, model, device, snn_aug, args, profiler=None):
                 accu_per_timestep = torch.cat(
                     [accu_per_timestep, padding_per_timestep.repeat(padding_length, 1, 1)], dim=0)
 
-            if correct_per_timestep is not None and correct_per_timestep.shape[0] < max_T:
-                for t in range(correct_per_timestep.shape[0], max_T):
-                    metric_logger.meters['acc@{}'.format(t + 1)] = deepcopy(
-                        metric_logger.meters['acc@{}'.format(correct_per_timestep.shape[0])]
-                    )
-
             _, predicted_per_time_step = torch.max(accu_per_timestep.data, 2)
             correct_per_timestep = torch.sum((predicted_per_time_step == target.unsqueeze(0)), dim=1)
+            if correct_per_timestep_sum is None:
+                correct_per_timestep_sum = correct_per_timestep.detach().clone()
+            else:
+                if correct_per_timestep_sum.shape[0] < correct_per_timestep.shape[0]:
+                    pad = correct_per_timestep_sum.new_zeros(
+                        (correct_per_timestep.shape[0] - correct_per_timestep_sum.shape[0],)
+                    )
+                    correct_per_timestep_sum = torch.cat([correct_per_timestep_sum, pad], dim=0)
+                correct_per_timestep_sum[:correct_per_timestep.shape[0]] += correct_per_timestep.detach()
 
         loss = criterion(output, target)
 
@@ -366,14 +369,11 @@ def evaluate(data_loader, model, device, snn_aug, args, profiler=None):
         acc1, acc5 = accuracy(output, target, topk=(1, 5))
 
         batch_size = images.shape[0]
-        metric_logger.update(loss=loss.item())
-        metric_logger.meters['acc1'].update(acc1.item(), n=batch_size)
-        metric_logger.meters['acc5'].update(acc5.item(), n=batch_size)
+        metric_logger.update(loss=loss.detach())
+        metric_logger.meters['acc1'].update(acc1.detach(), n=batch_size)
+        metric_logger.meters['acc5'].update(acc5.detach(), n=batch_size)
         if args.mode == "SNN":
             metric_logger.meters['AvgTime'].update(float(count), n=batch_size)
-            for t in range(max_T):
-                metric_logger.meters['acc@{}'.format(t + 1)].update(
-                    correct_per_timestep[t].cpu().item() * 100. / batch_size, n=batch_size)
             _unwrap_snn_model(model).reset()
 
         if profiler is not None:
@@ -381,10 +381,24 @@ def evaluate(data_loader, model, device, snn_aug, args, profiler=None):
 
     print("Evaluation End")
     metric_logger.synchronize_between_processes()
+    if args.mode == "SNN" and correct_per_timestep_sum is not None and args.distributed:
+        correct_per_timestep_sum = correct_per_timestep_sum.to(device)
+        torch.distributed.all_reduce(correct_per_timestep_sum)
+        total_num_tensor = torch.tensor(
+            total_num, device=device, dtype=correct_per_timestep_sum.dtype
+        )
+        torch.distributed.all_reduce(total_num_tensor)
+        total_num = int(total_num_tensor.item())
     print('* Acc@1 {top1.global_avg:.3f} Acc@5 {top5.global_avg:.3f} loss {losses.global_avg:.3f}'
           .format(top1=metric_logger.acc1, top5=metric_logger.acc5, losses=metric_logger.loss))
 
-    return {k: meter.global_avg for k, meter in metric_logger.meters.items()}
+    stats = {k: meter.global_avg for k, meter in metric_logger.meters.items()}
+    if args.mode == "SNN" and correct_per_timestep_sum is not None:
+        acc_per_timestep = (correct_per_timestep_sum / float(total_num)) * 100.0
+        acc_per_timestep = acc_per_timestep.detach().cpu().tolist()
+        for t, val in enumerate(acc_per_timestep):
+            stats['acc@{}'.format(t + 1)] = val
+    return stats
 
 
 def get_args_parser():
@@ -425,6 +439,8 @@ def get_args_parser():
     parser.add_argument('--weight_quantization_bit', default=32, type=int)
     parser.add_argument('--neuron_type', default="ST-BIF", type=str,
                         help='neuron type["ST-BIF", "IF"]')
+    parser.add_argument('--neuron_impl', default="auto", type=str, choices=["auto", "torch"],
+                        help='neuron implementation: auto uses CUDA/custom path when available; torch uses pure torch ops')
     parser.add_argument('--remove_softmax', action='store_true',
                         help='need softmax or not')
     parser.add_argument('--NormType', default='layernorm', type=str,
@@ -549,13 +565,14 @@ def main(args):
             print("Load pre-trained checkpoint from: %s" % load_path)
             _load_checkpoint(model, load_path)
 
-        model = SNNWrapper_MS(
+        model = SNNWrapper(
             ann_model=model,
             cfg=args,
             time_step=args.time_step,
             Encoding_type=args.encoding_type,
             level=args.level,
             neuron_type=args.neuron_type,
+            neuron_impl=args.neuron_impl,
             model_name=args.model,
             is_softmax=not args.remove_softmax,
             suppress_over_fire=args.suppress_over_fire,
