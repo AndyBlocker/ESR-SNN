@@ -7,7 +7,7 @@ from timm.models.layers import trunc_normal_
 
 from snn.nvtx import nvtx_range
 from .quant import MyQuan
-from .softmax import spiking_softmax
+from .softmax import spiking_softmax, spiking_softmax_ss
 from .attention import AttentionMulti, AttentionMulti1
 from .st_bifneuron_ms import ST_BIFNeuron_MS
 from .st_bifneuron_ss import ST_BIFNeuron_SS
@@ -277,7 +277,7 @@ class SWindowAttention(nn.Module):
         self.proj_IF = self.neuron_layer(q_threshold=torch.tensor(1.0),level=self.level,sym=True,T=self.T)
 
         trunc_normal_(self.relative_position_bias_table, std=.02)
-        self.Ssoftmax = spiking_softmax(self.step, T)
+        self.Ssoftmax = spiking_softmax_ss(self.step, T)
         self.attn_softmax_IF = self.neuron_layer(q_threshold=torch.tensor(1.0),level=self.level,sym=True, need_spike_tracer=True,T=self.T)
         self.attn_multi = AttentionMulti()
         self.attn_multi1 = AttentionMulti1()
@@ -416,14 +416,13 @@ class SWindowAttention_SS(nn.Module):
         # self.attn_softmax_IF.prefire.data = torch.tensor(0.025)
 
     def reset(self):
-        self.qkv.reset()
         self.q_IF.reset()
-        self.proj.reset()
         self.k_IF.reset()
         self.v_IF.reset()
         self.attn_softmax_IF.reset()
         self.after_attn_IF.reset()
         self.proj_IF.reset()
+        self.Ssoftmax.reset()
         self.t = 0
 
 

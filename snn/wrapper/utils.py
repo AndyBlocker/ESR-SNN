@@ -13,6 +13,7 @@ from snn.layer import (
     ST_BIFNeuron_SS,
     SWindowAttention,
     SWindowAttention_SS,
+    spiking_softmax_ss,
 )
 
 
@@ -37,7 +38,8 @@ def reset_model(model):
             isinstance(child, LLConv2d) or isinstance(child, LLLinear) or isinstance(child, SWindowAttention_SS) or \
             isinstance(child, SWindowAttention) or isinstance(child, Spiking_LayerNorm) or \
             isinstance(child, SpikeMaxPooling) or isinstance(child, SDyHT_SS) or \
-            isinstance(child, ST_BIFNeuron_MS) or isinstance(child, ST_BIFNeuron_SS):
+            isinstance(child, ST_BIFNeuron_MS) or isinstance(child, ST_BIFNeuron_SS) or \
+            isinstance(child, spiking_softmax_ss):
             model._modules[name].reset()
             is_need = True
         if not is_need:

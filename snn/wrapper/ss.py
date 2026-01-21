@@ -32,7 +32,12 @@ from snn.layer import (
     save_module_inout,
     spiking_dyt,
 )
-from .convert import attn_convert, attn_convert_SS, attn_convert_Swin_SS
+from .convert import (
+    attn_convert,
+    attn_convert_QAttention_SS,
+    attn_convert_SS,
+    attn_convert_Swin_SS,
+)
 from .utils import Judger, get_subtensors, reset_model
 
 
@@ -134,7 +139,7 @@ class SNNWrapper(nn.Module):
             is_need = False
             if isinstance(child, QAttention):
                 SAttn = SAttention(dim=child.num_heads*child.head_dim,num_heads=child.num_heads,level=self.level,is_softmax=self.is_softmax,neuron_layer=ST_BIFNeuron_SS,T=self.T)
-                attn_convert(QAttn=child,SAttn=SAttn,level=self.level,neuron_type = self.neuron_type, T=self.T)
+                attn_convert_QAttention_SS(QAttn=child,SAttn=SAttn,level=self.level,neuron_type = self.neuron_type, T=self.T)
                 model._modules[name] = SAttn
                 is_need = True
             elif isinstance(child, QAttention_without_softmax):
@@ -187,7 +192,7 @@ class SNNWrapper(nn.Module):
                 
                 is_need = True
             elif isinstance(child, nn.LayerNorm):
-                SNN_LN = Spiking_LayerNorm(child.normalized_shape[0],T=self.T)
+                SNN_LN = Spiking_LayerNorm(child.normalized_shape[0],T=self.T,step=self.step)
                 SNN_LN.layernorm = child
                 if child.elementwise_affine:
                     SNN_LN.weight = child.weight.data
@@ -196,11 +201,11 @@ class SNNWrapper(nn.Module):
                 # model._modules[name].register_full_backward_hook(modify_gradient_for_spiking_layernorm_softmax(self.T))
                 is_need = True
             elif isinstance(child, MyQuan):
-                neurons = ST_BIFNeuron_SS(q_threshold = torch.tensor(1.0),sym=child.sym,level = child.pos_max)
+                neurons = ST_BIFNeuron_SS(q_threshold = torch.tensor(1.0),sym=child.sym,level = self.level, T=self.T)
                 neurons.q_threshold.data = min(child.s.data, child.s_max.data)
                 neurons.level = self.level
-                neurons.pos_max = child.pos_max
-                neurons.neg_min = child.neg_min
+                neurons.pos_max = child.pos_max_buf
+                neurons.neg_min = child.neg_min_buf
                 neurons.init = True
                 self.first_neuron = False
                 neurons.cuda()

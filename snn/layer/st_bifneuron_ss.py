@@ -64,13 +64,14 @@ class ST_BIFNodeATGF_SS(torch.autograd.Function):
             return grad_X_t, grad_V_t_1, grad_T_t_1, None, None, None, None
 
 class ST_BIFNeuron_SS(nn.Module):
-    def __init__(self,q_threshold,level,sym=False):
-        super(ST_BIFNeuron_SS,self).__init__()
+    def __init__(self, q_threshold, level, sym=False, need_spike_tracer=False, T=None, C=None):
+        super(ST_BIFNeuron_SS, self).__init__()
+        self.need_spike_tracer = need_spike_tracer
         self.q = 0.0
         self.acc_q = 0.0
-        self.q_threshold = nn.Parameter(torch.tensor(q_threshold),requires_grad=False)
+        self.q_threshold = nn.Parameter(torch.tensor(q_threshold), requires_grad=False)
         self.level = torch.tensor(level)
-        self.T = self.level//2 - 1
+        self.T = T if T is not None else self.level // 2 - 1
         self.sym = sym
         if sym:
             self.register_buffer("pos_max",torch.tensor(level//2 - 1))
@@ -82,6 +83,7 @@ class ST_BIFNeuron_SS(nn.Module):
             self.register_buffer("neg_min",torch.tensor(0))
             # self.pos_max = torch.tensor(level - 1)
             # self.neg_min = torch.tensor(0)
+        self.register_buffer("prefire", torch.tensor(0.0))
         self.init = True
         # self.steps = max(self.pos_max,torch.abs(self.neg_min))
         self.eps = 0

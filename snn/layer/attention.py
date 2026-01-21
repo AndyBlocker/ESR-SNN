@@ -5,7 +5,7 @@ import torch.nn.functional as F
 import glo
 from snn.nvtx import nvtx_range
 from .quant import MyQuan
-from .softmax import spiking_softmax
+from .softmax import spiking_softmax, spiking_softmax_ss
 from .st_bifneuron_ms import ST_BIFNeuron_MS
 from .st_bifneuron_ss import ST_BIFNeuron_SS
 from .record import save_input_for_bin_snn_4dim
@@ -219,6 +219,7 @@ class SAttention(nn.Module):
         self.neuron_layer = neuron_layer
         self.level = level
         self.is_softmax = is_softmax
+        self.is_single_step = neuron_layer is ST_BIFNeuron_SS
 
         self.qkv = nn.Linear(dim, dim * 3, bias=qkv_bias)
         self.q_IF = self.neuron_layer(q_threshold=torch.tensor(1.0),level=self.level,sym=True, need_spike_tracer=True, T=T, C=dim)
@@ -242,7 +243,10 @@ class SAttention(nn.Module):
         # self.spikeBN_proj = spiking_BatchNorm2d(bn=torch.nn.BatchNorm1d(dim),level=self.level//2-1,input_allcate=False)
         # self.proj_IF = self.neuron_layer(q_threshold=torch.tensor(1.0),level=self.level,sym=True)
         if self.is_softmax:
-            self.Ssoftmax = spiking_softmax(self.level//2 - 1, T)
+            if self.is_single_step:
+                self.Ssoftmax = spiking_softmax_ss(self.level//2 - 1, T)
+            else:
+                self.Ssoftmax = spiking_softmax(self.level//2 - 1, T)
         self.T = T
         # self.Release_attn1 = Release_attn(self.level//2 - 1)
         # self.Release_attn2 = Release_attn(self.level//2 - 1)
@@ -506,9 +510,6 @@ class SAttention_without_softmax_SS(nn.Module):
         self.v_IF.reset()
         self.attn_IF.reset()
         self.after_attn_IF.reset()
-        self.proj_IF.reset()
-        self.qkv.reset()
-        self.proj.reset()
         self.t = 0
 
     def forward(self, x):

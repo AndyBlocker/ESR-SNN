@@ -26,7 +26,7 @@ from .record import (
     save_input_for_bin_snn_5dim,
     save_module_inout,
 )
-from .softmax import spiking_softmax
+from .softmax import spiking_softmax, spiking_softmax_ss
 from .st_bifneuron_ms import ST_BIFNeuron_MS
 from .st_bifneuron_ss import ST_BIFNodeATGF_SS, ST_BIFNeuron_SS
 from .utils import (
@@ -98,6 +98,7 @@ __all__ = [
     "set_init_false",
     "spiking_dyt",
     "spiking_softmax",
+    "spiking_softmax_ss",
     "theta",
     "theta_backward",
     "theta_eq",

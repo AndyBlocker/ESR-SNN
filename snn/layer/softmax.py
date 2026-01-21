@@ -67,3 +67,52 @@ class spiking_softmax(nn.Module):
             output = torch.diff(output, dim=0, prepend=(output[0]*0.0).unsqueeze(0))
 
             return output.reshape(ori_shape)
+
+
+class spiking_softmax_ss(nn.Module):
+    def __init__(self, step, T):
+        super(spiking_softmax_ss, self).__init__()
+        self.X = None
+        self.Y_pre = None
+        self.step = step
+        self.t = 0
+        self.T = T
+
+        init_list = []
+        self.param_number = self.step
+        if self.param_number == 1:
+            init_list.append(self.step)
+        else:
+            for i in range(self.param_number - 1):
+                if i < self.step - 1:
+                    init_list.append((self.step) / (i + 1))
+                else:
+                    init_list.append(1.0)
+
+        init_list.append(1.0)
+        self.biasAllocator = nn.Parameter(torch.tensor(init_list), requires_grad=False)
+
+    def reset(self):
+        self.X = None
+        self.Y_pre = None
+        self.t = 0
+
+    def forward(self, input):
+        with nvtx_range("snn.layer.softmax.spiking_softmax_ss.forward"):
+            self.t += 1
+            if self.X is None:
+                self.X = input * 0.0
+            self.X = self.X + input
+
+            limit = min(self.step, self.T)
+            if self.t <= limit:
+                output = F.softmax(self.X * self.biasAllocator[self.t - 1], dim=-1)
+            else:
+                output = F.softmax(self.X, dim=-1)
+
+            if self.Y_pre is None:
+                delta = output
+            else:
+                delta = output - self.Y_pre
+            self.Y_pre = output
+            return delta
