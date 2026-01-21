@@ -235,6 +235,9 @@ class SNNWrapper(nn.Module):
                     self.model.pos_embed.data = self.model.pos_embed/self.step
                     self.model.cls_token.data = self.model.cls_token/self.step
                 # print("x.shape",x.shape)
+                zero_input = torch.zeros_like(x[0])
+            else:
+                zero_input = torch.zeros_like(x)
             while(1):
                 self.finish_judger.reset_network_finish_flag()
                 self.finish_judger.judge_finish(self)
@@ -253,12 +256,12 @@ class SNNWrapper(nn.Module):
                     if count1 < x.shape[0]:
                         input = x[count1]
                     else:
-                        input = torch.zeros(x[0].shape).to(x.device)
+                        input = zero_input
                 else:
                     if count1 == 0:
                         input = x
                     else:
-                        input = torch.zeros(x.shape).to(x.device)
+                        input = zero_input
                 # elif self.neuron_type == 'IF':
                 #     input = x
                 # else:
