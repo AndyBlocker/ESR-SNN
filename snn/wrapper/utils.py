@@ -9,6 +9,7 @@ from snn.layer import (
     SpikeMaxPooling,
     SpikeMaxPooling_SS,
     Spiking_LayerNorm,
+    Spiking_LayerNorm_SS,
     ST_BIFNeuron_MS,
     ST_BIFNeuron_SS,
     SWindowAttention,
@@ -37,6 +38,7 @@ def reset_model(model):
             isinstance(child, MyBatchNorm1d_SS) or \
             isinstance(child, LLConv2d) or isinstance(child, LLLinear) or isinstance(child, SWindowAttention_SS) or \
             isinstance(child, SWindowAttention) or isinstance(child, Spiking_LayerNorm) or \
+            isinstance(child, Spiking_LayerNorm_SS) or \
             isinstance(child, SpikeMaxPooling) or isinstance(child, SDyHT_SS) or \
             isinstance(child, ST_BIFNeuron_MS) or isinstance(child, ST_BIFNeuron_SS) or \
             isinstance(child, spiking_softmax_ss):

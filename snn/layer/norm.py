@@ -57,6 +57,58 @@ class Spiking_LayerNorm(nn.Module):
                 output.append(Y - Y_pre)
             return torch.cat(output, dim=0)
 
+
+class Spiking_LayerNorm_SS(nn.Module):
+    def __init__(self, dim, T, step):
+        super(Spiking_LayerNorm_SS, self).__init__()
+        self.layernorm = None
+        self.X = None
+        self.Y_pre = None
+        self.weight = None
+        self.bias = None
+        self.T = T
+        self.t = 0
+        self.step = step
+
+        init_list = []
+        self.param_number = self.step
+        if self.param_number == 1:
+            init_list.append(1 / self.step)
+        else:
+            for i in range(self.param_number - 1):
+                if i < self.step - 1:
+                    init_list.append((i + 1) / (self.step))
+                else:
+                    init_list.append(1.0)
+
+        init_list.append(1.0)
+        self.biasAllocator = nn.Parameter(torch.tensor(init_list), requires_grad=False)
+
+    def reset(self):
+        self.X = None
+        self.Y_pre = None
+        self.t = 0
+
+    def forward(self, input):
+        with nvtx_range("snn.layer.norm.Spiking_LayerNorm_SS.forward"):
+            self.t += 1
+            if self.X is None:
+                self.X = input * 0.0
+            self.X = self.X + input
+
+            limit = min(self.step, self.T)
+            if self.t <= limit:
+                Y = self.layernorm(self.X) * self.biasAllocator[self.t - 1]
+            else:
+                Y = self.layernorm(self.X)
+
+            if self.Y_pre is not None:
+                Y_pre = self.Y_pre.detach().clone()
+            else:
+                Y_pre = 0.0
+            self.Y_pre = Y
+            return Y - Y_pre
+
 class MyBatchNorm1d_SS(nn.BatchNorm1d):
     def __init__(self, dim, **kwargs):
         super(MyBatchNorm1d_SS, self).__init__(dim, **kwargs)

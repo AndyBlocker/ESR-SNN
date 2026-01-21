@@ -16,7 +16,15 @@ from .dyt import DyHT, DyHT_ReLU, DyHT_Softmax, DyT, SDyHT, SDyHT_SS, spiking_dy
 from .embed import PatchEmbedConv, PatchMergingConv
 from .if_neuron import IFNeuron
 from .linear import LLConv2d, LLConv2d_MS, LLLinear, LLLinear_MS
-from .norm import LN2BNorm, MLP_BN, MyBatchNorm1d, MyBatchNorm1d_SS, MyLayerNorm, Spiking_LayerNorm
+from .norm import (
+    LN2BNorm,
+    MLP_BN,
+    MyBatchNorm1d,
+    MyBatchNorm1d_SS,
+    MyLayerNorm,
+    Spiking_LayerNorm,
+    Spiking_LayerNorm_SS,
+)
 from .pooling import SpikeMaxPooling, SpikeMaxPooling_SS
 from .quant import MyQuan, MyQuanRound, QuanConv2d, QuanLinear
 from .record import (
@@ -78,6 +86,7 @@ __all__ = [
     "SpikeMaxPooling",
     "SpikeMaxPooling_SS",
     "Spiking_LayerNorm",
+    "Spiking_LayerNorm_SS",
     "ST_BIFNodeATGF_SS",
     "ST_BIFNeuron_MS",
     "ST_BIFNeuron_SS",

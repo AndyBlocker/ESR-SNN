@@ -129,7 +129,6 @@ def attn_convert_QAttention_SS(QAttn:QAttention,SAttn:SAttention,level,neuron_ty
     SAttn.q_IF.q_threshold.data = QAttn.quan_q.s.data
     SAttn.q_IF.pos_max = QAttn.quan_q.pos_max_buf
     SAttn.q_IF.neg_min = QAttn.quan_q.neg_min_buf
-    SAttn.q_IF.suppress_over_fire = suppress_over_fire
     if isinstance(SAttn.q_IF, IFNeuron):
         SAttn.q_IF.is_init = False
     elif isinstance(SAttn.q_IF, ST_BIFNeuron_SS) or isinstance(SAttn.q_IF, ST_BIFNeuron_MS):
@@ -141,7 +140,6 @@ def attn_convert_QAttention_SS(QAttn:QAttention,SAttn:SAttention,level,neuron_ty
     SAttn.k_IF.q_threshold.data = QAttn.quan_k.s.data
     SAttn.k_IF.pos_max = QAttn.quan_k.pos_max_buf
     SAttn.k_IF.neg_min = QAttn.quan_k.neg_min_buf
-    SAttn.k_IF.suppress_over_fire = suppress_over_fire
     if isinstance(SAttn.k_IF, IFNeuron):
         SAttn.k_IF.is_init = False
     elif isinstance(SAttn.k_IF, ST_BIFNeuron_SS) or isinstance(SAttn.k_IF, ST_BIFNeuron_MS):
@@ -153,7 +151,6 @@ def attn_convert_QAttention_SS(QAttn:QAttention,SAttn:SAttention,level,neuron_ty
     SAttn.v_IF.q_threshold.data = QAttn.quan_v.s.data
     SAttn.v_IF.pos_max = QAttn.quan_v.pos_max_buf
     SAttn.v_IF.neg_min = QAttn.quan_v.neg_min_buf
-    SAttn.v_IF.suppress_over_fire = suppress_over_fire
     if isinstance(SAttn.v_IF, IFNeuron):
         SAttn.v_IF.is_init = False
     elif isinstance(SAttn.v_IF, ST_BIFNeuron_SS) or isinstance(SAttn.v_IF, ST_BIFNeuron_MS):

@@ -26,7 +26,7 @@ from snn.layer import (
     SAttention,
     SAttention_without_softmax_SS,
     SpikeMaxPooling_SS,
-    Spiking_LayerNorm,
+    Spiking_LayerNorm_SS,
     ST_BIFNeuron_SS,
     SWindowAttention_SS,
     save_module_inout,
@@ -192,7 +192,7 @@ class SNNWrapper(nn.Module):
                 
                 is_need = True
             elif isinstance(child, nn.LayerNorm):
-                SNN_LN = Spiking_LayerNorm(child.normalized_shape[0],T=self.T,step=self.step)
+                SNN_LN = Spiking_LayerNorm_SS(child.normalized_shape[0],T=self.T,step=self.step)
                 SNN_LN.layernorm = child
                 if child.elementwise_affine:
                     SNN_LN.weight = child.weight.data
