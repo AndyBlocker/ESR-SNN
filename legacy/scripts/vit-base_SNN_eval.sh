@@ -1,0 +1,11 @@
+NCCL_P2P_DISABLE=1 OMP_NUM_THREADS=1 CUDA_VISIBLE_DEVICES=0,1,2,3,4,5,6 python -m torch.distributed.launch --use-env --nproc_per_node=7 --master_port='29500' main_finetune_distill_snn.py \
+    --accum_iter 4 \
+    --batch_size 8 \
+    --model vit_base_patch16 \
+    --finetune /data/kang_you1/SpikeZIP_transformer_resnet1/output/T-SNN_vit_base_patch16_imagenet_relu_SNN_act10_weightbit32/checkpoint-SNN-timestep4-61.pth \
+    --resume /data/kang_you1/SpikeZIP_transformer_resnet1/output/T-SNN-DyHT-Test2_vit_base_patch16_imagenet_relu_QANN_QAT_act10_weightbit32_NormTypedyht/checkpoint-best.pth \
+    --epochs 50 --hybrid_training --warmup_epochs 0 --print_freq 10 \
+    --blr 1e-3 --layer_decay 1.0 --encoding_type rate --eval \
+    --weight_decay 0.0005 --drop_path 0.1 --mixup 0.0 --cutmix 0.0 --reprob 0.25 \
+    --dist_eval --data_path /data/ImageNet --output_dir /data/kang_you1/SpikeZIP_transformer_resnet1/output/ --log_dir /data/kang_you1/SpikeZIP_transformer_resnet1/output/ \
+    --mode "SNN" --level 10 --global_pool --act_layer relu --NormType dyht --time_step 24  --remove_softmax --weight_quantization_bit 32 --define_params --mean 0.5 0.5 0.5 --std 0.5 0.5 0.5

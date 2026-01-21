@@ -1,0 +1,13 @@
+NCCL_P2P_DISABLE=1 OMP_NUM_THREADS=1 CUDA_VISIBLE_DEVICES=0,1,2,3,4,5,6,7, python -m torch.distributed.run --nproc_per_node=8 --master_port='29500' main_finetune_snn.py \
+    --accum_iter 4 \
+    --batch_size 16 \
+    --model vit_small_patch16 \
+    --model_teacher vit_small_patch16 \
+    --finetune /home/kang_you/SpikeZIP_transformer/output/T-SNN_vit_small_patch16_imagenet_relu_QANN_QAT_act4_weightbit32/checkpoint-29.pth \
+    --resume /home/kang_you/SpikeZIP_transformer/output/T-SNN_vit_small_patch16_imagenet_relu_QANN_QAT_act4_weightbit32/checkpoint-29.pth \
+    --pretrain_teacher /data1/vit-small-patch16-relu-82.34.pth \
+    --epochs 30 \
+    --blr 1.5e-5 --layer_decay 0.65 --warmup_epochs 0 \
+    --weight_decay 0.05 --drop_path 0.1 --drop_rate 0.0 --mixup 0.8 --cutmix 1.0 --reprob 0.25 \
+    --dist_eval --data_path /data1/ImageNet/ --output_dir /home/kang_you/SpikeZIP_transformer/output --log_dir /home/kang_you/SpikeZIP_transformer/output \
+    --mode "SNN" --eval --remove_softmax --level 4 --act_layer relu --act_layer_teacher relu --temp 2.0 --wandb --print_freq 200 --define_params --mean 0.5 0.5 0.5 --std 0.5 0.5 0.5

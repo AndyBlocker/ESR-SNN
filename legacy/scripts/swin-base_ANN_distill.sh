@@ -1,0 +1,11 @@
+NCCL_P2P_DISABLE=1 OMP_NUM_THREADS=1 CUDA_VISIBLE_DEVICES=0,1,2,3,4,5 numactl --cpunodebind=0 --membind=0  python -m torch.distributed.launch --use-env --nproc_per_node=6 --master_port='29500' main_finetune_distill.py \
+    --accum_iter 4 \
+    --batch_size 56 \
+    --model swin_small --convEmbedding \
+    --model_teacher swin_small \
+    --resume /home/kang_you/ANN-swin-base-conv-dyht-82.74.pth \
+    --epochs 20 \
+    --blr 1e-5 --layer_decay 1.0 --warmup_epochs 0 \
+    --weight_decay 0.05 --drop_path 0.1 --mixup 0.0 --cutmix 0.0 --reprob 0.25 --clip_grad 1.0 \
+    --dist_eval --data_path /data/ImageNet --project_name "T-SNN-ANN-21K" --output_dir /data/kang_you1/SpikeZIP_transformer_resnet1/output/ --log_dir /data/kang_you1/SpikeZIP_transformer_resnet1/output/ \
+    --mode "ANN" --act_layer relu --NormType dyht --remove_softmax --act_layer_teacher gelu --temp 2.0 --print_freq 200

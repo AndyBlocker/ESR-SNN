@@ -1,0 +1,8 @@
+*.pth
+output_dir
+
+*.nsys-rep
+*.csv
+*.sqlite
+
+__pycache__/

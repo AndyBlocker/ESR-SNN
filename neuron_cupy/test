@@ -1,0 +1,1115 @@
+============================= test session starts ==============================
+platform linux -- Python 3.10.15, pytest-7.4.4, pluggy-1.5.0 -- /home/kang_you/anaconda3/envs/SNN/bin/python
+cachedir: .pytest_cache
+rootdir: /home/kang_you/SpikeZIP_transformer_resnet1/neuron_cupy
+collecting ... collected 17 items
+
+test_snn_operator.py::TestSNNOperator::test_forward_pass[True-dtype0] FAILED
+test_snn_operator.py::TestSNNOperator::test_forward_pass[False-dtype1] FAILED
+test_snn_operator.py::TestSNNOperator::test_forward_pass[True-dtype2] FAILED
+test_snn_operator.py::TestSNNOperator::test_forward_pass[False-dtype3] FAILED
+test_snn_operator.py::TestSNNOperator::test_backward_pass[True-dtype0] FAILED
+test_snn_operator.py::TestSNNOperator::test_backward_pass[False-dtype1] FAILED
+test_snn_operator.py::TestSNNOperator::test_backward_pass[True-dtype2] FAILED
+test_snn_operator.py::TestSNNOperator::test_backward_pass[False-dtype3] FAILED
+test_snn_operator.py::TestSNNOperator::test_varying_sizes[1-1-dtype0] PASSED
+test_snn_operator.py::TestSNNOperator::test_varying_sizes[32-32-dtype1] FAILED
+test_snn_operator.py::TestSNNOperator::test_varying_sizes[128-64-dtype2] FAILED
+test_snn_operator.py::TestSNNOperator::test_varying_sizes[256-128-dtype3] FAILED
+test_snn_operator.py::TestSNNOperator::test_varying_sizes[1-1-dtype4] FAILED
+test_snn_operator.py::TestSNNOperator::test_varying_sizes[32-32-dtype5] FAILED
+test_snn_operator.py::TestSNNOperator::test_varying_sizes[128-64-dtype6] FAILED
+test_snn_operator.py::TestSNNOperator::test_varying_sizes[256-128-dtype7] FAILED
+test_snn_operator.py::TestSNNOperator::test_edge_cases PASSED
+
+=================================== FAILURES ===================================
+________________ TestSNNOperator.test_forward_pass[True-dtype0] ________________
+
+self = <test_snn_operator.TestSNNOperator object at 0x7fcafc367ac0>
+test_shapes = [(10, 2, 32), (5, 16, 64), (20, 1, 16), (15, 8, 128), (32, 4, 75264)]
+threshold_values = (tensor(1., device='cuda:0'), tensor(5., device='cuda:0'), tensor(-5., device='cuda:0'))
+device = device(type='cuda'), use_seed = True, dtype = torch.float16
+
+    @pytest.mark.parametrize("use_seed, dtype",
+        [(True, torch.float16), (False, torch.float16), (True, torch.float32), (False, torch.float32)]
+    )
+    def test_forward_pass(self, test_shapes, threshold_values, device, use_seed, dtype):
+        """Test forward pass output consistency"""
+        if use_seed:
+            torch.manual_seed(42)
+    
+        v_th, T_max, T_min = threshold_values
+        v_th = v_th.type(dtype)
+        T_max = T_max.type(dtype)
+        T_min = T_min.type(dtype)
+    
+        for shape in test_shapes:
+            # Generate input
+            x = self.generate_input_data(shape, device, dtype)
+            x_copy = x.clone().detach().requires_grad_(True)
+    
+            # Run both implementations
+            pytorch_op = ST_BIFNodeATGF_MS.apply
+            cuda_op = ST_BIFNodeATGF_MS_CUDA.apply
+    
+            spike_seq_pt, v_pt, T_seq_pt = pytorch_op(x, v_th, T_max, T_min)
+            spike_seq_cuda, v_cuda, T_seq_cuda = cuda_op(x_copy, v_th, T_max, T_min)
+    
+            # Compare outputs
+>           self.assert_tensor_close(spike_seq_pt, spike_seq_cuda)
+
+test_snn_operator.py:82: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = <test_snn_operator.TestSNNOperator object at 0x7fcafc367ac0>
+a = tensor([[[ 0., -0., -0., -0., -0., -0.,  0., -0.,  0., -0., -0.,  1.,  0., -0.,
+          -0., -0.,  0., -0.,  0., -0.... 0.,
+           0., -0., -0., -0.]]], device='cuda:0', dtype=torch.float16,
+       grad_fn=<ST_BIFNodeATGF_MSBackward>)
+b = tensor([[[ 0.,  0.,  0.,  0.,  0.,  0.,  0.,  0.,  0.,  0.,  0.,  1.,  0.,  0.,
+           0.,  0.,  0.,  0.,  0.,  0....           0.,  0.,  0.,  0.]]], device='cuda:0', dtype=torch.float16,
+       grad_fn=<ST_BIFNodeATGF_MS_CUDABackward>)
+rtol = 1e-05, atol = 1e-06
+
+    def assert_tensor_close(self, a: torch.Tensor, b: torch.Tensor, rtol=1e-5, atol=1e-6):
+        """Custom assertion for tensor comparison with detailed error message"""
+        if not torch.allclose(a, b, rtol=rtol, atol=atol):
+            max_diff = torch.max(torch.abs(a - b)).item()
+            mean_diff = torch.mean(torch.abs(a - b)).item()
+            diff_locations = torch.where(torch.abs(a - b) > atol)
+>           pytest.fail(f"Tensors not close!\nMax difference: {max_diff}\n"
+                       f"Mean difference: {mean_diff}\n"
+                       f"Number of differing elements: {len(diff_locations[0])}\n"
+                       f"First few differences:\n"
+                       f"a: {a[diff_locations][:5]}\n"
+                       f"b: {b[diff_locations][:5]}")
+E           Failed: Tensors not close!
+E           Max difference: 1.0
+E           Mean difference: 0.021881103515625
+E           Number of differing elements: 14
+E           First few differences:
+E           a: tensor([-0., -0.,  1., -1., -1.], device='cuda:0', dtype=torch.float16,
+E                  grad_fn=<SliceBackward0>)
+E           b: tensor([-1., -1.,  0.,  0.,  0.], device='cuda:0', dtype=torch.float16,
+E                  grad_fn=<SliceBackward0>)
+
+test_snn_operator.py:49: Failed
+_______________ TestSNNOperator.test_forward_pass[False-dtype1] ________________
+
+self = <test_snn_operator.TestSNNOperator object at 0x7fcafc367b20>
+test_shapes = [(10, 2, 32), (5, 16, 64), (20, 1, 16), (15, 8, 128), (32, 4, 75264)]
+threshold_values = (tensor(1., device='cuda:0'), tensor(5., device='cuda:0'), tensor(-5., device='cuda:0'))
+device = device(type='cuda'), use_seed = False, dtype = torch.float16
+
+    @pytest.mark.parametrize("use_seed, dtype",
+        [(True, torch.float16), (False, torch.float16), (True, torch.float32), (False, torch.float32)]
+    )
+    def test_forward_pass(self, test_shapes, threshold_values, device, use_seed, dtype):
+        """Test forward pass output consistency"""
+        if use_seed:
+            torch.manual_seed(42)
+    
+        v_th, T_max, T_min = threshold_values
+        v_th = v_th.type(dtype)
+        T_max = T_max.type(dtype)
+        T_min = T_min.type(dtype)
+    
+        for shape in test_shapes:
+            # Generate input
+            x = self.generate_input_data(shape, device, dtype)
+            x_copy = x.clone().detach().requires_grad_(True)
+    
+            # Run both implementations
+            pytorch_op = ST_BIFNodeATGF_MS.apply
+            cuda_op = ST_BIFNodeATGF_MS_CUDA.apply
+    
+            spike_seq_pt, v_pt, T_seq_pt = pytorch_op(x, v_th, T_max, T_min)
+            spike_seq_cuda, v_cuda, T_seq_cuda = cuda_op(x_copy, v_th, T_max, T_min)
+    
+            # Compare outputs
+>           self.assert_tensor_close(spike_seq_pt, spike_seq_cuda)
+
+test_snn_operator.py:82: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = <test_snn_operator.TestSNNOperator object at 0x7fcafc367b20>
+a = tensor([[[ 1., -0.,  0.,  0.,  0.,  0.,  1.,  1.,  0.,  0.,  0.,  0.,  0., -0.,
+           1., -0.,  0., -0.,  1.,  0....-0.,
+           1.,  0.,  1.,  1.]]], device='cuda:0', dtype=torch.float16,
+       grad_fn=<ST_BIFNodeATGF_MSBackward>)
+b = tensor([[[ 1.,  0.,  0.,  0.,  0.,  0.,  1.,  0.,  0.,  0.,  0.,  0.,  0.,  0.,
+           0.,  0.,  0.,  0.,  1.,  0....           1.,  0.,  1.,  1.]]], device='cuda:0', dtype=torch.float16,
+       grad_fn=<ST_BIFNodeATGF_MS_CUDABackward>)
+rtol = 1e-05, atol = 1e-06
+
+    def assert_tensor_close(self, a: torch.Tensor, b: torch.Tensor, rtol=1e-5, atol=1e-6):
+        """Custom assertion for tensor comparison with detailed error message"""
+        if not torch.allclose(a, b, rtol=rtol, atol=atol):
+            max_diff = torch.max(torch.abs(a - b)).item()
+            mean_diff = torch.mean(torch.abs(a - b)).item()
+            diff_locations = torch.where(torch.abs(a - b) > atol)
+>           pytest.fail(f"Tensors not close!\nMax difference: {max_diff}\n"
+                       f"Mean difference: {mean_diff}\n"
+                       f"Number of differing elements: {len(diff_locations[0])}\n"
+                       f"First few differences:\n"
+                       f"a: {a[diff_locations][:5]}\n"
+                       f"b: {b[diff_locations][:5]}")
+E           Failed: Tensors not close!
+E           Max difference: 1.0
+E           Mean difference: 0.0124969482421875
+E           Number of differing elements: 8
+E           First few differences:
+E           a: tensor([ 1.,  1., -1.,  0.,  1.], device='cuda:0', dtype=torch.float16,
+E                  grad_fn=<SliceBackward0>)
+E           b: tensor([0., 0., 0., 1., 0.], device='cuda:0', dtype=torch.float16,
+E                  grad_fn=<SliceBackward0>)
+
+test_snn_operator.py:49: Failed
+________________ TestSNNOperator.test_forward_pass[True-dtype2] ________________
+
+self = <test_snn_operator.TestSNNOperator object at 0x7fcafc367bb0>
+test_shapes = [(10, 2, 32), (5, 16, 64), (20, 1, 16), (15, 8, 128), (32, 4, 75264)]
+threshold_values = (tensor(1., device='cuda:0'), tensor(5., device='cuda:0'), tensor(-5., device='cuda:0'))
+device = device(type='cuda'), use_seed = True, dtype = torch.float32
+
+    @pytest.mark.parametrize("use_seed, dtype",
+        [(True, torch.float16), (False, torch.float16), (True, torch.float32), (False, torch.float32)]
+    )
+    def test_forward_pass(self, test_shapes, threshold_values, device, use_seed, dtype):
+        """Test forward pass output consistency"""
+        if use_seed:
+            torch.manual_seed(42)
+    
+        v_th, T_max, T_min = threshold_values
+        v_th = v_th.type(dtype)
+        T_max = T_max.type(dtype)
+        T_min = T_min.type(dtype)
+    
+        for shape in test_shapes:
+            # Generate input
+            x = self.generate_input_data(shape, device, dtype)
+            x_copy = x.clone().detach().requires_grad_(True)
+    
+            # Run both implementations
+            pytorch_op = ST_BIFNodeATGF_MS.apply
+            cuda_op = ST_BIFNodeATGF_MS_CUDA.apply
+    
+            spike_seq_pt, v_pt, T_seq_pt = pytorch_op(x, v_th, T_max, T_min)
+            spike_seq_cuda, v_cuda, T_seq_cuda = cuda_op(x_copy, v_th, T_max, T_min)
+    
+            # Compare outputs
+>           self.assert_tensor_close(spike_seq_pt, spike_seq_cuda)
+
+test_snn_operator.py:82: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = <test_snn_operator.TestSNNOperator object at 0x7fcafc367bb0>
+a = tensor([[[ 0., -0., -0., -0., -0., -0.,  0., -0.,  0., -0., -0.,  1.,  0., -0.,
+          -0., -0.,  0., -0.,  0., -0.... -0.,  1., -0., -0.,  0.,
+           0., -0., -0., -0.]]], device='cuda:0',
+       grad_fn=<ST_BIFNodeATGF_MSBackward>)
+b = tensor([[[ 0.,  0.,  0.,  0.,  0.,  0.,  0.,  0.,  0.,  0.,  0.,  1.,  0.,  0.,
+           0.,  0.,  0.,  0.,  0.,  0....  1.,  0.,  0.,  0.,
+           0.,  0.,  0.,  0.]]], device='cuda:0',
+       grad_fn=<ST_BIFNodeATGF_MS_CUDABackward>)
+rtol = 1e-05, atol = 1e-06
+
+    def assert_tensor_close(self, a: torch.Tensor, b: torch.Tensor, rtol=1e-5, atol=1e-6):
+        """Custom assertion for tensor comparison with detailed error message"""
+        if not torch.allclose(a, b, rtol=rtol, atol=atol):
+            max_diff = torch.max(torch.abs(a - b)).item()
+            mean_diff = torch.mean(torch.abs(a - b)).item()
+            diff_locations = torch.where(torch.abs(a - b) > atol)
+>           pytest.fail(f"Tensors not close!\nMax difference: {max_diff}\n"
+                       f"Mean difference: {mean_diff}\n"
+                       f"Number of differing elements: {len(diff_locations[0])}\n"
+                       f"First few differences:\n"
+                       f"a: {a[diff_locations][:5]}\n"
+                       f"b: {b[diff_locations][:5]}")
+E           Failed: Tensors not close!
+E           Max difference: 1.0
+E           Mean difference: 0.02187499962747097
+E           Number of differing elements: 14
+E           First few differences:
+E           a: tensor([-0., -0.,  1., -1., -1.], device='cuda:0', grad_fn=<SliceBackward0>)
+E           b: tensor([-1., -1.,  0.,  0.,  0.], device='cuda:0', grad_fn=<SliceBackward0>)
+
+test_snn_operator.py:49: Failed
+_______________ TestSNNOperator.test_forward_pass[False-dtype3] ________________
+
+self = <test_snn_operator.TestSNNOperator object at 0x7fcafc367c40>
+test_shapes = [(10, 2, 32), (5, 16, 64), (20, 1, 16), (15, 8, 128), (32, 4, 75264)]
+threshold_values = (tensor(1., device='cuda:0'), tensor(5., device='cuda:0'), tensor(-5., device='cuda:0'))
+device = device(type='cuda'), use_seed = False, dtype = torch.float32
+
+    @pytest.mark.parametrize("use_seed, dtype",
+        [(True, torch.float16), (False, torch.float16), (True, torch.float32), (False, torch.float32)]
+    )
+    def test_forward_pass(self, test_shapes, threshold_values, device, use_seed, dtype):
+        """Test forward pass output consistency"""
+        if use_seed:
+            torch.manual_seed(42)
+    
+        v_th, T_max, T_min = threshold_values
+        v_th = v_th.type(dtype)
+        T_max = T_max.type(dtype)
+        T_min = T_min.type(dtype)
+    
+        for shape in test_shapes:
+            # Generate input
+            x = self.generate_input_data(shape, device, dtype)
+            x_copy = x.clone().detach().requires_grad_(True)
+    
+            # Run both implementations
+            pytorch_op = ST_BIFNodeATGF_MS.apply
+            cuda_op = ST_BIFNodeATGF_MS_CUDA.apply
+    
+            spike_seq_pt, v_pt, T_seq_pt = pytorch_op(x, v_th, T_max, T_min)
+            spike_seq_cuda, v_cuda, T_seq_cuda = cuda_op(x_copy, v_th, T_max, T_min)
+    
+            # Compare outputs
+>           self.assert_tensor_close(spike_seq_pt, spike_seq_cuda)
+
+test_snn_operator.py:82: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = <test_snn_operator.TestSNNOperator object at 0x7fcafc367c40>
+a = tensor([[[ 1., -0.,  0.,  0.,  0.,  0.,  1.,  1.,  0.,  0.,  0.,  0.,  0., -0.,
+           1., -0.,  0., -0.,  1.,  0....  0., -0., -0.,  0., -0.,
+           1.,  0.,  1.,  1.]]], device='cuda:0',
+       grad_fn=<ST_BIFNodeATGF_MSBackward>)
+b = tensor([[[ 1.,  0.,  0.,  0.,  0.,  0.,  1.,  0.,  0.,  0.,  0.,  0.,  0.,  0.,
+           0.,  0.,  0.,  0.,  1.,  0....  0.,  0.,  0.,  0.,
+           1.,  0.,  1.,  1.]]], device='cuda:0',
+       grad_fn=<ST_BIFNodeATGF_MS_CUDABackward>)
+rtol = 1e-05, atol = 1e-06
+
+    def assert_tensor_close(self, a: torch.Tensor, b: torch.Tensor, rtol=1e-5, atol=1e-6):
+        """Custom assertion for tensor comparison with detailed error message"""
+        if not torch.allclose(a, b, rtol=rtol, atol=atol):
+            max_diff = torch.max(torch.abs(a - b)).item()
+            mean_diff = torch.mean(torch.abs(a - b)).item()
+            diff_locations = torch.where(torch.abs(a - b) > atol)
+>           pytest.fail(f"Tensors not close!\nMax difference: {max_diff}\n"
+                       f"Mean difference: {mean_diff}\n"
+                       f"Number of differing elements: {len(diff_locations[0])}\n"
+                       f"First few differences:\n"
+                       f"a: {a[diff_locations][:5]}\n"
+                       f"b: {b[diff_locations][:5]}")
+E           Failed: Tensors not close!
+E           Max difference: 1.0
+E           Mean difference: 0.012500000186264515
+E           Number of differing elements: 8
+E           First few differences:
+E           a: tensor([ 1.,  1., -1.,  0.,  1.], device='cuda:0', grad_fn=<SliceBackward0>)
+E           b: tensor([0., 0., 0., 1., 0.], device='cuda:0', grad_fn=<SliceBackward0>)
+
+test_snn_operator.py:49: Failed
+_______________ TestSNNOperator.test_backward_pass[True-dtype0] ________________
+
+self = <test_snn_operator.TestSNNOperator object at 0x7fcafc367e80>
+test_shapes = [(10, 2, 32), (5, 16, 64), (20, 1, 16), (15, 8, 128), (32, 4, 75264)]
+threshold_values = (tensor(1., device='cuda:0'), tensor(5., device='cuda:0'), tensor(-5., device='cuda:0'))
+device = device(type='cuda'), use_seed = True, dtype = torch.float16
+
+    @pytest.mark.parametrize("use_seed, dtype",
+        [(True, torch.float16), (False, torch.float16), (True, torch.float32), (False, torch.float32)]
+    )
+    def test_backward_pass(self, test_shapes, threshold_values, device, use_seed, dtype):
+        """Test backward pass gradient consistency"""
+        if use_seed:
+            torch.manual_seed(42)
+    
+        v_th, T_max, T_min = threshold_values
+        v_th = v_th.type(dtype)
+        T_max = T_max.type(dtype)
+        T_min = T_min.type(dtype)
+    
+        for shape in test_shapes:
+            # Generate input
+            x = self.generate_input_data(shape, device, dtype)
+            x_copy = x.clone().detach().requires_grad_(True)
+    
+            # Forward pass
+            pytorch_op = ST_BIFNodeATGF_MS.apply
+            cuda_op = ST_BIFNodeATGF_MS_CUDA.apply
+    
+            spike_seq_pt, v_pt, T_seq_pt = pytorch_op(x, v_th, T_max, T_min)
+            spike_seq_cuda, v_cuda, T_seq_cuda = cuda_op(x_copy, v_th, T_max, T_min)
+    
+            # Generate gradient tensors
+            grad_spike = torch.randn_like(spike_seq_pt)
+            grad_v = torch.randn_like(v_pt)
+            grad_T = torch.randn_like(T_seq_pt)
+    
+            # Backward pass
+            spike_seq_pt.backward(grad_spike, retain_graph=True)
+            v_pt.backward(grad_v, retain_graph=True)
+            T_seq_pt.backward(grad_T)
+    
+            spike_seq_cuda.backward(grad_spike, retain_graph=True)
+            v_cuda.backward(grad_v, retain_graph=True)
+            T_seq_cuda.backward(grad_T)
+    
+            # Compare gradients
+>           self.assert_tensor_close(x.grad, x_copy.grad)
+
+test_snn_operator.py:126: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = <test_snn_operator.TestSNNOperator object at 0x7fcafc367e80>
+a = tensor([[[ 1.7017e-01, -1.1072e-01, -5.2588e-01,  7.7246e-01,  3.3252e-01,
+          -8.6426e-01,  3.2440e-02,  6.0693...01, -8.4033e-01,  2.9077e-01, -2.8711e-01,
+          -7.0862e-02, -2.7637e-01]]], device='cuda:0', dtype=torch.float16)
+b = tensor([[[ 1.8054e-01, -1.1151e-01, -5.2539e-01,  7.7734e-01,  3.4399e-01,
+          -8.5498e-01,  2.5970e-02,  6.0938...01, -8.3984e-01,  2.9053e-01, -2.8687e-01,
+          -7.0862e-02, -2.7637e-01]]], device='cuda:0', dtype=torch.float16)
+rtol = 1e-05, atol = 1e-06
+
+    def assert_tensor_close(self, a: torch.Tensor, b: torch.Tensor, rtol=1e-5, atol=1e-6):
+        """Custom assertion for tensor comparison with detailed error message"""
+        if not torch.allclose(a, b, rtol=rtol, atol=atol):
+            max_diff = torch.max(torch.abs(a - b)).item()
+            mean_diff = torch.mean(torch.abs(a - b)).item()
+            diff_locations = torch.where(torch.abs(a - b) > atol)
+>           pytest.fail(f"Tensors not close!\nMax difference: {max_diff}\n"
+                       f"Mean difference: {mean_diff}\n"
+                       f"Number of differing elements: {len(diff_locations[0])}\n"
+                       f"First few differences:\n"
+                       f"a: {a[diff_locations][:5]}\n"
+                       f"b: {b[diff_locations][:5]}")
+E           Failed: Tensors not close!
+E           Max difference: 0.462890625
+E           Mean difference: 0.006061553955078125
+E           Number of differing elements: 503
+E           First few differences:
+E           a: tensor([ 0.1702, -0.1107, -0.5259,  0.7725,  0.3325], device='cuda:0',
+E                  dtype=torch.float16)
+E           b: tensor([ 0.1805, -0.1115, -0.5254,  0.7773,  0.3440], device='cuda:0',
+E                  dtype=torch.float16)
+
+test_snn_operator.py:49: Failed
+_______________ TestSNNOperator.test_backward_pass[False-dtype1] _______________
+
+self = <test_snn_operator.TestSNNOperator object at 0x7fcafc367fd0>
+test_shapes = [(10, 2, 32), (5, 16, 64), (20, 1, 16), (15, 8, 128), (32, 4, 75264)]
+threshold_values = (tensor(1., device='cuda:0'), tensor(5., device='cuda:0'), tensor(-5., device='cuda:0'))
+device = device(type='cuda'), use_seed = False, dtype = torch.float16
+
+    @pytest.mark.parametrize("use_seed, dtype",
+        [(True, torch.float16), (False, torch.float16), (True, torch.float32), (False, torch.float32)]
+    )
+    def test_backward_pass(self, test_shapes, threshold_values, device, use_seed, dtype):
+        """Test backward pass gradient consistency"""
+        if use_seed:
+            torch.manual_seed(42)
+    
+        v_th, T_max, T_min = threshold_values
+        v_th = v_th.type(dtype)
+        T_max = T_max.type(dtype)
+        T_min = T_min.type(dtype)
+    
+        for shape in test_shapes:
+            # Generate input
+            x = self.generate_input_data(shape, device, dtype)
+            x_copy = x.clone().detach().requires_grad_(True)
+    
+            # Forward pass
+            pytorch_op = ST_BIFNodeATGF_MS.apply
+            cuda_op = ST_BIFNodeATGF_MS_CUDA.apply
+    
+            spike_seq_pt, v_pt, T_seq_pt = pytorch_op(x, v_th, T_max, T_min)
+            spike_seq_cuda, v_cuda, T_seq_cuda = cuda_op(x_copy, v_th, T_max, T_min)
+    
+            # Generate gradient tensors
+            grad_spike = torch.randn_like(spike_seq_pt)
+            grad_v = torch.randn_like(v_pt)
+            grad_T = torch.randn_like(T_seq_pt)
+    
+            # Backward pass
+            spike_seq_pt.backward(grad_spike, retain_graph=True)
+            v_pt.backward(grad_v, retain_graph=True)
+            T_seq_pt.backward(grad_T)
+    
+            spike_seq_cuda.backward(grad_spike, retain_graph=True)
+            v_cuda.backward(grad_v, retain_graph=True)
+            T_seq_cuda.backward(grad_T)
+    
+            # Compare gradients
+>           self.assert_tensor_close(x.grad, x_copy.grad)
+
+test_snn_operator.py:126: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = <test_snn_operator.TestSNNOperator object at 0x7fcafc367fd0>
+a = tensor([[[ 1.0518e+00, -3.2642e-01,  7.7051e-01,  1.3721e+00, -1.7051e+00,
+          -3.3203e-02, -1.0283e+00, -1.2930...01,  5.0629e-02,  5.6787e-01,  8.7354e-01,
+          -2.0837e-01,  6.2207e-01]]], device='cuda:0', dtype=torch.float16)
+b = tensor([[[ 1.0684e+00, -3.2007e-01,  7.6660e-01,  1.3887e+00, -1.7051e+00,
+          -1.7426e-02, -1.0059e+00, -1.2959...01,  5.0659e-02,  5.6787e-01,  8.7451e-01,
+          -2.0752e-01,  6.2256e-01]]], device='cuda:0', dtype=torch.float16)
+rtol = 1e-05, atol = 1e-06
+
+    def assert_tensor_close(self, a: torch.Tensor, b: torch.Tensor, rtol=1e-5, atol=1e-6):
+        """Custom assertion for tensor comparison with detailed error message"""
+        if not torch.allclose(a, b, rtol=rtol, atol=atol):
+            max_diff = torch.max(torch.abs(a - b)).item()
+            mean_diff = torch.mean(torch.abs(a - b)).item()
+            diff_locations = torch.where(torch.abs(a - b) > atol)
+>           pytest.fail(f"Tensors not close!\nMax difference: {max_diff}\n"
+                       f"Mean difference: {mean_diff}\n"
+                       f"Number of differing elements: {len(diff_locations[0])}\n"
+                       f"First few differences:\n"
+                       f"a: {a[diff_locations][:5]}\n"
+                       f"b: {b[diff_locations][:5]}")
+E           Failed: Tensors not close!
+E           Max difference: 0.294921875
+E           Mean difference: 0.005611419677734375
+E           Number of differing elements: 501
+E           First few differences:
+E           a: tensor([ 1.0518, -0.3264,  0.7705,  1.3721, -0.0332], device='cuda:0',
+E                  dtype=torch.float16)
+E           b: tensor([ 1.0684, -0.3201,  0.7666,  1.3887, -0.0174], device='cuda:0',
+E                  dtype=torch.float16)
+
+test_snn_operator.py:49: Failed
+_______________ TestSNNOperator.test_backward_pass[True-dtype2] ________________
+
+self = <test_snn_operator.TestSNNOperator object at 0x7fcafc3940a0>
+test_shapes = [(10, 2, 32), (5, 16, 64), (20, 1, 16), (15, 8, 128), (32, 4, 75264)]
+threshold_values = (tensor(1., device='cuda:0'), tensor(5., device='cuda:0'), tensor(-5., device='cuda:0'))
+device = device(type='cuda'), use_seed = True, dtype = torch.float32
+
+    @pytest.mark.parametrize("use_seed, dtype",
+        [(True, torch.float16), (False, torch.float16), (True, torch.float32), (False, torch.float32)]
+    )
+    def test_backward_pass(self, test_shapes, threshold_values, device, use_seed, dtype):
+        """Test backward pass gradient consistency"""
+        if use_seed:
+            torch.manual_seed(42)
+    
+        v_th, T_max, T_min = threshold_values
+        v_th = v_th.type(dtype)
+        T_max = T_max.type(dtype)
+        T_min = T_min.type(dtype)
+    
+        for shape in test_shapes:
+            # Generate input
+            x = self.generate_input_data(shape, device, dtype)
+            x_copy = x.clone().detach().requires_grad_(True)
+    
+            # Forward pass
+            pytorch_op = ST_BIFNodeATGF_MS.apply
+            cuda_op = ST_BIFNodeATGF_MS_CUDA.apply
+    
+            spike_seq_pt, v_pt, T_seq_pt = pytorch_op(x, v_th, T_max, T_min)
+            spike_seq_cuda, v_cuda, T_seq_cuda = cuda_op(x_copy, v_th, T_max, T_min)
+    
+            # Generate gradient tensors
+            grad_spike = torch.randn_like(spike_seq_pt)
+            grad_v = torch.randn_like(v_pt)
+            grad_T = torch.randn_like(T_seq_pt)
+    
+            # Backward pass
+            spike_seq_pt.backward(grad_spike, retain_graph=True)
+            v_pt.backward(grad_v, retain_graph=True)
+            T_seq_pt.backward(grad_T)
+    
+            spike_seq_cuda.backward(grad_spike, retain_graph=True)
+            v_cuda.backward(grad_v, retain_graph=True)
+            T_seq_cuda.backward(grad_T)
+    
+            # Compare gradients
+>           self.assert_tensor_close(x.grad, x_copy.grad)
+
+test_snn_operator.py:126: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = <test_snn_operator.TestSNNOperator object at 0x7fcafc3940a0>
+a = tensor([[[ 1.6969e-01, -1.1076e-01, -5.2624e-01,  7.7199e-01,  3.3247e-01,
+          -8.6386e-01,  3.2371e-02,  6.0734...1.6570e-01, -3.7688e-01, -8.4043e-01,  2.9067e-01, -2.8681e-01,
+          -7.0843e-02, -2.7628e-01]]], device='cuda:0')
+b = tensor([[[ 1.8072e-01, -1.1146e-01, -5.2525e-01,  7.7691e-01,  3.4411e-01,
+          -8.5490e-01,  2.5613e-02,  6.0847...1.6570e-01, -3.7688e-01, -8.4043e-01,  2.9067e-01, -2.8681e-01,
+          -7.0843e-02, -2.7628e-01]]], device='cuda:0')
+rtol = 1e-05, atol = 1e-06
+
+    def assert_tensor_close(self, a: torch.Tensor, b: torch.Tensor, rtol=1e-5, atol=1e-6):
+        """Custom assertion for tensor comparison with detailed error message"""
+        if not torch.allclose(a, b, rtol=rtol, atol=atol):
+            max_diff = torch.max(torch.abs(a - b)).item()
+            mean_diff = torch.mean(torch.abs(a - b)).item()
+            diff_locations = torch.where(torch.abs(a - b) > atol)
+>           pytest.fail(f"Tensors not close!\nMax difference: {max_diff}\n"
+                       f"Mean difference: {mean_diff}\n"
+                       f"Number of differing elements: {len(diff_locations[0])}\n"
+                       f"First few differences:\n"
+                       f"a: {a[diff_locations][:5]}\n"
+                       f"b: {b[diff_locations][:5]}")
+E           Failed: Tensors not close!
+E           Max difference: 0.4626008868217468
+E           Mean difference: 0.005731550510972738
+E           Number of differing elements: 321
+E           First few differences:
+E           a: tensor([ 0.1697, -0.1108, -0.5262,  0.7720,  0.3325], device='cuda:0')
+E           b: tensor([ 0.1807, -0.1115, -0.5252,  0.7769,  0.3441], device='cuda:0')
+
+test_snn_operator.py:49: Failed
+_______________ TestSNNOperator.test_backward_pass[False-dtype3] _______________
+
+self = <test_snn_operator.TestSNNOperator object at 0x7fcafc394130>
+test_shapes = [(10, 2, 32), (5, 16, 64), (20, 1, 16), (15, 8, 128), (32, 4, 75264)]
+threshold_values = (tensor(1., device='cuda:0'), tensor(5., device='cuda:0'), tensor(-5., device='cuda:0'))
+device = device(type='cuda'), use_seed = False, dtype = torch.float32
+
+    @pytest.mark.parametrize("use_seed, dtype",
+        [(True, torch.float16), (False, torch.float16), (True, torch.float32), (False, torch.float32)]
+    )
+    def test_backward_pass(self, test_shapes, threshold_values, device, use_seed, dtype):
+        """Test backward pass gradient consistency"""
+        if use_seed:
+            torch.manual_seed(42)
+    
+        v_th, T_max, T_min = threshold_values
+        v_th = v_th.type(dtype)
+        T_max = T_max.type(dtype)
+        T_min = T_min.type(dtype)
+    
+        for shape in test_shapes:
+            # Generate input
+            x = self.generate_input_data(shape, device, dtype)
+            x_copy = x.clone().detach().requires_grad_(True)
+    
+            # Forward pass
+            pytorch_op = ST_BIFNodeATGF_MS.apply
+            cuda_op = ST_BIFNodeATGF_MS_CUDA.apply
+    
+            spike_seq_pt, v_pt, T_seq_pt = pytorch_op(x, v_th, T_max, T_min)
+            spike_seq_cuda, v_cuda, T_seq_cuda = cuda_op(x_copy, v_th, T_max, T_min)
+    
+            # Generate gradient tensors
+            grad_spike = torch.randn_like(spike_seq_pt)
+            grad_v = torch.randn_like(v_pt)
+            grad_T = torch.randn_like(T_seq_pt)
+    
+            # Backward pass
+            spike_seq_pt.backward(grad_spike, retain_graph=True)
+            v_pt.backward(grad_v, retain_graph=True)
+            T_seq_pt.backward(grad_T)
+    
+            spike_seq_cuda.backward(grad_spike, retain_graph=True)
+            v_cuda.backward(grad_v, retain_graph=True)
+            T_seq_cuda.backward(grad_T)
+    
+            # Compare gradients
+>           self.assert_tensor_close(x.grad, x_copy.grad)
+
+test_snn_operator.py:126: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = <test_snn_operator.TestSNNOperator object at 0x7fcafc394130>
+a = tensor([[[ 1.0527e+00, -3.2626e-01,  7.7029e-01,  1.3735e+00, -1.7052e+00,
+          -3.3667e-02, -1.0282e+00, -1.2932...4.0191e-01,  5.6525e-01,  5.0648e-02,  5.6769e-01,  8.7423e-01,
+          -2.0777e-01,  6.2250e-01]]], device='cuda:0')
+b = tensor([[[ 1.0689e+00, -3.2045e-01,  7.6652e-01,  1.3880e+00, -1.7044e+00,
+          -1.6690e-02, -1.0061e+00, -1.2961...4.0191e-01,  5.6525e-01,  5.0648e-02,  5.6769e-01,  8.7423e-01,
+          -2.0777e-01,  6.2250e-01]]], device='cuda:0')
+rtol = 1e-05, atol = 1e-06
+
+    def assert_tensor_close(self, a: torch.Tensor, b: torch.Tensor, rtol=1e-5, atol=1e-6):
+        """Custom assertion for tensor comparison with detailed error message"""
+        if not torch.allclose(a, b, rtol=rtol, atol=atol):
+            max_diff = torch.max(torch.abs(a - b)).item()
+            mean_diff = torch.mean(torch.abs(a - b)).item()
+            diff_locations = torch.where(torch.abs(a - b) > atol)
+>           pytest.fail(f"Tensors not close!\nMax difference: {max_diff}\n"
+                       f"Mean difference: {mean_diff}\n"
+                       f"Number of differing elements: {len(diff_locations[0])}\n"
+                       f"First few differences:\n"
+                       f"a: {a[diff_locations][:5]}\n"
+                       f"b: {b[diff_locations][:5]}")
+E           Failed: Tensors not close!
+E           Max difference: 0.29822003841400146
+E           Mean difference: 0.005247639957815409
+E           Number of differing elements: 320
+E           First few differences:
+E           a: tensor([ 1.0527, -0.3263,  0.7703,  1.3735, -1.7052], device='cuda:0')
+E           b: tensor([ 1.0689, -0.3205,  0.7665,  1.3880, -1.7044], device='cuda:0')
+
+test_snn_operator.py:49: Failed
+_______________ TestSNNOperator.test_varying_sizes[32-32-dtype1] _______________
+
+self = <test_snn_operator.TestSNNOperator object at 0x7fcafc3945b0>
+batch_size = 32, feature_size = 32
+threshold_values = (tensor(1., device='cuda:0'), tensor(5., device='cuda:0'), tensor(-5., device='cuda:0'))
+device = device(type='cuda'), dtype = torch.float32
+
+    @pytest.mark.parametrize("batch_size,feature_size,dtype", [
+        (1, 1, torch.float32), (32, 32, torch.float32), (128, 64, torch.float32), (256, 128, torch.float32),
+        (1, 1, torch.float16), (32, 32, torch.float16), (128, 64, torch.float16), (256, 128, torch.float16),
+    ])
+    def test_varying_sizes(self, batch_size, feature_size, threshold_values, device, dtype):
+        """Test operator with different batch and feature sizes"""
+        shape = (10, batch_size, feature_size)  # Fixed time steps
+        x = self.generate_input_data(shape, device, dtype)
+        x_copy = x.clone().detach().requires_grad_(True)
+        v_th, T_max, T_min = threshold_values
+        v_th = v_th.type(dtype)
+        T_max = T_max.type(dtype)
+        T_min = T_min.type(dtype)
+    
+        pytorch_op = ST_BIFNodeATGF_MS.apply
+        cuda_op = ST_BIFNodeATGF_MS_CUDA.apply
+    
+        spike_seq_pt, v_pt, T_seq_pt = pytorch_op(x, v_th, T_max, T_min)
+        spike_seq_cuda, v_cuda, T_seq_cuda = cuda_op(x_copy, v_th, T_max, T_min)
+    
+>       self.assert_tensor_close(spike_seq_pt, spike_seq_cuda)
+
+test_snn_operator.py:148: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = <test_snn_operator.TestSNNOperator object at 0x7fcafc3945b0>
+a = tensor([[[-0., -0., -0.,  ..., -0., -0., -0.],
+         [ 0.,  1.,  0.,  ...,  0.,  1.,  0.],
+         [-0.,  0., -0.,...1.,  0.],
+         [ 1., -0., -0.,  ...,  1.,  1., -0.]]], device='cuda:0',
+       grad_fn=<ST_BIFNodeATGF_MSBackward>)
+b = tensor([[[ 0.,  0.,  0.,  ...,  0.,  0.,  0.],
+         [ 0.,  1.,  0.,  ...,  0.,  1.,  0.],
+         [ 0.,  0.,  0.,...0.],
+         [ 1.,  0.,  0.,  ...,  1.,  1.,  0.]]], device='cuda:0',
+       grad_fn=<ST_BIFNodeATGF_MS_CUDABackward>)
+rtol = 1e-05, atol = 1e-06
+
+    def assert_tensor_close(self, a: torch.Tensor, b: torch.Tensor, rtol=1e-5, atol=1e-6):
+        """Custom assertion for tensor comparison with detailed error message"""
+        if not torch.allclose(a, b, rtol=rtol, atol=atol):
+            max_diff = torch.max(torch.abs(a - b)).item()
+            mean_diff = torch.mean(torch.abs(a - b)).item()
+            diff_locations = torch.where(torch.abs(a - b) > atol)
+>           pytest.fail(f"Tensors not close!\nMax difference: {max_diff}\n"
+                       f"Mean difference: {mean_diff}\n"
+                       f"Number of differing elements: {len(diff_locations[0])}\n"
+                       f"First few differences:\n"
+                       f"a: {a[diff_locations][:5]}\n"
+                       f"b: {b[diff_locations][:5]}")
+E           Failed: Tensors not close!
+E           Max difference: 1.0
+E           Mean difference: 0.012109375558793545
+E           Number of differing elements: 124
+E           First few differences:
+E           a: tensor([1., 1., 1., 1., 1.], device='cuda:0', grad_fn=<SliceBackward0>)
+E           b: tensor([0., 0., 0., 0., 0.], device='cuda:0', grad_fn=<SliceBackward0>)
+
+test_snn_operator.py:49: Failed
+______________ TestSNNOperator.test_varying_sizes[128-64-dtype2] _______________
+
+self = <test_snn_operator.TestSNNOperator object at 0x7fcafc394640>
+batch_size = 128, feature_size = 64
+threshold_values = (tensor(1., device='cuda:0'), tensor(5., device='cuda:0'), tensor(-5., device='cuda:0'))
+device = device(type='cuda'), dtype = torch.float32
+
+    @pytest.mark.parametrize("batch_size,feature_size,dtype", [
+        (1, 1, torch.float32), (32, 32, torch.float32), (128, 64, torch.float32), (256, 128, torch.float32),
+        (1, 1, torch.float16), (32, 32, torch.float16), (128, 64, torch.float16), (256, 128, torch.float16),
+    ])
+    def test_varying_sizes(self, batch_size, feature_size, threshold_values, device, dtype):
+        """Test operator with different batch and feature sizes"""
+        shape = (10, batch_size, feature_size)  # Fixed time steps
+        x = self.generate_input_data(shape, device, dtype)
+        x_copy = x.clone().detach().requires_grad_(True)
+        v_th, T_max, T_min = threshold_values
+        v_th = v_th.type(dtype)
+        T_max = T_max.type(dtype)
+        T_min = T_min.type(dtype)
+    
+        pytorch_op = ST_BIFNodeATGF_MS.apply
+        cuda_op = ST_BIFNodeATGF_MS_CUDA.apply
+    
+        spike_seq_pt, v_pt, T_seq_pt = pytorch_op(x, v_th, T_max, T_min)
+        spike_seq_cuda, v_cuda, T_seq_cuda = cuda_op(x_copy, v_th, T_max, T_min)
+    
+>       self.assert_tensor_close(spike_seq_pt, spike_seq_cuda)
+
+test_snn_operator.py:148: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = <test_snn_operator.TestSNNOperator object at 0x7fcafc394640>
+a = tensor([[[ 0., -0., -0.,  ...,  0.,  0., -0.],
+         [ 1., -0., -0.,  ...,  0.,  0., -0.],
+         [ 1., -0., -0.,...0., -0.],
+         [ 0.,  0., -0.,  ..., -0.,  0., -0.]]], device='cuda:0',
+       grad_fn=<ST_BIFNodeATGF_MSBackward>)
+b = tensor([[[ 0.,  0.,  0.,  ...,  0.,  0.,  0.],
+         [ 1.,  0.,  0.,  ...,  0.,  0.,  0.],
+         [ 1.,  0.,  0.,...0.],
+         [ 0.,  0.,  0.,  ...,  0.,  0.,  0.]]], device='cuda:0',
+       grad_fn=<ST_BIFNodeATGF_MS_CUDABackward>)
+rtol = 1e-05, atol = 1e-06
+
+    def assert_tensor_close(self, a: torch.Tensor, b: torch.Tensor, rtol=1e-5, atol=1e-6):
+        """Custom assertion for tensor comparison with detailed error message"""
+        if not torch.allclose(a, b, rtol=rtol, atol=atol):
+            max_diff = torch.max(torch.abs(a - b)).item()
+            mean_diff = torch.mean(torch.abs(a - b)).item()
+            diff_locations = torch.where(torch.abs(a - b) > atol)
+>           pytest.fail(f"Tensors not close!\nMax difference: {max_diff}\n"
+                       f"Mean difference: {mean_diff}\n"
+                       f"Number of differing elements: {len(diff_locations[0])}\n"
+                       f"First few differences:\n"
+                       f"a: {a[diff_locations][:5]}\n"
+                       f"b: {b[diff_locations][:5]}")
+E           Failed: Tensors not close!
+E           Max difference: 1.0
+E           Mean difference: 0.011547851376235485
+E           Number of differing elements: 946
+E           First few differences:
+E           a: tensor([1., 1., 1., 1., 1.], device='cuda:0', grad_fn=<SliceBackward0>)
+E           b: tensor([0., 0., 0., 0., 0.], device='cuda:0', grad_fn=<SliceBackward0>)
+
+test_snn_operator.py:49: Failed
+______________ TestSNNOperator.test_varying_sizes[256-128-dtype3] ______________
+
+self = <test_snn_operator.TestSNNOperator object at 0x7fcafc3946d0>
+batch_size = 256, feature_size = 128
+threshold_values = (tensor(1., device='cuda:0'), tensor(5., device='cuda:0'), tensor(-5., device='cuda:0'))
+device = device(type='cuda'), dtype = torch.float32
+
+    @pytest.mark.parametrize("batch_size,feature_size,dtype", [
+        (1, 1, torch.float32), (32, 32, torch.float32), (128, 64, torch.float32), (256, 128, torch.float32),
+        (1, 1, torch.float16), (32, 32, torch.float16), (128, 64, torch.float16), (256, 128, torch.float16),
+    ])
+    def test_varying_sizes(self, batch_size, feature_size, threshold_values, device, dtype):
+        """Test operator with different batch and feature sizes"""
+        shape = (10, batch_size, feature_size)  # Fixed time steps
+        x = self.generate_input_data(shape, device, dtype)
+        x_copy = x.clone().detach().requires_grad_(True)
+        v_th, T_max, T_min = threshold_values
+        v_th = v_th.type(dtype)
+        T_max = T_max.type(dtype)
+        T_min = T_min.type(dtype)
+    
+        pytorch_op = ST_BIFNodeATGF_MS.apply
+        cuda_op = ST_BIFNodeATGF_MS_CUDA.apply
+    
+        spike_seq_pt, v_pt, T_seq_pt = pytorch_op(x, v_th, T_max, T_min)
+        spike_seq_cuda, v_cuda, T_seq_cuda = cuda_op(x_copy, v_th, T_max, T_min)
+    
+>       self.assert_tensor_close(spike_seq_pt, spike_seq_cuda)
+
+test_snn_operator.py:148: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = <test_snn_operator.TestSNNOperator object at 0x7fcafc3946d0>
+a = tensor([[[-0.,  0., -0.,  ...,  0., -0.,  0.],
+         [-0., -0.,  0.,  ...,  0., -0.,  1.],
+         [-0.,  0.,  0.,...0., -0.],
+         [-0., -1.,  0.,  ..., -0.,  0., -1.]]], device='cuda:0',
+       grad_fn=<ST_BIFNodeATGF_MSBackward>)
+b = tensor([[[ 0.,  0.,  0.,  ...,  0.,  0.,  0.],
+         [ 0.,  0.,  0.,  ...,  0.,  0.,  1.],
+         [ 0.,  0.,  0.,...0.],
+         [ 0., -1.,  0.,  ...,  0.,  0., -1.]]], device='cuda:0',
+       grad_fn=<ST_BIFNodeATGF_MS_CUDABackward>)
+rtol = 1e-05, atol = 1e-06
+
+    def assert_tensor_close(self, a: torch.Tensor, b: torch.Tensor, rtol=1e-5, atol=1e-6):
+        """Custom assertion for tensor comparison with detailed error message"""
+        if not torch.allclose(a, b, rtol=rtol, atol=atol):
+            max_diff = torch.max(torch.abs(a - b)).item()
+            mean_diff = torch.mean(torch.abs(a - b)).item()
+            diff_locations = torch.where(torch.abs(a - b) > atol)
+>           pytest.fail(f"Tensors not close!\nMax difference: {max_diff}\n"
+                       f"Mean difference: {mean_diff}\n"
+                       f"Number of differing elements: {len(diff_locations[0])}\n"
+                       f"First few differences:\n"
+                       f"a: {a[diff_locations][:5]}\n"
+                       f"b: {b[diff_locations][:5]}")
+E           Failed: Tensors not close!
+E           Max difference: 1.0
+E           Mean difference: 0.01190795935690403
+E           Number of differing elements: 3902
+E           First few differences:
+E           a: tensor([1., 1., 1., 1., 1.], device='cuda:0', grad_fn=<SliceBackward0>)
+E           b: tensor([0., 0., 0., 0., 0.], device='cuda:0', grad_fn=<SliceBackward0>)
+
+test_snn_operator.py:49: Failed
+________________ TestSNNOperator.test_varying_sizes[1-1-dtype4] ________________
+
+self = <test_snn_operator.TestSNNOperator object at 0x7fcafc394760>
+batch_size = 1, feature_size = 1
+threshold_values = (tensor(1., device='cuda:0'), tensor(5., device='cuda:0'), tensor(-5., device='cuda:0'))
+device = device(type='cuda'), dtype = torch.float16
+
+    @pytest.mark.parametrize("batch_size,feature_size,dtype", [
+        (1, 1, torch.float32), (32, 32, torch.float32), (128, 64, torch.float32), (256, 128, torch.float32),
+        (1, 1, torch.float16), (32, 32, torch.float16), (128, 64, torch.float16), (256, 128, torch.float16),
+    ])
+    def test_varying_sizes(self, batch_size, feature_size, threshold_values, device, dtype):
+        """Test operator with different batch and feature sizes"""
+        shape = (10, batch_size, feature_size)  # Fixed time steps
+        x = self.generate_input_data(shape, device, dtype)
+        x_copy = x.clone().detach().requires_grad_(True)
+        v_th, T_max, T_min = threshold_values
+        v_th = v_th.type(dtype)
+        T_max = T_max.type(dtype)
+        T_min = T_min.type(dtype)
+    
+        pytorch_op = ST_BIFNodeATGF_MS.apply
+        cuda_op = ST_BIFNodeATGF_MS_CUDA.apply
+    
+        spike_seq_pt, v_pt, T_seq_pt = pytorch_op(x, v_th, T_max, T_min)
+        spike_seq_cuda, v_cuda, T_seq_cuda = cuda_op(x_copy, v_th, T_max, T_min)
+    
+        self.assert_tensor_close(spike_seq_pt, spike_seq_cuda)
+>       self.assert_tensor_close(v_pt, v_cuda)
+
+test_snn_operator.py:149: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = <test_snn_operator.TestSNNOperator object at 0x7fcafc394760>
+a = tensor([[0.1897]], device='cuda:0', dtype=torch.float16,
+       grad_fn=<ST_BIFNodeATGF_MSBackward>)
+b = tensor([[0.1887]], device='cuda:0', dtype=torch.float16,
+       grad_fn=<ST_BIFNodeATGF_MS_CUDABackward>)
+rtol = 1e-05, atol = 1e-06
+
+    def assert_tensor_close(self, a: torch.Tensor, b: torch.Tensor, rtol=1e-5, atol=1e-6):
+        """Custom assertion for tensor comparison with detailed error message"""
+        if not torch.allclose(a, b, rtol=rtol, atol=atol):
+            max_diff = torch.max(torch.abs(a - b)).item()
+            mean_diff = torch.mean(torch.abs(a - b)).item()
+            diff_locations = torch.where(torch.abs(a - b) > atol)
+>           pytest.fail(f"Tensors not close!\nMax difference: {max_diff}\n"
+                       f"Mean difference: {mean_diff}\n"
+                       f"Number of differing elements: {len(diff_locations[0])}\n"
+                       f"First few differences:\n"
+                       f"a: {a[diff_locations][:5]}\n"
+                       f"b: {b[diff_locations][:5]}")
+E           Failed: Tensors not close!
+E           Max difference: 0.0009765625
+E           Mean difference: 0.0009765625
+E           Number of differing elements: 1
+E           First few differences:
+E           a: tensor([0.1897], device='cuda:0', dtype=torch.float16,
+E                  grad_fn=<SliceBackward0>)
+E           b: tensor([0.1887], device='cuda:0', dtype=torch.float16,
+E                  grad_fn=<SliceBackward0>)
+
+test_snn_operator.py:49: Failed
+_______________ TestSNNOperator.test_varying_sizes[32-32-dtype5] _______________
+
+self = <test_snn_operator.TestSNNOperator object at 0x7fcafc3947f0>
+batch_size = 32, feature_size = 32
+threshold_values = (tensor(1., device='cuda:0'), tensor(5., device='cuda:0'), tensor(-5., device='cuda:0'))
+device = device(type='cuda'), dtype = torch.float16
+
+    @pytest.mark.parametrize("batch_size,feature_size,dtype", [
+        (1, 1, torch.float32), (32, 32, torch.float32), (128, 64, torch.float32), (256, 128, torch.float32),
+        (1, 1, torch.float16), (32, 32, torch.float16), (128, 64, torch.float16), (256, 128, torch.float16),
+    ])
+    def test_varying_sizes(self, batch_size, feature_size, threshold_values, device, dtype):
+        """Test operator with different batch and feature sizes"""
+        shape = (10, batch_size, feature_size)  # Fixed time steps
+        x = self.generate_input_data(shape, device, dtype)
+        x_copy = x.clone().detach().requires_grad_(True)
+        v_th, T_max, T_min = threshold_values
+        v_th = v_th.type(dtype)
+        T_max = T_max.type(dtype)
+        T_min = T_min.type(dtype)
+    
+        pytorch_op = ST_BIFNodeATGF_MS.apply
+        cuda_op = ST_BIFNodeATGF_MS_CUDA.apply
+    
+        spike_seq_pt, v_pt, T_seq_pt = pytorch_op(x, v_th, T_max, T_min)
+        spike_seq_cuda, v_cuda, T_seq_cuda = cuda_op(x_copy, v_th, T_max, T_min)
+    
+>       self.assert_tensor_close(spike_seq_pt, spike_seq_cuda)
+
+test_snn_operator.py:148: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = <test_snn_operator.TestSNNOperator object at 0x7fcafc3947f0>
+a = tensor([[[-0., -0.,  0.,  ..., -0., -0., -0.],
+         [-0., -0., -0.,  ..., -0.,  0., -0.],
+         [-0.,  0., -0.,...1., -0.,  0.,  ...,  0., -0.,  1.]]], device='cuda:0',
+       dtype=torch.float16, grad_fn=<ST_BIFNodeATGF_MSBackward>)
+b = tensor([[[ 0.,  0.,  0.,  ...,  0.,  0.,  0.],
+         [ 0.,  0.,  0.,  ...,  0.,  0.,  0.],
+         [ 0.,  0.,  0.,...0.,  0.,  ...,  0.,  0.,  1.]]], device='cuda:0',
+       dtype=torch.float16, grad_fn=<ST_BIFNodeATGF_MS_CUDABackward>)
+rtol = 1e-05, atol = 1e-06
+
+    def assert_tensor_close(self, a: torch.Tensor, b: torch.Tensor, rtol=1e-5, atol=1e-6):
+        """Custom assertion for tensor comparison with detailed error message"""
+        if not torch.allclose(a, b, rtol=rtol, atol=atol):
+            max_diff = torch.max(torch.abs(a - b)).item()
+            mean_diff = torch.mean(torch.abs(a - b)).item()
+            diff_locations = torch.where(torch.abs(a - b) > atol)
+>           pytest.fail(f"Tensors not close!\nMax difference: {max_diff}\n"
+                       f"Mean difference: {mean_diff}\n"
+                       f"Number of differing elements: {len(diff_locations[0])}\n"
+                       f"First few differences:\n"
+                       f"a: {a[diff_locations][:5]}\n"
+                       f"b: {b[diff_locations][:5]}")
+E           Failed: Tensors not close!
+E           Max difference: 1.0
+E           Mean difference: 0.0126953125
+E           Number of differing elements: 130
+E           First few differences:
+E           a: tensor([1., 1., 1., 1., 1.], device='cuda:0', dtype=torch.float16,
+E                  grad_fn=<SliceBackward0>)
+E           b: tensor([0., 0., 0., 0., 0.], device='cuda:0', dtype=torch.float16,
+E                  grad_fn=<SliceBackward0>)
+
+test_snn_operator.py:49: Failed
+______________ TestSNNOperator.test_varying_sizes[128-64-dtype6] _______________
+
+self = <test_snn_operator.TestSNNOperator object at 0x7fcafc394880>
+batch_size = 128, feature_size = 64
+threshold_values = (tensor(1., device='cuda:0'), tensor(5., device='cuda:0'), tensor(-5., device='cuda:0'))
+device = device(type='cuda'), dtype = torch.float16
+
+    @pytest.mark.parametrize("batch_size,feature_size,dtype", [
+        (1, 1, torch.float32), (32, 32, torch.float32), (128, 64, torch.float32), (256, 128, torch.float32),
+        (1, 1, torch.float16), (32, 32, torch.float16), (128, 64, torch.float16), (256, 128, torch.float16),
+    ])
+    def test_varying_sizes(self, batch_size, feature_size, threshold_values, device, dtype):
+        """Test operator with different batch and feature sizes"""
+        shape = (10, batch_size, feature_size)  # Fixed time steps
+        x = self.generate_input_data(shape, device, dtype)
+        x_copy = x.clone().detach().requires_grad_(True)
+        v_th, T_max, T_min = threshold_values
+        v_th = v_th.type(dtype)
+        T_max = T_max.type(dtype)
+        T_min = T_min.type(dtype)
+    
+        pytorch_op = ST_BIFNodeATGF_MS.apply
+        cuda_op = ST_BIFNodeATGF_MS_CUDA.apply
+    
+        spike_seq_pt, v_pt, T_seq_pt = pytorch_op(x, v_th, T_max, T_min)
+        spike_seq_cuda, v_cuda, T_seq_cuda = cuda_op(x_copy, v_th, T_max, T_min)
+    
+>       self.assert_tensor_close(spike_seq_pt, spike_seq_cuda)
+
+test_snn_operator.py:148: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = <test_snn_operator.TestSNNOperator object at 0x7fcafc394880>
+a = tensor([[[-0., -0., -0.,  ..., -0., -0.,  1.],
+         [-0., -0., -0.,  ...,  0., -0., -0.],
+         [-0., -0., -0.,...0.,  0.,  0.,  ...,  0.,  0.,  0.]]], device='cuda:0',
+       dtype=torch.float16, grad_fn=<ST_BIFNodeATGF_MSBackward>)
+b = tensor([[[ 0.,  0.,  0.,  ...,  0.,  0.,  1.],
+         [ 0.,  0.,  0.,  ...,  0.,  0.,  0.],
+         [ 0.,  0.,  0.,...0.,  0.,  ...,  0.,  0.,  0.]]], device='cuda:0',
+       dtype=torch.float16, grad_fn=<ST_BIFNodeATGF_MS_CUDABackward>)
+rtol = 1e-05, atol = 1e-06
+
+    def assert_tensor_close(self, a: torch.Tensor, b: torch.Tensor, rtol=1e-5, atol=1e-6):
+        """Custom assertion for tensor comparison with detailed error message"""
+        if not torch.allclose(a, b, rtol=rtol, atol=atol):
+            max_diff = torch.max(torch.abs(a - b)).item()
+            mean_diff = torch.mean(torch.abs(a - b)).item()
+            diff_locations = torch.where(torch.abs(a - b) > atol)
+>           pytest.fail(f"Tensors not close!\nMax difference: {max_diff}\n"
+                       f"Mean difference: {mean_diff}\n"
+                       f"Number of differing elements: {len(diff_locations[0])}\n"
+                       f"First few differences:\n"
+                       f"a: {a[diff_locations][:5]}\n"
+                       f"b: {b[diff_locations][:5]}")
+E           Failed: Tensors not close!
+E           Max difference: 1.0
+E           Mean difference: 0.01220703125
+E           Number of differing elements: 1000
+E           First few differences:
+E           a: tensor([1., 1., 1., 1., 1.], device='cuda:0', dtype=torch.float16,
+E                  grad_fn=<SliceBackward0>)
+E           b: tensor([0., 0., 0., 0., 0.], device='cuda:0', dtype=torch.float16,
+E                  grad_fn=<SliceBackward0>)
+
+test_snn_operator.py:49: Failed
+______________ TestSNNOperator.test_varying_sizes[256-128-dtype7] ______________
+
+self = <test_snn_operator.TestSNNOperator object at 0x7fcafc367850>
+batch_size = 256, feature_size = 128
+threshold_values = (tensor(1., device='cuda:0'), tensor(5., device='cuda:0'), tensor(-5., device='cuda:0'))
+device = device(type='cuda'), dtype = torch.float16
+
+    @pytest.mark.parametrize("batch_size,feature_size,dtype", [
+        (1, 1, torch.float32), (32, 32, torch.float32), (128, 64, torch.float32), (256, 128, torch.float32),
+        (1, 1, torch.float16), (32, 32, torch.float16), (128, 64, torch.float16), (256, 128, torch.float16),
+    ])
+    def test_varying_sizes(self, batch_size, feature_size, threshold_values, device, dtype):
+        """Test operator with different batch and feature sizes"""
+        shape = (10, batch_size, feature_size)  # Fixed time steps
+        x = self.generate_input_data(shape, device, dtype)
+        x_copy = x.clone().detach().requires_grad_(True)
+        v_th, T_max, T_min = threshold_values
+        v_th = v_th.type(dtype)
+        T_max = T_max.type(dtype)
+        T_min = T_min.type(dtype)
+    
+        pytorch_op = ST_BIFNodeATGF_MS.apply
+        cuda_op = ST_BIFNodeATGF_MS_CUDA.apply
+    
+        spike_seq_pt, v_pt, T_seq_pt = pytorch_op(x, v_th, T_max, T_min)
+        spike_seq_cuda, v_cuda, T_seq_cuda = cuda_op(x_copy, v_th, T_max, T_min)
+    
+>       self.assert_tensor_close(spike_seq_pt, spike_seq_cuda)
+
+test_snn_operator.py:148: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = <test_snn_operator.TestSNNOperator object at 0x7fcafc367850>
+a = tensor([[[ 0.,  0., -0.,  ...,  0.,  0.,  0.],
+         [ 1.,  0.,  0.,  ..., -0., -0., -0.],
+         [ 0., -0., -0.,...0.,  0., -0.,  ..., -0.,  1., -0.]]], device='cuda:0',
+       dtype=torch.float16, grad_fn=<ST_BIFNodeATGF_MSBackward>)
+b = tensor([[[ 0.,  0.,  0.,  ...,  0.,  0.,  0.],
+         [ 1.,  0.,  0.,  ...,  0.,  0.,  0.],
+         [ 0.,  0.,  0.,...0.,  0.,  ...,  0.,  1.,  0.]]], device='cuda:0',
+       dtype=torch.float16, grad_fn=<ST_BIFNodeATGF_MS_CUDABackward>)
+rtol = 1e-05, atol = 1e-06
+
+    def assert_tensor_close(self, a: torch.Tensor, b: torch.Tensor, rtol=1e-5, atol=1e-6):
+        """Custom assertion for tensor comparison with detailed error message"""
+        if not torch.allclose(a, b, rtol=rtol, atol=atol):
+            max_diff = torch.max(torch.abs(a - b)).item()
+            mean_diff = torch.mean(torch.abs(a - b)).item()
+            diff_locations = torch.where(torch.abs(a - b) > atol)
+>           pytest.fail(f"Tensors not close!\nMax difference: {max_diff}\n"
+                       f"Mean difference: {mean_diff}\n"
+                       f"Number of differing elements: {len(diff_locations[0])}\n"
+                       f"First few differences:\n"
+                       f"a: {a[diff_locations][:5]}\n"
+                       f"b: {b[diff_locations][:5]}")
+E           Failed: Tensors not close!
+E           Max difference: 1.0
+E           Mean difference: 0.01239013671875
+E           Number of differing elements: 4061
+E           First few differences:
+E           a: tensor([1., 1., 1., 1., 1.], device='cuda:0', dtype=torch.float16,
+E                  grad_fn=<SliceBackward0>)
+E           b: tensor([0., 0., 0., 0., 0.], device='cuda:0', dtype=torch.float16,
+E                  grad_fn=<SliceBackward0>)
+
+test_snn_operator.py:49: Failed
+=========================== short test summary info ============================
+FAILED test_snn_operator.py::TestSNNOperator::test_forward_pass[True-dtype0]
+FAILED test_snn_operator.py::TestSNNOperator::test_forward_pass[False-dtype1]
+FAILED test_snn_operator.py::TestSNNOperator::test_forward_pass[True-dtype2]
+FAILED test_snn_operator.py::TestSNNOperator::test_forward_pass[False-dtype3]
+FAILED test_snn_operator.py::TestSNNOperator::test_backward_pass[True-dtype0]
+FAILED test_snn_operator.py::TestSNNOperator::test_backward_pass[False-dtype1]
+FAILED test_snn_operator.py::TestSNNOperator::test_backward_pass[True-dtype2]
+FAILED test_snn_operator.py::TestSNNOperator::test_backward_pass[False-dtype3]
+FAILED test_snn_operator.py::TestSNNOperator::test_varying_sizes[32-32-dtype1]
+FAILED test_snn_operator.py::TestSNNOperator::test_varying_sizes[128-64-dtype2]
+FAILED test_snn_operator.py::TestSNNOperator::test_varying_sizes[256-128-dtype3]
+FAILED test_snn_operator.py::TestSNNOperator::test_varying_sizes[1-1-dtype4]
+FAILED test_snn_operator.py::TestSNNOperator::test_varying_sizes[32-32-dtype5]
+FAILED test_snn_operator.py::TestSNNOperator::test_varying_sizes[128-64-dtype6]
+FAILED test_snn_operator.py::TestSNNOperator::test_varying_sizes[256-128-dtype7]
+========================= 15 failed, 2 passed in 5.14s =========================

@@ -1,0 +1,12 @@
+NCCL_P2P_DISABLE=1 OMP_NUM_THREADS=1 CUDA_VISIBLE_DEVICES=0,1,2,3,4,5,6 python -m torch.distributed.launch --use-env --nproc_per_node=7 --master_port='29505' main_finetune_distill_snn.py \
+    --accum_iter 1 \
+    --batch_size 16 \
+    --model swin_tiny_dvs --convEmbedding --dataset cifar10dvs --nb_classes 10 \
+    --model_teacher swin_tiny_dvs \
+    --finetune /data/kang_you1/SpikeZIP_transformer_resnet1/output/T-SNN_swin_tiny_dvs_cifar10dvs_relu_QANN_QAT_act10_weightbit32_NormTypedyt/checkpoint-best.pth \
+    --pretrain_teacher /data/kang_you1/SpikeZIP_transformer_resnet1/output/T-SNN_swin_tiny_dvs_cifar10dvs_relu_QANN_QAT_act10_weightbit32_NormTypedyt/checkpoint-best.pth \
+    --epochs 20 --hybrid_training --warmup_epochs 0 --print_freq 10 \
+    --blr 1e-4 --layer_decay 1.0  \
+    --weight_decay 0.0005 --drop_path 0.1 --mixup 0.5 --cutmix 1.0 --reprob 0.25 \
+    --dist_eval --data_path /data/cifar-10-dvs --output_dir /data/kang_you1/SpikeZIP_transformer_resnet1/output/ --log_dir /data/kang_you1/SpikeZIP_transformer_resnet1/output/ \
+    --mode "SNN" --act_layer relu --remove_softmax --NormType dyt --time_step 16 --act_layer_teacher relu --temp 2.0 --encoding_type rate --level 10 --weight_quantization_bit 32

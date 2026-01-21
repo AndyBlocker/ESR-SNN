@@ -1,0 +1,12 @@
+NCCL_P2P_DISABLE=1 OMP_NUM_THREADS=1 CUDA_VISIBLE_DEVICES=0,1,2,3,4,5,6 python -m torch.distributed.launch --nproc_per_node=7 --use-env --master_port='29500' main_finetune_distill.py \
+    --accum_iter 1 \
+    --batch_size 144 \
+    --model vit_small_patch16 \
+    --model_teacher vit_small_patch16 \
+    --finetune /data1/kang_you/vit_small_patch16_224_no_softmax_no_ln_high_lr_in21k_76.58.pth \
+    --pretrain_teacher /data/vit-small-patch16-relu-82.34.pth \
+    --epochs 100 \
+    --blr 5e-4 --layer_decay 0.65 --warmup_epochs 5 \
+    --weight_decay 0.05 --drop_path 0.1 --mixup 0.8 --cutmix 1.0 --reprob 0.25 --smoothing 0.1 \
+    --dist_eval --data_path /data/ImageNet --output_dir /data/kang_you1/SpikeZIP_transformer_resnet1/output/no_softmax_no_LN_output_ReLU_no_mixpre/ --log_dir /data/kang_you1/SpikeZIP_transformer_resnet1/output/no_softmax_no_LN_output_ReLU_no_mixpre/ \
+    --mode "ANN" --act_layer relu --remove_softmax --NormType mybatchnorm --act_layer_teacher relu --temp 2.0 --print_freq 200 --define_params --mean 0.5 0.5 0.5 --std 0.5 0.5 0.5

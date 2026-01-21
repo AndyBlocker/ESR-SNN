@@ -1,0 +1,12 @@
+CUDA_VISIBLE_DEVICES=0,1,2,3,4,5,6 python -m torch.distributed.launch --nproc_per_node=7 --use-env --master_port='29501' main_finetune_distill_snn.py \
+    --accum_iter 6 \
+    --batch_size 12 \
+    --model swin_tiny --convEmbedding \
+    --model_teacher swin_tiny \
+    --finetune /data1/kang_you/SpikeZIP_transformer_resnet1/output/T-SNN_swin_tiny_imagenet_relu_QANN_QAT_act14_weightbit32_NormTypedyt_NIPS/checkpoint-best.pth \
+    --pretrain_teacher /data1/kang_you/SpikeZIP_transformer_resnet1/output/T-SNN_swin_tiny_imagenet_relu_QANN_QAT_act14_weightbit32_NormTypedyt_NIPS/checkpoint-best.pth \
+    --epochs 5 --hybrid_training --warmup_epochs 0 --print_freq 10 \
+    --blr 2.5e-4 --layer_decay 1.0  \
+    --weight_decay 0.0005 --drop_path 0.1 --mixup 0.0 --cutmix 0.0 --reprob 0.25 \
+    --dist_eval --data_path /data/ImageNet --output_dir /data/kang_you1/SpikeZIP_transformer_resnet2/output/ --log_dir /data/kang_you1/SpikeZIP_transformer_resnet2/output/ \
+    --mode "SNN" --energy --act_layer relu --remove_softmax --NormType dyt --time_step 6 --act_layer_teacher relu --temp 2.0 --encoding_type rate --level 14 --weight_quantization_bit 32

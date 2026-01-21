@@ -1,0 +1,11 @@
+CUDA_VISIBLE_DEVICES=1,2,3,4,5 python -m torch.distributed.launch --use-env --nproc_per_node=5 --master_port='29500' main_finetune_distill.py \
+    --accum_iter 1 \
+    --batch_size 256 \
+    --model vit_small_patch16 \
+    --model_teacher vit_small_patch16 \
+    --epochs 50 \
+    --blr 5e-4 --layer_decay 1.0 --warmup_epochs 5 \
+    --weight_decay 0.3 --drop_path 0.1 --mixup 0.8 --cutmix 1.0 --reprob 0.25 --clip_grad 1.0 \
+    --data_path /home/youkang/ImageNet/imagenet_extracted --output_dir /home/youkang/gpfs-share/SpikeZIP_transformer_Hybrid_CVPR/output --log_dir /home/youkang/gpfs-share/SpikeZIP_transformer_Hybrid_CVPR/output \
+    --dist_eval --project_name "T-SNN-DyHT-Test1" \
+    --mode ANN --global_pool --act_layer relu --NormType dyht --remove_softmax --act_layer_teacher gelu --temp 2.0 --print_freq 200

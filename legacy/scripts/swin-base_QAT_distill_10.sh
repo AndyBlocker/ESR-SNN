@@ -1,0 +1,11 @@
+NCCL_P2P_DISABLE=1 OMP_NUM_THREADS=1 CUDA_VISIBLE_DEVICES=0,1,2,3,4,5,6 python -m torch.distributed.launch --use-env --nproc_per_node=7 --master_port='29500' main_finetune_distill.py \
+    --accum_iter 4 \
+    --batch_size 28 \
+    --model swin_small --convEmbedding \
+    --model_teacher swin_small \
+    --finetune /home/kang_you/swin_small_dyht_83_32.pth \
+    --epochs 30 \
+    --blr 1e-5 --layer_decay 1.0 --warmup_epochs 0 \
+    --weight_decay 0.05 --drop_path 0.1 --mixup 0.2 --cutmix 0.2 --reprob 0.25 \
+    --dist_eval --data_path /data/ImageNet --project_name "T-SNN-16Level-bias" --output_dir /data/kang_you1/SpikeZIP_transformer_resnet1/output/ --log_dir /data/kang_you1/SpikeZIP_transformer_resnet1/output/ \
+    --mode "QANN_QAT" --level 18 --act_layer relu --remove_softmax --NormType dyht --weight_quantization_bit 32 --act_layer_teacher relu --temp 2.0 --print_freq 10

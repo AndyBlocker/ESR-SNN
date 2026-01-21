@@ -1,0 +1,435 @@
+VisionTransformer(
+  (patch_embed): PatchEmbed(
+    (proj): Conv2d(3, 768, kernel_size=(16, 16), stride=(16, 16))
+    (norm): Identity()
+  )
+  (pos_drop): Dropout(p=0.0, inplace=False)
+  (blocks): Sequential(
+    (0): Block(
+      (norm1): Sequential(
+        (0): LayerNorm((768,), eps=1e-06, elementwise_affine=True)
+        (1): MyQuan(level=10, sym=True, pos_max=4.0, neg_min=-4.0, s=0.398895800113678, s_max=2000.0)
+      )
+      (attn): QAttention(
+        (qkv): Linear(in_features=768, out_features=2304, bias=True)
+        (quan_q): MyQuan(level=10, sym=True, pos_max=4.0, neg_min=-4.0, s=0.5750622153282166, s_max=2000.0)
+        (quan_k): MyQuan(level=10, sym=True, pos_max=4.0, neg_min=-4.0, s=0.3509822487831116, s_max=2000.0)
+        (quan_v): MyQuan(level=10, sym=True, pos_max=4.0, neg_min=-4.0, s=0.28442856669425964, s_max=2000.0)
+        (attn_drop): Dropout(p=0.0, inplace=False)
+        (proj): Linear(in_features=768, out_features=768, bias=True)
+        (attn_quan): MyQuan(level=10, sym=False, pos_max=4.0, neg_min=0.0, s=2.0, s_max=2000.0)
+        (proj_drop): Dropout(p=0.0, inplace=False)
+        (attn_softmax_quan): MyQuan(level=10, sym=True, pos_max=4.0, neg_min=-4.0, s=0.010410831309854984, s_max=2000.0)
+        (after_attn_quan): MyQuan(level=10, sym=True, pos_max=4.0, neg_min=-4.0, s=0.06320603936910629, s_max=2000.0)
+      )
+      (drop_path): Identity()
+      (norm2): Sequential(
+        (0): LayerNorm((768,), eps=1e-06, elementwise_affine=True)
+        (1): MyQuan(level=10, sym=True, pos_max=4.0, neg_min=-4.0, s=0.7918261885643005, s_max=2000.0)
+      )
+      (mlp): Mlp(
+        (fc1): Linear(in_features=768, out_features=3072, bias=True)
+        (act): Sequential(
+          (0): ReLU()
+          (1): MyQuan(level=10, sym=False, pos_max=4.0, neg_min=0.0, s=0.47864100337028503, s_max=2000.0)
+        )
+        (drop1): Dropout(p=0.0, inplace=False)
+        (fc2): Sequential(
+          (0): Linear(in_features=3072, out_features=768, bias=True)
+        )
+        (drop2): Dropout(p=0.0, inplace=False)
+      )
+    )
+    (1): Block(
+      (norm1): Sequential(
+        (0): LayerNorm((768,), eps=1e-06, elementwise_affine=True)
+        (1): MyQuan(level=10, sym=True, pos_max=4.0, neg_min=-4.0, s=0.6243428587913513, s_max=2000.0)
+      )
+      (attn): QAttention(
+        (qkv): Linear(in_features=768, out_features=2304, bias=True)
+        (quan_q): MyQuan(level=10, sym=True, pos_max=4.0, neg_min=-4.0, s=0.6859684586524963, s_max=2000.0)
+        (quan_k): MyQuan(level=10, sym=True, pos_max=4.0, neg_min=-4.0, s=0.6731879115104675, s_max=2000.0)
+        (quan_v): MyQuan(level=10, sym=True, pos_max=4.0, neg_min=-4.0, s=0.6959405541419983, s_max=2000.0)
+        (attn_drop): Dropout(p=0.0, inplace=False)
+        (proj): Linear(in_features=768, out_features=768, bias=True)
+        (attn_quan): MyQuan(level=10, sym=False, pos_max=4.0, neg_min=0.0, s=2.0, s_max=2000.0)
+        (proj_drop): Dropout(p=0.0, inplace=False)
+        (attn_softmax_quan): MyQuan(level=10, sym=True, pos_max=4.0, neg_min=-4.0, s=0.017306741327047348, s_max=2000.0)
+        (after_attn_quan): MyQuan(level=10, sym=True, pos_max=4.0, neg_min=-4.0, s=0.11170270293951035, s_max=2000.0)
+      )
+      (drop_path): DropPath()
+      (norm2): Sequential(
+        (0): LayerNorm((768,), eps=1e-06, elementwise_affine=True)
+        (1): MyQuan(level=10, sym=True, pos_max=4.0, neg_min=-4.0, s=0.4790160059928894, s_max=2000.0)
+      )
+      (mlp): Mlp(
+        (fc1): Linear(in_features=768, out_features=3072, bias=True)
+        (act): Sequential(
+          (0): ReLU()
+          (1): MyQuan(level=10, sym=False, pos_max=4.0, neg_min=0.0, s=0.33774879574775696, s_max=2000.0)
+        )
+        (drop1): Dropout(p=0.0, inplace=False)
+        (fc2): Sequential(
+          (0): Linear(in_features=3072, out_features=768, bias=True)
+        )
+        (drop2): Dropout(p=0.0, inplace=False)
+      )
+    )
+    (2): Block(
+      (norm1): Sequential(
+        (0): LayerNorm((768,), eps=1e-06, elementwise_affine=True)
+        (1): MyQuan(level=10, sym=True, pos_max=4.0, neg_min=-4.0, s=0.6622885465621948, s_max=2000.0)
+      )
+      (attn): QAttention(
+        (qkv): Linear(in_features=768, out_features=2304, bias=True)
+        (quan_q): MyQuan(level=10, sym=True, pos_max=4.0, neg_min=-4.0, s=0.6737779378890991, s_max=2000.0)
+        (quan_k): MyQuan(level=10, sym=True, pos_max=4.0, neg_min=-4.0, s=0.6026410460472107, s_max=2000.0)
+        (quan_v): MyQuan(level=10, sym=True, pos_max=4.0, neg_min=-4.0, s=0.8183508515357971, s_max=2000.0)
+        (attn_drop): Dropout(p=0.0, inplace=False)
+        (proj): Linear(in_features=768, out_features=768, bias=True)
+        (attn_quan): MyQuan(level=10, sym=False, pos_max=4.0, neg_min=0.0, s=2.0, s_max=2000.0)
+        (proj_drop): Dropout(p=0.0, inplace=False)
+        (attn_softmax_quan): MyQuan(level=10, sym=True, pos_max=4.0, neg_min=-4.0, s=0.028638148680329323, s_max=2000.0)
+        (after_attn_quan): MyQuan(level=10, sym=True, pos_max=4.0, neg_min=-4.0, s=0.1321340799331665, s_max=2000.0)
+      )
+      (drop_path): DropPath()
+      (norm2): Sequential(
+        (0): LayerNorm((768,), eps=1e-06, elementwise_affine=True)
+        (1): MyQuan(level=10, sym=True, pos_max=4.0, neg_min=-4.0, s=0.5268442630767822, s_max=2000.0)
+      )
+      (mlp): Mlp(
+        (fc1): Linear(in_features=768, out_features=3072, bias=True)
+        (act): Sequential(
+          (0): ReLU()
+          (1): MyQuan(level=10, sym=False, pos_max=4.0, neg_min=0.0, s=0.41732674837112427, s_max=2000.0)
+        )
+        (drop1): Dropout(p=0.0, inplace=False)
+        (fc2): Sequential(
+          (0): Linear(in_features=3072, out_features=768, bias=True)
+        )
+        (drop2): Dropout(p=0.0, inplace=False)
+      )
+    )
+    (3): Block(
+      (norm1): Sequential(
+        (0): LayerNorm((768,), eps=1e-06, elementwise_affine=True)
+        (1): MyQuan(level=10, sym=True, pos_max=4.0, neg_min=-4.0, s=0.766399621963501, s_max=2000.0)
+      )
+      (attn): QAttention(
+        (qkv): Linear(in_features=768, out_features=2304, bias=True)
+        (quan_q): MyQuan(level=10, sym=True, pos_max=4.0, neg_min=-4.0, s=0.6695072650909424, s_max=2000.0)
+        (quan_k): MyQuan(level=10, sym=True, pos_max=4.0, neg_min=-4.0, s=0.6535642743110657, s_max=2000.0)
+        (quan_v): MyQuan(level=10, sym=True, pos_max=4.0, neg_min=-4.0, s=0.6790941953659058, s_max=2000.0)
+        (attn_drop): Dropout(p=0.0, inplace=False)
+        (proj): Linear(in_features=768, out_features=768, bias=True)
+        (attn_quan): MyQuan(level=10, sym=False, pos_max=4.0, neg_min=0.0, s=2.0, s_max=2000.0)
+        (proj_drop): Dropout(p=0.0, inplace=False)
+        (attn_softmax_quan): MyQuan(level=10, sym=True, pos_max=4.0, neg_min=-4.0, s=0.027176406234502792, s_max=2000.0)
+        (after_attn_quan): MyQuan(level=10, sym=True, pos_max=4.0, neg_min=-4.0, s=0.15540370345115662, s_max=2000.0)
+      )
+      (drop_path): DropPath()
+      (norm2): Sequential(
+        (0): LayerNorm((768,), eps=1e-06, elementwise_affine=True)
+        (1): MyQuan(level=10, sym=True, pos_max=4.0, neg_min=-4.0, s=0.558314323425293, s_max=2000.0)
+      )
+      (mlp): Mlp(
+        (fc1): Linear(in_features=768, out_features=3072, bias=True)
+        (act): Sequential(
+          (0): ReLU()
+          (1): MyQuan(level=10, sym=False, pos_max=4.0, neg_min=0.0, s=0.4464462995529175, s_max=2000.0)
+        )
+        (drop1): Dropout(p=0.0, inplace=False)
+        (fc2): Sequential(
+          (0): Linear(in_features=3072, out_features=768, bias=True)
+        )
+        (drop2): Dropout(p=0.0, inplace=False)
+      )
+    )
+    (4): Block(
+      (norm1): Sequential(
+        (0): LayerNorm((768,), eps=1e-06, elementwise_affine=True)
+        (1): MyQuan(level=10, sym=True, pos_max=4.0, neg_min=-4.0, s=0.7616556286811829, s_max=2000.0)
+      )
+      (attn): QAttention(
+        (qkv): Linear(in_features=768, out_features=2304, bias=True)
+        (quan_q): MyQuan(level=10, sym=True, pos_max=4.0, neg_min=-4.0, s=0.6613654494285583, s_max=2000.0)
+        (quan_k): MyQuan(level=10, sym=True, pos_max=4.0, neg_min=-4.0, s=0.6619455814361572, s_max=2000.0)
+        (quan_v): MyQuan(level=10, sym=True, pos_max=4.0, neg_min=-4.0, s=0.6353005170822144, s_max=2000.0)
+        (attn_drop): Dropout(p=0.0, inplace=False)
+        (proj): Linear(in_features=768, out_features=768, bias=True)
+        (attn_quan): MyQuan(level=10, sym=False, pos_max=4.0, neg_min=0.0, s=2.0, s_max=2000.0)
+        (proj_drop): Dropout(p=0.0, inplace=False)
+        (attn_softmax_quan): MyQuan(level=10, sym=True, pos_max=4.0, neg_min=-4.0, s=0.023365437984466553, s_max=2000.0)
+        (after_attn_quan): MyQuan(level=10, sym=True, pos_max=4.0, neg_min=-4.0, s=0.18202871084213257, s_max=2000.0)
+      )
+      (drop_path): DropPath()
+      (norm2): Sequential(
+        (0): LayerNorm((768,), eps=1e-06, elementwise_affine=True)
+        (1): MyQuan(level=10, sym=True, pos_max=4.0, neg_min=-4.0, s=0.6266810894012451, s_max=2000.0)
+      )
+      (mlp): Mlp(
+        (fc1): Linear(in_features=768, out_features=3072, bias=True)
+        (act): Sequential(
+          (0): ReLU()
+          (1): MyQuan(level=10, sym=False, pos_max=4.0, neg_min=0.0, s=0.45634782314300537, s_max=2000.0)
+        )
+        (drop1): Dropout(p=0.0, inplace=False)
+        (fc2): Sequential(
+          (0): Linear(in_features=3072, out_features=768, bias=True)
+        )
+        (drop2): Dropout(p=0.0, inplace=False)
+      )
+    )
+    (5): Block(
+      (norm1): Sequential(
+        (0): LayerNorm((768,), eps=1e-06, elementwise_affine=True)
+        (1): MyQuan(level=10, sym=True, pos_max=4.0, neg_min=-4.0, s=0.7857484221458435, s_max=2000.0)
+      )
+      (attn): QAttention(
+        (qkv): Linear(in_features=768, out_features=2304, bias=True)
+        (quan_q): MyQuan(level=10, sym=True, pos_max=4.0, neg_min=-4.0, s=0.6844174265861511, s_max=2000.0)
+        (quan_k): MyQuan(level=10, sym=True, pos_max=4.0, neg_min=-4.0, s=0.6475365161895752, s_max=2000.0)
+        (quan_v): MyQuan(level=10, sym=True, pos_max=4.0, neg_min=-4.0, s=0.6460199952125549, s_max=2000.0)
+        (attn_drop): Dropout(p=0.0, inplace=False)
+        (proj): Linear(in_features=768, out_features=768, bias=True)
+        (attn_quan): MyQuan(level=10, sym=False, pos_max=4.0, neg_min=0.0, s=2.0, s_max=2000.0)
+        (proj_drop): Dropout(p=0.0, inplace=False)
+        (attn_softmax_quan): MyQuan(level=10, sym=True, pos_max=4.0, neg_min=-4.0, s=0.025688491761684418, s_max=2000.0)
+        (after_attn_quan): MyQuan(level=10, sym=True, pos_max=4.0, neg_min=-4.0, s=0.187321737408638, s_max=2000.0)
+      )
+      (drop_path): DropPath()
+      (norm2): Sequential(
+        (0): LayerNorm((768,), eps=1e-06, elementwise_affine=True)
+        (1): MyQuan(level=10, sym=True, pos_max=4.0, neg_min=-4.0, s=0.7206586599349976, s_max=2000.0)
+      )
+      (mlp): Mlp(
+        (fc1): Linear(in_features=768, out_features=3072, bias=True)
+        (act): Sequential(
+          (0): ReLU()
+          (1): MyQuan(level=10, sym=False, pos_max=4.0, neg_min=0.0, s=0.5313712358474731, s_max=2000.0)
+        )
+        (drop1): Dropout(p=0.0, inplace=False)
+        (fc2): Sequential(
+          (0): Linear(in_features=3072, out_features=768, bias=True)
+        )
+        (drop2): Dropout(p=0.0, inplace=False)
+      )
+    )
+    (6): Block(
+      (norm1): Sequential(
+        (0): LayerNorm((768,), eps=1e-06, elementwise_affine=True)
+        (1): MyQuan(level=10, sym=True, pos_max=4.0, neg_min=-4.0, s=0.8756551146507263, s_max=2000.0)
+      )
+      (attn): QAttention(
+        (qkv): Linear(in_features=768, out_features=2304, bias=True)
+        (quan_q): MyQuan(level=10, sym=True, pos_max=4.0, neg_min=-4.0, s=0.6882317066192627, s_max=2000.0)
+        (quan_k): MyQuan(level=10, sym=True, pos_max=4.0, neg_min=-4.0, s=0.6849897503852844, s_max=2000.0)
+        (quan_v): MyQuan(level=10, sym=True, pos_max=4.0, neg_min=-4.0, s=0.6811185479164124, s_max=2000.0)
+        (attn_drop): Dropout(p=0.0, inplace=False)
+        (proj): Linear(in_features=768, out_features=768, bias=True)
+        (attn_quan): MyQuan(level=10, sym=False, pos_max=4.0, neg_min=0.0, s=2.0, s_max=2000.0)
+        (proj_drop): Dropout(p=0.0, inplace=False)
+        (attn_softmax_quan): MyQuan(level=10, sym=True, pos_max=4.0, neg_min=-4.0, s=0.018975233659148216, s_max=2000.0)
+        (after_attn_quan): MyQuan(level=10, sym=True, pos_max=4.0, neg_min=-4.0, s=0.1919940710067749, s_max=2000.0)
+      )
+      (drop_path): DropPath()
+      (norm2): Sequential(
+        (0): LayerNorm((768,), eps=1e-06, elementwise_affine=True)
+        (1): MyQuan(level=10, sym=True, pos_max=4.0, neg_min=-4.0, s=0.8181097507476807, s_max=2000.0)
+      )
+      (mlp): Mlp(
+        (fc1): Linear(in_features=768, out_features=3072, bias=True)
+        (act): Sequential(
+          (0): ReLU()
+          (1): MyQuan(level=10, sym=False, pos_max=4.0, neg_min=0.0, s=0.5969883799552917, s_max=2000.0)
+        )
+        (drop1): Dropout(p=0.0, inplace=False)
+        (fc2): Sequential(
+          (0): Linear(in_features=3072, out_features=768, bias=True)
+        )
+        (drop2): Dropout(p=0.0, inplace=False)
+      )
+    )
+    (7): Block(
+      (norm1): Sequential(
+        (0): LayerNorm((768,), eps=1e-06, elementwise_affine=True)
+        (1): MyQuan(level=10, sym=True, pos_max=4.0, neg_min=-4.0, s=0.8977491855621338, s_max=2000.0)
+      )
+      (attn): QAttention(
+        (qkv): Linear(in_features=768, out_features=2304, bias=True)
+        (quan_q): MyQuan(level=10, sym=True, pos_max=4.0, neg_min=-4.0, s=0.7588872909545898, s_max=2000.0)
+        (quan_k): MyQuan(level=10, sym=True, pos_max=4.0, neg_min=-4.0, s=0.7102290987968445, s_max=2000.0)
+        (quan_v): MyQuan(level=10, sym=True, pos_max=4.0, neg_min=-4.0, s=0.7461736798286438, s_max=2000.0)
+        (attn_drop): Dropout(p=0.0, inplace=False)
+        (proj): Linear(in_features=768, out_features=768, bias=True)
+        (attn_quan): MyQuan(level=10, sym=False, pos_max=4.0, neg_min=0.0, s=2.0, s_max=2000.0)
+        (proj_drop): Dropout(p=0.0, inplace=False)
+        (attn_softmax_quan): MyQuan(level=10, sym=True, pos_max=4.0, neg_min=-4.0, s=0.023337354883551598, s_max=2000.0)
+        (after_attn_quan): MyQuan(level=10, sym=True, pos_max=4.0, neg_min=-4.0, s=0.23251312971115112, s_max=2000.0)
+      )
+      (drop_path): DropPath()
+      (norm2): Sequential(
+        (0): LayerNorm((768,), eps=1e-06, elementwise_affine=True)
+        (1): MyQuan(level=10, sym=True, pos_max=4.0, neg_min=-4.0, s=1.0792362689971924, s_max=2000.0)
+      )
+      (mlp): Mlp(
+        (fc1): Linear(in_features=768, out_features=3072, bias=True)
+        (act): Sequential(
+          (0): ReLU()
+          (1): MyQuan(level=10, sym=False, pos_max=4.0, neg_min=0.0, s=0.7790370583534241, s_max=2000.0)
+        )
+        (drop1): Dropout(p=0.0, inplace=False)
+        (fc2): Sequential(
+          (0): Linear(in_features=3072, out_features=768, bias=True)
+        )
+        (drop2): Dropout(p=0.0, inplace=False)
+      )
+    )
+    (8): Block(
+      (norm1): Sequential(
+        (0): LayerNorm((768,), eps=1e-06, elementwise_affine=True)
+        (1): MyQuan(level=10, sym=True, pos_max=4.0, neg_min=-4.0, s=0.8781774640083313, s_max=2000.0)
+      )
+      (attn): QAttention(
+        (qkv): Linear(in_features=768, out_features=2304, bias=True)
+        (quan_q): MyQuan(level=10, sym=True, pos_max=4.0, neg_min=-4.0, s=0.7748702168464661, s_max=2000.0)
+        (quan_k): MyQuan(level=10, sym=True, pos_max=4.0, neg_min=-4.0, s=0.7300993800163269, s_max=2000.0)
+        (quan_v): MyQuan(level=10, sym=True, pos_max=4.0, neg_min=-4.0, s=0.7561479210853577, s_max=2000.0)
+        (attn_drop): Dropout(p=0.0, inplace=False)
+        (proj): Linear(in_features=768, out_features=768, bias=True)
+        (attn_quan): MyQuan(level=10, sym=False, pos_max=4.0, neg_min=0.0, s=2.0, s_max=2000.0)
+        (proj_drop): Dropout(p=0.0, inplace=False)
+        (attn_softmax_quan): MyQuan(level=10, sym=True, pos_max=4.0, neg_min=-4.0, s=0.031431831419467926, s_max=2000.0)
+        (after_attn_quan): MyQuan(level=10, sym=True, pos_max=4.0, neg_min=-4.0, s=0.304744154214859, s_max=2000.0)
+      )
+      (drop_path): DropPath()
+      (norm2): Sequential(
+        (0): LayerNorm((768,), eps=1e-06, elementwise_affine=True)
+        (1): MyQuan(level=10, sym=True, pos_max=4.0, neg_min=-4.0, s=2.5893285274505615, s_max=2000.0)
+      )
+      (mlp): Mlp(
+        (fc1): Linear(in_features=768, out_features=3072, bias=True)
+        (act): Sequential(
+          (0): ReLU()
+          (1): MyQuan(level=10, sym=False, pos_max=4.0, neg_min=0.0, s=1.8577337265014648, s_max=2000.0)
+        )
+        (drop1): Dropout(p=0.0, inplace=False)
+        (fc2): Sequential(
+          (0): Linear(in_features=3072, out_features=768, bias=True)
+        )
+        (drop2): Dropout(p=0.0, inplace=False)
+      )
+    )
+    (9): Block(
+      (norm1): Sequential(
+        (0): LayerNorm((768,), eps=1e-06, elementwise_affine=True)
+        (1): MyQuan(level=10, sym=True, pos_max=4.0, neg_min=-4.0, s=0.9619095921516418, s_max=2000.0)
+      )
+      (attn): QAttention(
+        (qkv): Linear(in_features=768, out_features=2304, bias=True)
+        (quan_q): MyQuan(level=10, sym=True, pos_max=4.0, neg_min=-4.0, s=0.8960374593734741, s_max=2000.0)
+        (quan_k): MyQuan(level=10, sym=True, pos_max=4.0, neg_min=-4.0, s=0.7923381924629211, s_max=2000.0)
+        (quan_v): MyQuan(level=10, sym=True, pos_max=4.0, neg_min=-4.0, s=0.8536562323570251, s_max=2000.0)
+        (attn_drop): Dropout(p=0.0, inplace=False)
+        (proj): Linear(in_features=768, out_features=768, bias=True)
+        (attn_quan): MyQuan(level=10, sym=False, pos_max=4.0, neg_min=0.0, s=2.0, s_max=2000.0)
+        (proj_drop): Dropout(p=0.0, inplace=False)
+        (attn_softmax_quan): MyQuan(level=10, sym=True, pos_max=4.0, neg_min=-4.0, s=0.024973571300506592, s_max=2000.0)
+        (after_attn_quan): MyQuan(level=10, sym=True, pos_max=4.0, neg_min=-4.0, s=0.3686508536338806, s_max=2000.0)
+      )
+      (drop_path): DropPath()
+      (norm2): Sequential(
+        (0): LayerNorm((768,), eps=1e-06, elementwise_affine=True)
+        (1): MyQuan(level=10, sym=True, pos_max=4.0, neg_min=-4.0, s=5.321452617645264, s_max=2000.0)
+      )
+      (mlp): Mlp(
+        (fc1): Linear(in_features=768, out_features=3072, bias=True)
+        (act): Sequential(
+          (0): ReLU()
+          (1): MyQuan(level=10, sym=False, pos_max=4.0, neg_min=0.0, s=3.790661573410034, s_max=2000.0)
+        )
+        (drop1): Dropout(p=0.0, inplace=False)
+        (fc2): Sequential(
+          (0): Linear(in_features=3072, out_features=768, bias=True)
+        )
+        (drop2): Dropout(p=0.0, inplace=False)
+      )
+    )
+    (10): Block(
+      (norm1): Sequential(
+        (0): LayerNorm((768,), eps=1e-06, elementwise_affine=True)
+        (1): MyQuan(level=10, sym=True, pos_max=4.0, neg_min=-4.0, s=1.119016408920288, s_max=2000.0)
+      )
+      (attn): QAttention(
+        (qkv): Linear(in_features=768, out_features=2304, bias=True)
+        (quan_q): MyQuan(level=10, sym=True, pos_max=4.0, neg_min=-4.0, s=1.028422236442566, s_max=2000.0)
+        (quan_k): MyQuan(level=10, sym=True, pos_max=4.0, neg_min=-4.0, s=0.8131436705589294, s_max=2000.0)
+        (quan_v): MyQuan(level=10, sym=True, pos_max=4.0, neg_min=-4.0, s=1.0012378692626953, s_max=2000.0)
+        (attn_drop): Dropout(p=0.0, inplace=False)
+        (proj): Linear(in_features=768, out_features=768, bias=True)
+        (attn_quan): MyQuan(level=10, sym=False, pos_max=4.0, neg_min=0.0, s=2.0, s_max=2000.0)
+        (proj_drop): Dropout(p=0.0, inplace=False)
+        (attn_softmax_quan): MyQuan(level=10, sym=True, pos_max=4.0, neg_min=-4.0, s=0.027489950880408287, s_max=2000.0)
+        (after_attn_quan): MyQuan(level=10, sym=True, pos_max=4.0, neg_min=-4.0, s=0.469495564699173, s_max=2000.0)
+      )
+      (drop_path): DropPath()
+      (norm2): Sequential(
+        (0): LayerNorm((768,), eps=1e-06, elementwise_affine=True)
+        (1): MyQuan(level=10, sym=True, pos_max=4.0, neg_min=-4.0, s=9.195026397705078, s_max=2000.0)
+      )
+      (mlp): Mlp(
+        (fc1): Linear(in_features=768, out_features=3072, bias=True)
+        (act): Sequential(
+          (0): ReLU()
+          (1): MyQuan(level=10, sym=False, pos_max=4.0, neg_min=0.0, s=6.306901454925537, s_max=2000.0)
+        )
+        (drop1): Dropout(p=0.0, inplace=False)
+        (fc2): Sequential(
+          (0): Linear(in_features=3072, out_features=768, bias=True)
+        )
+        (drop2): Dropout(p=0.0, inplace=False)
+      )
+    )
+    (11): Block(
+      (norm1): Sequential(
+        (0): LayerNorm((768,), eps=1e-06, elementwise_affine=True)
+        (1): MyQuan(level=10, sym=True, pos_max=4.0, neg_min=-4.0, s=1.0916842222213745, s_max=2000.0)
+      )
+      (attn): QAttention(
+        (qkv): Linear(in_features=768, out_features=2304, bias=True)
+        (quan_q): MyQuan(level=10, sym=True, pos_max=4.0, neg_min=-4.0, s=1.2185462713241577, s_max=2000.0)
+        (quan_k): MyQuan(level=10, sym=True, pos_max=4.0, neg_min=-4.0, s=0.6886643171310425, s_max=2000.0)
+        (quan_v): MyQuan(level=10, sym=True, pos_max=4.0, neg_min=-4.0, s=1.605809211730957, s_max=2000.0)
+        (attn_drop): Dropout(p=0.0, inplace=False)
+        (proj): Linear(in_features=768, out_features=768, bias=True)
+        (attn_quan): MyQuan(level=10, sym=False, pos_max=4.0, neg_min=0.0, s=2.0, s_max=2000.0)
+        (proj_drop): Dropout(p=0.0, inplace=False)
+        (attn_softmax_quan): MyQuan(level=10, sym=True, pos_max=4.0, neg_min=-4.0, s=0.02357460744678974, s_max=2000.0)
+        (after_attn_quan): MyQuan(level=10, sym=True, pos_max=4.0, neg_min=-4.0, s=0.7696943879127502, s_max=2000.0)
+      )
+      (drop_path): DropPath()
+      (norm2): Sequential(
+        (0): LayerNorm((768,), eps=1e-06, elementwise_affine=True)
+        (1): MyQuan(level=10, sym=True, pos_max=4.0, neg_min=-4.0, s=1.4011086225509644, s_max=2000.0)
+      )
+      (mlp): Mlp(
+        (fc1): Linear(in_features=768, out_features=3072, bias=True)
+        (act): Sequential(
+          (0): ReLU()
+          (1): MyQuan(level=10, sym=False, pos_max=4.0, neg_min=0.0, s=1.5658611059188843, s_max=2000.0)
+        )
+        (drop1): Dropout(p=0.0, inplace=False)
+        (fc2): Sequential(
+          (0): Linear(in_features=3072, out_features=768, bias=True)
+        )
+        (drop2): Dropout(p=0.0, inplace=False)
+      )
+    )
+  )
+  (pre_logits): Identity()
+  (head): Linear(in_features=768, out_features=1000, bias=True)
+  (fc_norm): Sequential(
+    (0): LayerNorm((768,), eps=1e-06, elementwise_affine=True)
+    (1): MyQuan(level=10, sym=True, pos_max=4.0, neg_min=-4.0, s=0.8057197332382202, s_max=2000.0)
+  )
+)

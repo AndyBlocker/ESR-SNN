@@ -1,0 +1,11 @@
+NCCL_P2P_DISABLE=1 OMP_NUM_THREADS=1 CUDA_VISIBLE_DEVICES=0,1,2,3,4,5,6 python -m torch.distributed.launch --use-env --nproc_per_node=7 --master_port='29501' main_finetune_distill.py \
+    --accum_iter 1 \
+    --batch_size 144 \
+    --model swin_tiny --convEmbedding \
+    --model_teacher swin_tiny \
+    --finetune /data1/kang_you/swin_tiny_in21k.pth \
+    --epochs 100 \
+    --blr 5e-5 --layer_decay 1.0 --warmup_epochs 0 \
+    --weight_decay 0.05 --drop_path 0.1 --mixup 0.8 --cutmix 1.0 --reprob 0.25 --clip_grad 1.0 \
+    --dist_eval --data_path /data/ImageNet --output_dir /data/kang_you1/SpikeZIP_transformer_resnet1/output/ --log_dir /data/kang_you1/SpikeZIP_transformer_resnet1/output/ \
+    --mode "ANN" --act_layer relu --NormType dyt --remove_softmax --act_layer_teacher gelu --temp 2.0 --print_freq 10

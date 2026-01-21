@@ -1,0 +1,11 @@
+NCCL_P2P_DISABLE=1 OMP_NUM_THREADS=1 CUDA_VISIBLE_DEVICES=3,4,5,6 python -m torch.distributed.launch --use-env --nproc_per_node=4 --master_port='29502' main_finetune.py \
+    --accum_iter 4 \
+    --batch_size 64 \
+    --model resnet34 \
+    --finetune /data/kang_you1/SpikeZIP_transformer_resnet/output/T-SNN_resnet34_imagenet_relu_QANN_QAT_act12_weightbit32/checkpoint-99.pth \
+    --resume /data/kang_you1/SpikeZIP_transformer_resnet/output/T-SNN_resnet34_imagenet_relu_QANN_QAT_act12_weightbit32/checkpoint-99.pth \
+    --epochs 100 \
+    --blr 3.536e-4 --layer_decay 0.65 \
+    --weight_decay 0.05 --drop_path 0.1 --drop_rate 0.0 --mixup 0.8 --cutmix 1.0 --reprob 0.25 \
+    --dist_eval --data_path /data/ImageNet --output_dir /home/kang_you/SpikeZIP_transformer/output/ --log_dir /home/kang_you/SpikeZIP_transformer/output \
+    --mode "SNN" --act_layer relu --eval --time_step 8 --encoding_type analog --level 12 --weight_quantization_bit 32 --define_params --mean 0.5 0.5 0.5 --std 0.5 0.5 0.5

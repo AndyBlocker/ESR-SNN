@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="PublishConfigData" remoteFilesAllowedToDisappearOnAutoupload="false" confirmBeforeUploading="false">
+    <option name="confirmBeforeUploading" value="false" />
+    <serverData>
+      <paths name="zekai_xu@58.220.114.190:7022 key">
+        <serverdata>
+          <mappings>
+            <mapping deploy="/home/zekai_xu/SNN/code/SpikeZIP_transformer" local="$PROJECT_DIR$" web="/" />
+          </mappings>
+        </serverdata>
+      </paths>
+      <paths name="zekaixu15">
+        <serverdata>
+          <mappings>
+            <mapping deploy="/root/SNN/code/SpikeZIP_transformer" local="$PROJECT_DIR$" web="/" />
+          </mappings>
+        </serverdata>
+      </paths>
+      <paths name="zkxu@101.6.96.204:8105 key">
+        <serverdata>
+          <mappings>
+            <mapping deploy="/home/zkxu/SNN/code/SpikeZIP_transformer" local="$PROJECT_DIR$" web="/" />
+          </mappings>
+        </serverdata>
+      </paths>
+    </serverData>
+  </component>
+</project>

@@ -1,0 +1,13 @@
+CUDA_VISIBLE_DEVICES=0,1,2,3,4,5 python -m torch.distributed.launch --nproc_per_node=6 --use-env --master_port='29501' main_finetune_distill_snn.py \
+    --accum_iter 2 \
+    --batch_size 16 \
+    --model vit_small_patch16 \
+    --model_teacher vit_small_patch16 \
+    --finetune /data/kang_you1/SpikeZIP_transformer_resnet1/output/T-SNN_vit_small_patch16_imagenet_relu_QANN_QAT_act10_weightbit32_NormTypemybatchnorm/checkpoint-best.pth \
+    --resume /data/kang_you1/SpikeZIP_transformer_resnet2/output/T-SNN_vit_small_patch16_imagenet_relu_SNN_act10_weightbit32/checkpoint-20.pth \
+    --pretrain_teacher /data/vit-small-patch16-relu-82.34.pth \
+    --epochs 50 --hybrid_training --warmup_epochs 0 --print_freq 200 \
+    --blr 4e-5 --layer_decay 1.0  \
+    --weight_decay 0.0005 --drop_path 0.1 --mixup 0.0 --cutmix 0.0 --reprob 0.25 \
+    --dist_eval --data_path /data/ImageNet --output_dir /data/kang_you1/SpikeZIP_transformer_resnet2/output/ --log_dir /data/kang_you1/SpikeZIP_transformer_resnet2/output/ \
+    --mode "SNN" --act_layer relu --remove_softmax --NormType mybatchnorm --time_step 32 --act_layer_teacher relu --temp 2.0 --encoding_type rate --level 10 --weight_quantization_bit 32 --define_params --mean 0.5 0.5 0.5 --std 0.5 0.5 0.5   

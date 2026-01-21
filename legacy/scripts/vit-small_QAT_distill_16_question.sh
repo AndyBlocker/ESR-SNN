@@ -1,0 +1,12 @@
+CUDA_VISIBLE_DEVICES=0,1,2,3,4,5,6,7, python -m torch.distributed.launch --nproc_per_node=8 --master_port='29500' main_finetune_distill.py \
+    --accum_iter 4 \
+    --batch_size 64 \
+    --model vit_small_patch16 \
+    --model_teacher vit_small_patch16 \
+    --finetune /data1/vit-small-patch16-relu-82.34.pth \
+    --pretrain_teacher /data1/vit-small-patch16-relu-82.34.pth \
+    --epochs 30 \
+    --blr 1.5e-4 --layer_decay 0.65 --warmup_epochs 0 \
+    --weight_decay 0.05 --drop_path 0.0 --drop_rate 0.0 --mixup 0.8 --cutmix 1.0 --reprob 0.25 \
+    --dist_eval --data_path /data1/ImageNet/ --output_dir /home/kang_you/SpikeZIP_transformer/output --log_dir /home/kang_you/SpikeZIP_transformer/output \
+    --mode "QANN_QAT" --level 16 --act_layer relu --act_layer_teacher relu --temp 2.0 --wandb --print_freq 200 --define_params --mean 0.5 0.5 0.5 --std 0.5 0.5 0.5

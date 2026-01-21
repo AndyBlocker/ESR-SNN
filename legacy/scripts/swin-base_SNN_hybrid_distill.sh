@@ -1,0 +1,13 @@
+NCCL_P2P_DISABLE=1 OMP_NUM_THREADS=1 CUDA_VISIBLE_DEVICES=1,2,3,4,5,6 python -m torch.distributed.launch --use-env --nproc_per_node=6 --master_port='29501' main_finetune_distill_snn.py \
+    --accum_iter 4 \
+    --batch_size 9 \
+    --model swin_small --convEmbedding \
+    --model_teacher swin_small \
+    --finetune /data/kang_you1/SpikeZIP_transformer_resnet1/output/T-SNN_swin_small_imagenet_relu_QANN_QAT_act10_weightbit32_NormTypedyht/checkpoint-best.pth \
+    --pretrain_teacher /data/kang_you1/SpikeZIP_transformer_resnet1/output/T-SNN_swin_small_imagenet_relu_QANN_QAT_act10_weightbit32_NormTypedyht/checkpoint-best.pth \
+    --snn_model_path /data/kang_you1/SpikeZIP_transformer_resnet2/output/T-SNN_swin_small_imagenet_relu_SNN_act10_weightbit32/checkpoint-4.pth \
+    --epochs 5 --hybrid_training --warmup_epochs 0 --print_freq 10 --encoding_type analog \
+    --blr 1e-4 --layer_decay 0.65  \
+    --weight_decay 0.0005 --drop_path 0.1 --mixup 0.0 --cutmix 0.0 --reprob 0.25 \
+    --dist_eval --project_name "T-SNN-ST-BIF-sigmoid" --data_path /data/ImageNet --output_dir /data/kang_you1/SpikeZIP_transformer_resnet2/output/ --log_dir /data/kang_you1/SpikeZIP_transformer_resnet2/output/ \
+    --mode "SNN" --act_layer relu --NormType dyht --time_step 4 --act_layer_teacher relu --temp 2.0 --level 10 --weight_quantization_bit 32

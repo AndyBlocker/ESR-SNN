@@ -1,0 +1,12 @@
+NCCL_P2P_DISABLE=1 OMP_NUM_THREADS=1 CUDA_VISIBLE_DEVICES=0,1,2,3,4,5,6,7 numactl --cpunodebind=1 --membind=1 python -m torch.distributed.launch --use-env --nproc_per_node=8 --master_port='29500' main_finetune_distill.py \
+    --accum_iter 4 \
+    --batch_size 16 \
+    --model vit_large_patch16 \
+    --model_teacher vit_large_patch16 \
+    --finetune /data/kang_you/vit-large-imagenet-relu-85.41.pth \
+    --resume /data/kang_you/SpikeZIP_transformer_resnet1/output/T-SNN-ori-16Level-bias_vit_large_patch16_imagenet_relu_QANN_QAT_act18_weightbit32_NormTypelayernorm/checkpoint-9.pth \
+    --epochs 10 \
+    --blr 1e-5 --layer_decay 1.0 --warmup_epochs 0  \
+    --weight_decay 0.05 --drop_path 0.1 --mixup 0.2 --cutmix 0.2 --reprob 0.25 \
+    --dist_eval --data_path /data/ImageNet --project_name "T-SNN-ori-10Level-bias" --output_dir /data/kang_you/SpikeZIP_transformer_resnet1/output/ --log_dir /data/kang_you/SpikeZIP_transformer_resnet1/output/ \
+    --mode "QANN_QAT" --level 10 --act_layer relu --NormType layernorm --weight_quantization_bit 32 --act_layer_teacher relu --temp 2.0 --print_freq 10

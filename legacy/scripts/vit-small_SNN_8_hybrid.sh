@@ -1,0 +1,11 @@
+CUDA_VISIBLE_DEVICES=0,1,2,3,4,5,6,7 python -m torch.distributed.launch --nproc_per_node=8 --use-env --master_port='29502' main_finetune.py \
+    --accum_iter 8 \
+    --batch_size 12 \
+    --model vit_small_patch16 \
+    --finetune /home/kang_you/SpikeZIP_transformer_resnet1/output/T-SNN_vit_small_patch16_imagenet_relu_QANN_QAT_act8_weightbit32/checkpoint-170.pth \
+    --resume /home/kang_you/SpikeZIP_transformer_resnet1/output/T-SNN_vit_small_patch16_imagenet_relu_QANN_QAT_act8_weightbit32/checkpoint-170.pth \
+    --epochs 10 --hybrid_training --warmup_epochs 0 --print_freq 20 \
+    --blr 1e-5 --layer_decay 0.65 \
+    --weight_decay 0.0001 --drop_path 0.0 --mixup 0.0 --cutmix 0.0 --reprob 0.0 --no_aug \
+    --dist_eval --data_path /data/ImageNet --output_dir /home/kang_you/SpikeZIP_transformer_resnet1/output/ --log_dir /home/kang_you/SpikeZIP_transformer_resnet1/output/ \
+    --mode "SNN" --act_layer relu --time_step 8 --encoding_type rate --level 8 --weight_quantization_bit 32 --define_params --mean 0.5 0.5 0.5 --std 0.5 0.5 0.5

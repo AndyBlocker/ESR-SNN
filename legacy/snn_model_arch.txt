@@ -1,0 +1,708 @@
+SNNWrapper_MS(
+  (model): VisionTransformer(
+    (patch_embed): PatchEmbed(
+      (proj): LLConv2d_MS(
+        (conv): Conv2d(3, 768, kernel_size=(16, 16), stride=(16, 16))
+      )
+      (norm): Identity()
+    )
+    (pos_drop): Dropout(p=0.0, inplace=False)
+    (blocks): Sequential(
+      (0): Block(
+        (norm1): Sequential(
+          (0): Spiking_LayerNorm(
+            (layernorm): LayerNorm((768,), eps=1e-06, elementwise_affine=True)
+          )
+          (1): ST_BIFNeuron_MS(level=10, sym=True, pos_max=4.0, neg_min=-4.0, q_threshold=Parameter containing:
+          tensor(0.398895800113678, device='cuda:0'))
+        )
+        (attn): SAttention(
+          (qkv): LLLinear_MS(
+            (linear): Linear(in_features=768, out_features=2304, bias=True)
+          )
+          (q_IF): ST_BIFNeuron_MS(level=10, sym=True, pos_max=4.0, neg_min=-4.0, q_threshold=Parameter containing:
+          tensor(0.575062215328217))
+          (k_IF): ST_BIFNeuron_MS(level=10, sym=True, pos_max=4.0, neg_min=-4.0, q_threshold=Parameter containing:
+          tensor(0.350982248783112))
+          (v_IF): ST_BIFNeuron_MS(level=10, sym=True, pos_max=4.0, neg_min=-4.0, q_threshold=Parameter containing:
+          tensor(0.284428566694260))
+          (attn_drop): Dropout(p=0.0, inplace=False)
+          (attn_IF): ST_BIFNeuron_MS(level=10, sym=False, pos_max=4.0, neg_min=0.0, q_threshold=Parameter containing:
+          tensor(2.))
+          (attn_softmax_IF): ST_BIFNeuron_MS(level=10, sym=True, pos_max=4.0, neg_min=-4.0, q_threshold=Parameter containing:
+          tensor(0.010410831309855))
+          (after_attn_IF): ST_BIFNeuron_MS(level=10, sym=True, pos_max=4.0, neg_min=-4.0, q_threshold=Parameter containing:
+          tensor(0.063206039369106))
+          (proj): LLLinear_MS(
+            (linear): Linear(in_features=768, out_features=768, bias=True)
+          )
+          (proj_drop): Dropout(p=0.0, inplace=False)
+          (Ssoftmax): spiking_softmax()
+        )
+        (drop_path): Identity()
+        (norm2): Sequential(
+          (0): Spiking_LayerNorm(
+            (layernorm): LayerNorm((768,), eps=1e-06, elementwise_affine=True)
+          )
+          (1): ST_BIFNeuron_MS(level=10, sym=True, pos_max=4.0, neg_min=-4.0, q_threshold=Parameter containing:
+          tensor(0.791826188564301, device='cuda:0'))
+        )
+        (mlp): Mlp(
+          (fc1): LLLinear_MS(
+            (linear): Linear(in_features=768, out_features=3072, bias=True)
+          )
+          (act): Sequential(
+            (0): Identity()
+            (1): ST_BIFNeuron_MS(level=10, sym=False, pos_max=4.0, neg_min=0.0, q_threshold=Parameter containing:
+            tensor(0.478641003370285, device='cuda:0'))
+          )
+          (drop1): Dropout(p=0.0, inplace=False)
+          (fc2): Sequential(
+            (0): LLLinear_MS(
+              (linear): Linear(in_features=3072, out_features=768, bias=True)
+            )
+          )
+          (drop2): Dropout(p=0.0, inplace=False)
+        )
+      )
+      (1): Block(
+        (norm1): Sequential(
+          (0): Spiking_LayerNorm(
+            (layernorm): LayerNorm((768,), eps=1e-06, elementwise_affine=True)
+          )
+          (1): ST_BIFNeuron_MS(level=10, sym=True, pos_max=4.0, neg_min=-4.0, q_threshold=Parameter containing:
+          tensor(0.624342858791351, device='cuda:0'))
+        )
+        (attn): SAttention(
+          (qkv): LLLinear_MS(
+            (linear): Linear(in_features=768, out_features=2304, bias=True)
+          )
+          (q_IF): ST_BIFNeuron_MS(level=10, sym=True, pos_max=4.0, neg_min=-4.0, q_threshold=Parameter containing:
+          tensor(0.685968458652496))
+          (k_IF): ST_BIFNeuron_MS(level=10, sym=True, pos_max=4.0, neg_min=-4.0, q_threshold=Parameter containing:
+          tensor(0.673187911510468))
+          (v_IF): ST_BIFNeuron_MS(level=10, sym=True, pos_max=4.0, neg_min=-4.0, q_threshold=Parameter containing:
+          tensor(0.695940554141998))
+          (attn_drop): Dropout(p=0.0, inplace=False)
+          (attn_IF): ST_BIFNeuron_MS(level=10, sym=False, pos_max=4.0, neg_min=0.0, q_threshold=Parameter containing:
+          tensor(2.))
+          (attn_softmax_IF): ST_BIFNeuron_MS(level=10, sym=True, pos_max=4.0, neg_min=-4.0, q_threshold=Parameter containing:
+          tensor(0.017306741327047))
+          (after_attn_IF): ST_BIFNeuron_MS(level=10, sym=True, pos_max=4.0, neg_min=-4.0, q_threshold=Parameter containing:
+          tensor(0.111702702939510))
+          (proj): LLLinear_MS(
+            (linear): Linear(in_features=768, out_features=768, bias=True)
+          )
+          (proj_drop): Dropout(p=0.0, inplace=False)
+          (Ssoftmax): spiking_softmax()
+        )
+        (drop_path): DropPath()
+        (norm2): Sequential(
+          (0): Spiking_LayerNorm(
+            (layernorm): LayerNorm((768,), eps=1e-06, elementwise_affine=True)
+          )
+          (1): ST_BIFNeuron_MS(level=10, sym=True, pos_max=4.0, neg_min=-4.0, q_threshold=Parameter containing:
+          tensor(0.479016005992889, device='cuda:0'))
+        )
+        (mlp): Mlp(
+          (fc1): LLLinear_MS(
+            (linear): Linear(in_features=768, out_features=3072, bias=True)
+          )
+          (act): Sequential(
+            (0): Identity()
+            (1): ST_BIFNeuron_MS(level=10, sym=False, pos_max=4.0, neg_min=0.0, q_threshold=Parameter containing:
+            tensor(0.337748795747757, device='cuda:0'))
+          )
+          (drop1): Dropout(p=0.0, inplace=False)
+          (fc2): Sequential(
+            (0): LLLinear_MS(
+              (linear): Linear(in_features=3072, out_features=768, bias=True)
+            )
+          )
+          (drop2): Dropout(p=0.0, inplace=False)
+        )
+      )
+      (2): Block(
+        (norm1): Sequential(
+          (0): Spiking_LayerNorm(
+            (layernorm): LayerNorm((768,), eps=1e-06, elementwise_affine=True)
+          )
+          (1): ST_BIFNeuron_MS(level=10, sym=True, pos_max=4.0, neg_min=-4.0, q_threshold=Parameter containing:
+          tensor(0.662288546562195, device='cuda:0'))
+        )
+        (attn): SAttention(
+          (qkv): LLLinear_MS(
+            (linear): Linear(in_features=768, out_features=2304, bias=True)
+          )
+          (q_IF): ST_BIFNeuron_MS(level=10, sym=True, pos_max=4.0, neg_min=-4.0, q_threshold=Parameter containing:
+          tensor(0.673777937889099))
+          (k_IF): ST_BIFNeuron_MS(level=10, sym=True, pos_max=4.0, neg_min=-4.0, q_threshold=Parameter containing:
+          tensor(0.602641046047211))
+          (v_IF): ST_BIFNeuron_MS(level=10, sym=True, pos_max=4.0, neg_min=-4.0, q_threshold=Parameter containing:
+          tensor(0.818350851535797))
+          (attn_drop): Dropout(p=0.0, inplace=False)
+          (attn_IF): ST_BIFNeuron_MS(level=10, sym=False, pos_max=4.0, neg_min=0.0, q_threshold=Parameter containing:
+          tensor(2.))
+          (attn_softmax_IF): ST_BIFNeuron_MS(level=10, sym=True, pos_max=4.0, neg_min=-4.0, q_threshold=Parameter containing:
+          tensor(0.028638148680329))
+          (after_attn_IF): ST_BIFNeuron_MS(level=10, sym=True, pos_max=4.0, neg_min=-4.0, q_threshold=Parameter containing:
+          tensor(0.132134079933167))
+          (proj): LLLinear_MS(
+            (linear): Linear(in_features=768, out_features=768, bias=True)
+          )
+          (proj_drop): Dropout(p=0.0, inplace=False)
+          (Ssoftmax): spiking_softmax()
+        )
+        (drop_path): DropPath()
+        (norm2): Sequential(
+          (0): Spiking_LayerNorm(
+            (layernorm): LayerNorm((768,), eps=1e-06, elementwise_affine=True)
+          )
+          (1): ST_BIFNeuron_MS(level=10, sym=True, pos_max=4.0, neg_min=-4.0, q_threshold=Parameter containing:
+          tensor(0.526844263076782, device='cuda:0'))
+        )
+        (mlp): Mlp(
+          (fc1): LLLinear_MS(
+            (linear): Linear(in_features=768, out_features=3072, bias=True)
+          )
+          (act): Sequential(
+            (0): Identity()
+            (1): ST_BIFNeuron_MS(level=10, sym=False, pos_max=4.0, neg_min=0.0, q_threshold=Parameter containing:
+            tensor(0.417326748371124, device='cuda:0'))
+          )
+          (drop1): Dropout(p=0.0, inplace=False)
+          (fc2): Sequential(
+            (0): LLLinear_MS(
+              (linear): Linear(in_features=3072, out_features=768, bias=True)
+            )
+          )
+          (drop2): Dropout(p=0.0, inplace=False)
+        )
+      )
+      (3): Block(
+        (norm1): Sequential(
+          (0): Spiking_LayerNorm(
+            (layernorm): LayerNorm((768,), eps=1e-06, elementwise_affine=True)
+          )
+          (1): ST_BIFNeuron_MS(level=10, sym=True, pos_max=4.0, neg_min=-4.0, q_threshold=Parameter containing:
+          tensor(0.766399621963501, device='cuda:0'))
+        )
+        (attn): SAttention(
+          (qkv): LLLinear_MS(
+            (linear): Linear(in_features=768, out_features=2304, bias=True)
+          )
+          (q_IF): ST_BIFNeuron_MS(level=10, sym=True, pos_max=4.0, neg_min=-4.0, q_threshold=Parameter containing:
+          tensor(0.669507265090942))
+          (k_IF): ST_BIFNeuron_MS(level=10, sym=True, pos_max=4.0, neg_min=-4.0, q_threshold=Parameter containing:
+          tensor(0.653564274311066))
+          (v_IF): ST_BIFNeuron_MS(level=10, sym=True, pos_max=4.0, neg_min=-4.0, q_threshold=Parameter containing:
+          tensor(0.679094195365906))
+          (attn_drop): Dropout(p=0.0, inplace=False)
+          (attn_IF): ST_BIFNeuron_MS(level=10, sym=False, pos_max=4.0, neg_min=0.0, q_threshold=Parameter containing:
+          tensor(2.))
+          (attn_softmax_IF): ST_BIFNeuron_MS(level=10, sym=True, pos_max=4.0, neg_min=-4.0, q_threshold=Parameter containing:
+          tensor(0.027176406234503))
+          (after_attn_IF): ST_BIFNeuron_MS(level=10, sym=True, pos_max=4.0, neg_min=-4.0, q_threshold=Parameter containing:
+          tensor(0.155403703451157))
+          (proj): LLLinear_MS(
+            (linear): Linear(in_features=768, out_features=768, bias=True)
+          )
+          (proj_drop): Dropout(p=0.0, inplace=False)
+          (Ssoftmax): spiking_softmax()
+        )
+        (drop_path): DropPath()
+        (norm2): Sequential(
+          (0): Spiking_LayerNorm(
+            (layernorm): LayerNorm((768,), eps=1e-06, elementwise_affine=True)
+          )
+          (1): ST_BIFNeuron_MS(level=10, sym=True, pos_max=4.0, neg_min=-4.0, q_threshold=Parameter containing:
+          tensor(0.558314323425293, device='cuda:0'))
+        )
+        (mlp): Mlp(
+          (fc1): LLLinear_MS(
+            (linear): Linear(in_features=768, out_features=3072, bias=True)
+          )
+          (act): Sequential(
+            (0): Identity()
+            (1): ST_BIFNeuron_MS(level=10, sym=False, pos_max=4.0, neg_min=0.0, q_threshold=Parameter containing:
+            tensor(0.446446299552917, device='cuda:0'))
+          )
+          (drop1): Dropout(p=0.0, inplace=False)
+          (fc2): Sequential(
+            (0): LLLinear_MS(
+              (linear): Linear(in_features=3072, out_features=768, bias=True)
+            )
+          )
+          (drop2): Dropout(p=0.0, inplace=False)
+        )
+      )
+      (4): Block(
+        (norm1): Sequential(
+          (0): Spiking_LayerNorm(
+            (layernorm): LayerNorm((768,), eps=1e-06, elementwise_affine=True)
+          )
+          (1): ST_BIFNeuron_MS(level=10, sym=True, pos_max=4.0, neg_min=-4.0, q_threshold=Parameter containing:
+          tensor(0.761655628681183, device='cuda:0'))
+        )
+        (attn): SAttention(
+          (qkv): LLLinear_MS(
+            (linear): Linear(in_features=768, out_features=2304, bias=True)
+          )
+          (q_IF): ST_BIFNeuron_MS(level=10, sym=True, pos_max=4.0, neg_min=-4.0, q_threshold=Parameter containing:
+          tensor(0.661365449428558))
+          (k_IF): ST_BIFNeuron_MS(level=10, sym=True, pos_max=4.0, neg_min=-4.0, q_threshold=Parameter containing:
+          tensor(0.661945581436157))
+          (v_IF): ST_BIFNeuron_MS(level=10, sym=True, pos_max=4.0, neg_min=-4.0, q_threshold=Parameter containing:
+          tensor(0.635300517082214))
+          (attn_drop): Dropout(p=0.0, inplace=False)
+          (attn_IF): ST_BIFNeuron_MS(level=10, sym=False, pos_max=4.0, neg_min=0.0, q_threshold=Parameter containing:
+          tensor(2.))
+          (attn_softmax_IF): ST_BIFNeuron_MS(level=10, sym=True, pos_max=4.0, neg_min=-4.0, q_threshold=Parameter containing:
+          tensor(0.023365437984467))
+          (after_attn_IF): ST_BIFNeuron_MS(level=10, sym=True, pos_max=4.0, neg_min=-4.0, q_threshold=Parameter containing:
+          tensor(0.182028710842133))
+          (proj): LLLinear_MS(
+            (linear): Linear(in_features=768, out_features=768, bias=True)
+          )
+          (proj_drop): Dropout(p=0.0, inplace=False)
+          (Ssoftmax): spiking_softmax()
+        )
+        (drop_path): DropPath()
+        (norm2): Sequential(
+          (0): Spiking_LayerNorm(
+            (layernorm): LayerNorm((768,), eps=1e-06, elementwise_affine=True)
+          )
+          (1): ST_BIFNeuron_MS(level=10, sym=True, pos_max=4.0, neg_min=-4.0, q_threshold=Parameter containing:
+          tensor(0.626681089401245, device='cuda:0'))
+        )
+        (mlp): Mlp(
+          (fc1): LLLinear_MS(
+            (linear): Linear(in_features=768, out_features=3072, bias=True)
+          )
+          (act): Sequential(
+            (0): Identity()
+            (1): ST_BIFNeuron_MS(level=10, sym=False, pos_max=4.0, neg_min=0.0, q_threshold=Parameter containing:
+            tensor(0.456347823143005, device='cuda:0'))
+          )
+          (drop1): Dropout(p=0.0, inplace=False)
+          (fc2): Sequential(
+            (0): LLLinear_MS(
+              (linear): Linear(in_features=3072, out_features=768, bias=True)
+            )
+          )
+          (drop2): Dropout(p=0.0, inplace=False)
+        )
+      )
+      (5): Block(
+        (norm1): Sequential(
+          (0): Spiking_LayerNorm(
+            (layernorm): LayerNorm((768,), eps=1e-06, elementwise_affine=True)
+          )
+          (1): ST_BIFNeuron_MS(level=10, sym=True, pos_max=4.0, neg_min=-4.0, q_threshold=Parameter containing:
+          tensor(0.785748422145844, device='cuda:0'))
+        )
+        (attn): SAttention(
+          (qkv): LLLinear_MS(
+            (linear): Linear(in_features=768, out_features=2304, bias=True)
+          )
+          (q_IF): ST_BIFNeuron_MS(level=10, sym=True, pos_max=4.0, neg_min=-4.0, q_threshold=Parameter containing:
+          tensor(0.684417426586151))
+          (k_IF): ST_BIFNeuron_MS(level=10, sym=True, pos_max=4.0, neg_min=-4.0, q_threshold=Parameter containing:
+          tensor(0.647536516189575))
+          (v_IF): ST_BIFNeuron_MS(level=10, sym=True, pos_max=4.0, neg_min=-4.0, q_threshold=Parameter containing:
+          tensor(0.646019995212555))
+          (attn_drop): Dropout(p=0.0, inplace=False)
+          (attn_IF): ST_BIFNeuron_MS(level=10, sym=False, pos_max=4.0, neg_min=0.0, q_threshold=Parameter containing:
+          tensor(2.))
+          (attn_softmax_IF): ST_BIFNeuron_MS(level=10, sym=True, pos_max=4.0, neg_min=-4.0, q_threshold=Parameter containing:
+          tensor(0.025688491761684))
+          (after_attn_IF): ST_BIFNeuron_MS(level=10, sym=True, pos_max=4.0, neg_min=-4.0, q_threshold=Parameter containing:
+          tensor(0.187321737408638))
+          (proj): LLLinear_MS(
+            (linear): Linear(in_features=768, out_features=768, bias=True)
+          )
+          (proj_drop): Dropout(p=0.0, inplace=False)
+          (Ssoftmax): spiking_softmax()
+        )
+        (drop_path): DropPath()
+        (norm2): Sequential(
+          (0): Spiking_LayerNorm(
+            (layernorm): LayerNorm((768,), eps=1e-06, elementwise_affine=True)
+          )
+          (1): ST_BIFNeuron_MS(level=10, sym=True, pos_max=4.0, neg_min=-4.0, q_threshold=Parameter containing:
+          tensor(0.720658659934998, device='cuda:0'))
+        )
+        (mlp): Mlp(
+          (fc1): LLLinear_MS(
+            (linear): Linear(in_features=768, out_features=3072, bias=True)
+          )
+          (act): Sequential(
+            (0): Identity()
+            (1): ST_BIFNeuron_MS(level=10, sym=False, pos_max=4.0, neg_min=0.0, q_threshold=Parameter containing:
+            tensor(0.531371235847473, device='cuda:0'))
+          )
+          (drop1): Dropout(p=0.0, inplace=False)
+          (fc2): Sequential(
+            (0): LLLinear_MS(
+              (linear): Linear(in_features=3072, out_features=768, bias=True)
+            )
+          )
+          (drop2): Dropout(p=0.0, inplace=False)
+        )
+      )
+      (6): Block(
+        (norm1): Sequential(
+          (0): Spiking_LayerNorm(
+            (layernorm): LayerNorm((768,), eps=1e-06, elementwise_affine=True)
+          )
+          (1): ST_BIFNeuron_MS(level=10, sym=True, pos_max=4.0, neg_min=-4.0, q_threshold=Parameter containing:
+          tensor(0.875655114650726, device='cuda:0'))
+        )
+        (attn): SAttention(
+          (qkv): LLLinear_MS(
+            (linear): Linear(in_features=768, out_features=2304, bias=True)
+          )
+          (q_IF): ST_BIFNeuron_MS(level=10, sym=True, pos_max=4.0, neg_min=-4.0, q_threshold=Parameter containing:
+          tensor(0.688231706619263))
+          (k_IF): ST_BIFNeuron_MS(level=10, sym=True, pos_max=4.0, neg_min=-4.0, q_threshold=Parameter containing:
+          tensor(0.684989750385284))
+          (v_IF): ST_BIFNeuron_MS(level=10, sym=True, pos_max=4.0, neg_min=-4.0, q_threshold=Parameter containing:
+          tensor(0.681118547916412))
+          (attn_drop): Dropout(p=0.0, inplace=False)
+          (attn_IF): ST_BIFNeuron_MS(level=10, sym=False, pos_max=4.0, neg_min=0.0, q_threshold=Parameter containing:
+          tensor(2.))
+          (attn_softmax_IF): ST_BIFNeuron_MS(level=10, sym=True, pos_max=4.0, neg_min=-4.0, q_threshold=Parameter containing:
+          tensor(0.018975233659148))
+          (after_attn_IF): ST_BIFNeuron_MS(level=10, sym=True, pos_max=4.0, neg_min=-4.0, q_threshold=Parameter containing:
+          tensor(0.191994071006775))
+          (proj): LLLinear_MS(
+            (linear): Linear(in_features=768, out_features=768, bias=True)
+          )
+          (proj_drop): Dropout(p=0.0, inplace=False)
+          (Ssoftmax): spiking_softmax()
+        )
+        (drop_path): DropPath()
+        (norm2): Sequential(
+          (0): Spiking_LayerNorm(
+            (layernorm): LayerNorm((768,), eps=1e-06, elementwise_affine=True)
+          )
+          (1): ST_BIFNeuron_MS(level=10, sym=True, pos_max=4.0, neg_min=-4.0, q_threshold=Parameter containing:
+          tensor(0.818109750747681, device='cuda:0'))
+        )
+        (mlp): Mlp(
+          (fc1): LLLinear_MS(
+            (linear): Linear(in_features=768, out_features=3072, bias=True)
+          )
+          (act): Sequential(
+            (0): Identity()
+            (1): ST_BIFNeuron_MS(level=10, sym=False, pos_max=4.0, neg_min=0.0, q_threshold=Parameter containing:
+            tensor(0.596988379955292, device='cuda:0'))
+          )
+          (drop1): Dropout(p=0.0, inplace=False)
+          (fc2): Sequential(
+            (0): LLLinear_MS(
+              (linear): Linear(in_features=3072, out_features=768, bias=True)
+            )
+          )
+          (drop2): Dropout(p=0.0, inplace=False)
+        )
+      )
+      (7): Block(
+        (norm1): Sequential(
+          (0): Spiking_LayerNorm(
+            (layernorm): LayerNorm((768,), eps=1e-06, elementwise_affine=True)
+          )
+          (1): ST_BIFNeuron_MS(level=10, sym=True, pos_max=4.0, neg_min=-4.0, q_threshold=Parameter containing:
+          tensor(0.897749185562134, device='cuda:0'))
+        )
+        (attn): SAttention(
+          (qkv): LLLinear_MS(
+            (linear): Linear(in_features=768, out_features=2304, bias=True)
+          )
+          (q_IF): ST_BIFNeuron_MS(level=10, sym=True, pos_max=4.0, neg_min=-4.0, q_threshold=Parameter containing:
+          tensor(0.758887290954590))
+          (k_IF): ST_BIFNeuron_MS(level=10, sym=True, pos_max=4.0, neg_min=-4.0, q_threshold=Parameter containing:
+          tensor(0.710229098796844))
+          (v_IF): ST_BIFNeuron_MS(level=10, sym=True, pos_max=4.0, neg_min=-4.0, q_threshold=Parameter containing:
+          tensor(0.746173679828644))
+          (attn_drop): Dropout(p=0.0, inplace=False)
+          (attn_IF): ST_BIFNeuron_MS(level=10, sym=False, pos_max=4.0, neg_min=0.0, q_threshold=Parameter containing:
+          tensor(2.))
+          (attn_softmax_IF): ST_BIFNeuron_MS(level=10, sym=True, pos_max=4.0, neg_min=-4.0, q_threshold=Parameter containing:
+          tensor(0.023337354883552))
+          (after_attn_IF): ST_BIFNeuron_MS(level=10, sym=True, pos_max=4.0, neg_min=-4.0, q_threshold=Parameter containing:
+          tensor(0.232513129711151))
+          (proj): LLLinear_MS(
+            (linear): Linear(in_features=768, out_features=768, bias=True)
+          )
+          (proj_drop): Dropout(p=0.0, inplace=False)
+          (Ssoftmax): spiking_softmax()
+        )
+        (drop_path): DropPath()
+        (norm2): Sequential(
+          (0): Spiking_LayerNorm(
+            (layernorm): LayerNorm((768,), eps=1e-06, elementwise_affine=True)
+          )
+          (1): ST_BIFNeuron_MS(level=10, sym=True, pos_max=4.0, neg_min=-4.0, q_threshold=Parameter containing:
+          tensor(1.079236268997192, device='cuda:0'))
+        )
+        (mlp): Mlp(
+          (fc1): LLLinear_MS(
+            (linear): Linear(in_features=768, out_features=3072, bias=True)
+          )
+          (act): Sequential(
+            (0): Identity()
+            (1): ST_BIFNeuron_MS(level=10, sym=False, pos_max=4.0, neg_min=0.0, q_threshold=Parameter containing:
+            tensor(0.779037058353424, device='cuda:0'))
+          )
+          (drop1): Dropout(p=0.0, inplace=False)
+          (fc2): Sequential(
+            (0): LLLinear_MS(
+              (linear): Linear(in_features=3072, out_features=768, bias=True)
+            )
+          )
+          (drop2): Dropout(p=0.0, inplace=False)
+        )
+      )
+      (8): Block(
+        (norm1): Sequential(
+          (0): Spiking_LayerNorm(
+            (layernorm): LayerNorm((768,), eps=1e-06, elementwise_affine=True)
+          )
+          (1): ST_BIFNeuron_MS(level=10, sym=True, pos_max=4.0, neg_min=-4.0, q_threshold=Parameter containing:
+          tensor(0.878177464008331, device='cuda:0'))
+        )
+        (attn): SAttention(
+          (qkv): LLLinear_MS(
+            (linear): Linear(in_features=768, out_features=2304, bias=True)
+          )
+          (q_IF): ST_BIFNeuron_MS(level=10, sym=True, pos_max=4.0, neg_min=-4.0, q_threshold=Parameter containing:
+          tensor(0.774870216846466))
+          (k_IF): ST_BIFNeuron_MS(level=10, sym=True, pos_max=4.0, neg_min=-4.0, q_threshold=Parameter containing:
+          tensor(0.730099380016327))
+          (v_IF): ST_BIFNeuron_MS(level=10, sym=True, pos_max=4.0, neg_min=-4.0, q_threshold=Parameter containing:
+          tensor(0.756147921085358))
+          (attn_drop): Dropout(p=0.0, inplace=False)
+          (attn_IF): ST_BIFNeuron_MS(level=10, sym=False, pos_max=4.0, neg_min=0.0, q_threshold=Parameter containing:
+          tensor(2.))
+          (attn_softmax_IF): ST_BIFNeuron_MS(level=10, sym=True, pos_max=4.0, neg_min=-4.0, q_threshold=Parameter containing:
+          tensor(0.031431831419468))
+          (after_attn_IF): ST_BIFNeuron_MS(level=10, sym=True, pos_max=4.0, neg_min=-4.0, q_threshold=Parameter containing:
+          tensor(0.304744154214859))
+          (proj): LLLinear_MS(
+            (linear): Linear(in_features=768, out_features=768, bias=True)
+          )
+          (proj_drop): Dropout(p=0.0, inplace=False)
+          (Ssoftmax): spiking_softmax()
+        )
+        (drop_path): DropPath()
+        (norm2): Sequential(
+          (0): Spiking_LayerNorm(
+            (layernorm): LayerNorm((768,), eps=1e-06, elementwise_affine=True)
+          )
+          (1): ST_BIFNeuron_MS(level=10, sym=True, pos_max=4.0, neg_min=-4.0, q_threshold=Parameter containing:
+          tensor(2.589328527450562, device='cuda:0'))
+        )
+        (mlp): Mlp(
+          (fc1): LLLinear_MS(
+            (linear): Linear(in_features=768, out_features=3072, bias=True)
+          )
+          (act): Sequential(
+            (0): Identity()
+            (1): ST_BIFNeuron_MS(level=10, sym=False, pos_max=4.0, neg_min=0.0, q_threshold=Parameter containing:
+            tensor(1.857733726501465, device='cuda:0'))
+          )
+          (drop1): Dropout(p=0.0, inplace=False)
+          (fc2): Sequential(
+            (0): LLLinear_MS(
+              (linear): Linear(in_features=3072, out_features=768, bias=True)
+            )
+          )
+          (drop2): Dropout(p=0.0, inplace=False)
+        )
+      )
+      (9): Block(
+        (norm1): Sequential(
+          (0): Spiking_LayerNorm(
+            (layernorm): LayerNorm((768,), eps=1e-06, elementwise_affine=True)
+          )
+          (1): ST_BIFNeuron_MS(level=10, sym=True, pos_max=4.0, neg_min=-4.0, q_threshold=Parameter containing:
+          tensor(0.961909592151642, device='cuda:0'))
+        )
+        (attn): SAttention(
+          (qkv): LLLinear_MS(
+            (linear): Linear(in_features=768, out_features=2304, bias=True)
+          )
+          (q_IF): ST_BIFNeuron_MS(level=10, sym=True, pos_max=4.0, neg_min=-4.0, q_threshold=Parameter containing:
+          tensor(0.896037459373474))
+          (k_IF): ST_BIFNeuron_MS(level=10, sym=True, pos_max=4.0, neg_min=-4.0, q_threshold=Parameter containing:
+          tensor(0.792338192462921))
+          (v_IF): ST_BIFNeuron_MS(level=10, sym=True, pos_max=4.0, neg_min=-4.0, q_threshold=Parameter containing:
+          tensor(0.853656232357025))
+          (attn_drop): Dropout(p=0.0, inplace=False)
+          (attn_IF): ST_BIFNeuron_MS(level=10, sym=False, pos_max=4.0, neg_min=0.0, q_threshold=Parameter containing:
+          tensor(2.))
+          (attn_softmax_IF): ST_BIFNeuron_MS(level=10, sym=True, pos_max=4.0, neg_min=-4.0, q_threshold=Parameter containing:
+          tensor(0.024973571300507))
+          (after_attn_IF): ST_BIFNeuron_MS(level=10, sym=True, pos_max=4.0, neg_min=-4.0, q_threshold=Parameter containing:
+          tensor(0.368650853633881))
+          (proj): LLLinear_MS(
+            (linear): Linear(in_features=768, out_features=768, bias=True)
+          )
+          (proj_drop): Dropout(p=0.0, inplace=False)
+          (Ssoftmax): spiking_softmax()
+        )
+        (drop_path): DropPath()
+        (norm2): Sequential(
+          (0): Spiking_LayerNorm(
+            (layernorm): LayerNorm((768,), eps=1e-06, elementwise_affine=True)
+          )
+          (1): ST_BIFNeuron_MS(level=10, sym=True, pos_max=4.0, neg_min=-4.0, q_threshold=Parameter containing:
+          tensor(5.321452617645264, device='cuda:0'))
+        )
+        (mlp): Mlp(
+          (fc1): LLLinear_MS(
+            (linear): Linear(in_features=768, out_features=3072, bias=True)
+          )
+          (act): Sequential(
+            (0): Identity()
+            (1): ST_BIFNeuron_MS(level=10, sym=False, pos_max=4.0, neg_min=0.0, q_threshold=Parameter containing:
+            tensor(3.790661573410034, device='cuda:0'))
+          )
+          (drop1): Dropout(p=0.0, inplace=False)
+          (fc2): Sequential(
+            (0): LLLinear_MS(
+              (linear): Linear(in_features=3072, out_features=768, bias=True)
+            )
+          )
+          (drop2): Dropout(p=0.0, inplace=False)
+        )
+      )
+      (10): Block(
+        (norm1): Sequential(
+          (0): Spiking_LayerNorm(
+            (layernorm): LayerNorm((768,), eps=1e-06, elementwise_affine=True)
+          )
+          (1): ST_BIFNeuron_MS(level=10, sym=True, pos_max=4.0, neg_min=-4.0, q_threshold=Parameter containing:
+          tensor(1.119016408920288, device='cuda:0'))
+        )
+        (attn): SAttention(
+          (qkv): LLLinear_MS(
+            (linear): Linear(in_features=768, out_features=2304, bias=True)
+          )
+          (q_IF): ST_BIFNeuron_MS(level=10, sym=True, pos_max=4.0, neg_min=-4.0, q_threshold=Parameter containing:
+          tensor(1.028422236442566))
+          (k_IF): ST_BIFNeuron_MS(level=10, sym=True, pos_max=4.0, neg_min=-4.0, q_threshold=Parameter containing:
+          tensor(0.813143670558929))
+          (v_IF): ST_BIFNeuron_MS(level=10, sym=True, pos_max=4.0, neg_min=-4.0, q_threshold=Parameter containing:
+          tensor(1.001237869262695))
+          (attn_drop): Dropout(p=0.0, inplace=False)
+          (attn_IF): ST_BIFNeuron_MS(level=10, sym=False, pos_max=4.0, neg_min=0.0, q_threshold=Parameter containing:
+          tensor(2.))
+          (attn_softmax_IF): ST_BIFNeuron_MS(level=10, sym=True, pos_max=4.0, neg_min=-4.0, q_threshold=Parameter containing:
+          tensor(0.027489950880408))
+          (after_attn_IF): ST_BIFNeuron_MS(level=10, sym=True, pos_max=4.0, neg_min=-4.0, q_threshold=Parameter containing:
+          tensor(0.469495564699173))
+          (proj): LLLinear_MS(
+            (linear): Linear(in_features=768, out_features=768, bias=True)
+          )
+          (proj_drop): Dropout(p=0.0, inplace=False)
+          (Ssoftmax): spiking_softmax()
+        )
+        (drop_path): DropPath()
+        (norm2): Sequential(
+          (0): Spiking_LayerNorm(
+            (layernorm): LayerNorm((768,), eps=1e-06, elementwise_affine=True)
+          )
+          (1): ST_BIFNeuron_MS(level=10, sym=True, pos_max=4.0, neg_min=-4.0, q_threshold=Parameter containing:
+          tensor(9.195026397705078, device='cuda:0'))
+        )
+        (mlp): Mlp(
+          (fc1): LLLinear_MS(
+            (linear): Linear(in_features=768, out_features=3072, bias=True)
+          )
+          (act): Sequential(
+            (0): Identity()
+            (1): ST_BIFNeuron_MS(level=10, sym=False, pos_max=4.0, neg_min=0.0, q_threshold=Parameter containing:
+            tensor(6.306901454925537, device='cuda:0'))
+          )
+          (drop1): Dropout(p=0.0, inplace=False)
+          (fc2): Sequential(
+            (0): LLLinear_MS(
+              (linear): Linear(in_features=3072, out_features=768, bias=True)
+            )
+          )
+          (drop2): Dropout(p=0.0, inplace=False)
+        )
+      )
+      (11): Block(
+        (norm1): Sequential(
+          (0): Spiking_LayerNorm(
+            (layernorm): LayerNorm((768,), eps=1e-06, elementwise_affine=True)
+          )
+          (1): ST_BIFNeuron_MS(level=10, sym=True, pos_max=4.0, neg_min=-4.0, q_threshold=Parameter containing:
+          tensor(1.091684222221375, device='cuda:0'))
+        )
+        (attn): SAttention(
+          (qkv): LLLinear_MS(
+            (linear): Linear(in_features=768, out_features=2304, bias=True)
+          )
+          (q_IF): ST_BIFNeuron_MS(level=10, sym=True, pos_max=4.0, neg_min=-4.0, q_threshold=Parameter containing:
+          tensor(1.218546271324158))
+          (k_IF): ST_BIFNeuron_MS(level=10, sym=True, pos_max=4.0, neg_min=-4.0, q_threshold=Parameter containing:
+          tensor(0.688664317131042))
+          (v_IF): ST_BIFNeuron_MS(level=10, sym=True, pos_max=4.0, neg_min=-4.0, q_threshold=Parameter containing:
+          tensor(1.605809211730957))
+          (attn_drop): Dropout(p=0.0, inplace=False)
+          (attn_IF): ST_BIFNeuron_MS(level=10, sym=False, pos_max=4.0, neg_min=0.0, q_threshold=Parameter containing:
+          tensor(2.))
+          (attn_softmax_IF): ST_BIFNeuron_MS(level=10, sym=True, pos_max=4.0, neg_min=-4.0, q_threshold=Parameter containing:
+          tensor(0.023574607446790))
+          (after_attn_IF): ST_BIFNeuron_MS(level=10, sym=True, pos_max=4.0, neg_min=-4.0, q_threshold=Parameter containing:
+          tensor(0.769694387912750))
+          (proj): LLLinear_MS(
+            (linear): Linear(in_features=768, out_features=768, bias=True)
+          )
+          (proj_drop): Dropout(p=0.0, inplace=False)
+          (Ssoftmax): spiking_softmax()
+        )
+        (drop_path): DropPath()
+        (norm2): Sequential(
+          (0): Spiking_LayerNorm(
+            (layernorm): LayerNorm((768,), eps=1e-06, elementwise_affine=True)
+          )
+          (1): ST_BIFNeuron_MS(level=10, sym=True, pos_max=4.0, neg_min=-4.0, q_threshold=Parameter containing:
+          tensor(1.401108622550964, device='cuda:0'))
+        )
+        (mlp): Mlp(
+          (fc1): LLLinear_MS(
+            (linear): Linear(in_features=768, out_features=3072, bias=True)
+          )
+          (act): Sequential(
+            (0): Identity()
+            (1): ST_BIFNeuron_MS(level=10, sym=False, pos_max=4.0, neg_min=0.0, q_threshold=Parameter containing:
+            tensor(1.565861105918884, device='cuda:0'))
+          )
+          (drop1): Dropout(p=0.0, inplace=False)
+          (fc2): Sequential(
+            (0): LLLinear_MS(
+              (linear): Linear(in_features=3072, out_features=768, bias=True)
+            )
+          )
+          (drop2): Dropout(p=0.0, inplace=False)
+        )
+      )
+    )
+    (pre_logits): Identity()
+    (head): LLLinear_MS(
+      (linear): Linear(in_features=768, out_features=1000, bias=True)
+    )
+    (fc_norm): Sequential(
+      (0): Spiking_LayerNorm(
+        (layernorm): LayerNorm((768,), eps=1e-06, elementwise_affine=True)
+      )
+      (1): ST_BIFNeuron_MS(level=10, sym=True, pos_max=4.0, neg_min=-4.0, q_threshold=Parameter containing:
+      tensor(0.805719733238220, device='cuda:0'))
+    )
+  )
+)

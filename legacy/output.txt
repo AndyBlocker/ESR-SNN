@@ -1,0 +1,1924 @@
+/data/kang_you/SpikeZIP_transformer_resnet1/output/T-SNN-ori-10Level-bias_vit_large_patch16_imagenet_relu_QANN_QAT_act10_weightbit32_NormTypelayernorm
+/data/kang_you/SpikeZIP_transformer_resnet1/output/T-SNN-ori-10Level-bias_vit_large_patch16_imagenet_relu_QANN_QAT_act10_weightbit32_NormTypelayernorm
+/data/kang_you/SpikeZIP_transformer_resnet1/output/T-SNN-ori-10Level-bias_vit_large_patch16_imagenet_relu_QANN_QAT_act10_weightbit32_NormTypelayernorm
+/data/kang_you/SpikeZIP_transformer_resnet1/output/T-SNN-ori-10Level-bias_vit_large_patch16_imagenet_relu_QANN_QAT_act10_weightbit32_NormTypelayernorm
+/data/kang_you/SpikeZIP_transformer_resnet1/output/T-SNN-ori-10Level-bias_vit_large_patch16_imagenet_relu_QANN_QAT_act10_weightbit32_NormTypelayernorm
+/data/kang_you/SpikeZIP_transformer_resnet1/output/T-SNN-ori-10Level-bias_vit_large_patch16_imagenet_relu_QANN_QAT_act10_weightbit32_NormTypelayernorm
+/data/kang_you/SpikeZIP_transformer_resnet1/output/T-SNN-ori-10Level-bias_vit_large_patch16_imagenet_relu_QANN_QAT_act10_weightbit32_NormTypelayernorm
+/data/kang_you/SpikeZIP_transformer_resnet1/output/T-SNN-ori-10Level-bias_vit_large_patch16_imagenet_relu_QANN_QAT_act10_weightbit32_NormTypelayernorm
+| distributed init (rank 1): env://, gpu 1
+| distributed init (rank 0): env://, gpu 0
+| distributed init (rank 2): env://, gpu 2
+| distributed init (rank 6): env://, gpu 6
+| distributed init (rank 5): env://, gpu 5
+| distributed init (rank 4): env://, gpu 4
+| distributed init (rank 7): env://, gpu 7
+| distributed init (rank 3): env://, gpu 3
+[22:43:55.392920] job dir: /home/kang_you/SpikeZIP_transformer_Hybrid_CVPR
+[22:43:55.393173] Namespace(batch_size=8,
+epochs=100,
+print_freq=10,
+accum_iter=4,
+project_name='T-SNN-ori-10Level-bias',
+model='vit_large_patch16',
+model_teacher='vit_large_patch16',
+input_size=224,
+encoding_type='analog',
+time_step=2000,
+drop_path=0.1,
+drop_rate=0.0,
+clip_grad=None,
+weight_decay=0.05,
+lr=None,
+blr=3e-05,
+layer_decay=1.0,
+act_layer='relu',
+act_layer_teacher='relu',
+min_lr=1e-06,
+temp=2.0,
+warmup_epochs=0,
+color_jitter=None,
+aa='rand-m9-mstd0.5-inc1',
+no_aug=False,
+smoothing=0.1,
+reprob=0.25,
+remode='pixel',
+recount=1,
+resplit=False,
+mixup=0.0,
+cutmix=0.0,
+cutmix_minmax=None,
+mixup_prob=1.0,
+mixup_switch_prob=0.5,
+mixup_mode='batch',
+finetune='/data/kang_you/vit-large-imagenet-relu-85.41.pth',
+pretrain_teacher='',
+global_pool=True,
+dataset='imagenet',
+data_path='/data/ImageNet',
+nb_classes=1000,
+define_params=True,
+mean=[0.5,
+0.5,
+0.5],
+std=[0.5,
+0.5,
+0.5],
+output_dir='/data/kang_you/SpikeZIP_transformer_resnet1/output/T-SNN-ori-10Level-bias_vit_large_patch16_imagenet_relu_QANN_QAT_act10_weightbit32_NormTypelayernorm',
+log_dir='/data/kang_you/SpikeZIP_transformer_resnet1/output/',
+device='cuda',
+seed=0,
+resume='',
+fintune_from_QANN='',
+convEmbedding=False,
+start_epoch=0,
+eval=False,
+wandb=False,
+dist_eval=True,
+num_workers=32,
+pin_mem=True,
+world_size=8,
+local_rank=-1,
+dist_on_itp=False,
+dist_url='env://',
+mode='QANN_QAT',
+level=10,
+weight_quantization_bit=32,
+neuron_type='ST-BIF',
+remove_softmax=False,
+NormType='layernorm',
+prune=False,
+swap_bn=False,
+prune_ratio=300000000.0,
+suppress_over_fire=False,
+rank=0,
+gpu=0,
+distributed=True,
+dist_backend='nccl')
+[22:43:57.247286] Dataset ImageFolder
+    Number of datapoints: 1281167
+    Root location: /data/ImageNet/train
+    StandardTransform
+Transform: Compose(
+               RandomResizedCropAndInterpolation(size=(224, 224), scale=(0.08, 1.0), ratio=(0.75, 1.3333), interpolation=bicubic)
+               RandomHorizontalFlip(p=0.5)
+               RandAugment(n=2, ops=
+           	AugmentOp(name=AutoContrast, p=0.5, m=9, mstd=0.5)
+           	AugmentOp(name=Equalize, p=0.5, m=9, mstd=0.5)
+           	AugmentOp(name=Invert, p=0.5, m=9, mstd=0.5)
+           	AugmentOp(name=Rotate, p=0.5, m=9, mstd=0.5)
+           	AugmentOp(name=PosterizeIncreasing, p=0.5, m=9, mstd=0.5)
+           	AugmentOp(name=SolarizeIncreasing, p=0.5, m=9, mstd=0.5)
+           	AugmentOp(name=SolarizeAdd, p=0.5, m=9, mstd=0.5)
+           	AugmentOp(name=ColorIncreasing, p=0.5, m=9, mstd=0.5)
+           	AugmentOp(name=ContrastIncreasing, p=0.5, m=9, mstd=0.5)
+           	AugmentOp(name=BrightnessIncreasing, p=0.5, m=9, mstd=0.5)
+           	AugmentOp(name=SharpnessIncreasing, p=0.5, m=9, mstd=0.5)
+           	AugmentOp(name=ShearX, p=0.5, m=9, mstd=0.5)
+           	AugmentOp(name=ShearY, p=0.5, m=9, mstd=0.5)
+           	AugmentOp(name=TranslateXRel, p=0.5, m=9, mstd=0.5)
+           	AugmentOp(name=TranslateYRel, p=0.5, m=9, mstd=0.5))
+               ToTensor()
+               Normalize(mean=tensor([0.5000, 0.5000, 0.5000]), std=tensor([0.5000, 0.5000, 0.5000]))
+               RandomErasing(p=0.25, mode=pixel, count=(1, 1))
+           )
+[22:43:57.339175] Dataset ImageFolder
+    Number of datapoints: 50000
+    Root location: /data/ImageNet/val
+    StandardTransform
+Transform: Compose(
+               Resize(size=248, interpolation=bicubic, max_size=None, antialias=True)
+               CenterCrop(size=(224, 224))
+               ToTensor()
+               Normalize(mean=[0.5, 0.5, 0.5], std=[0.5, 0.5, 0.5])
+           )
+[22:43:57.339339] Sampler_train = <torch.utils.data.distributed.DistributedSampler object at 0x77676929e710>
+[22:43:57.340126] args.drop_path 0.1
+[22:43:57.340165] global_pool True
+[22:44:02.848947] Load finetune Full precision checkpoint from: /data/kang_you/vit-large-imagenet-relu-85.41.pth !!!!!!!
+[22:44:02.948903] <All keys matched successfully>
+[22:44:03.618994] ======================== ANN model ========================
+[22:44:03.636253] level 10
+[22:44:03.636443] level 10
+[22:44:03.636534] level 10
+[22:44:03.640134] level 10
+[22:44:03.640263] level 10
+[22:44:03.640357] level 10
+[22:44:03.640435] level 10
+[22:44:03.640539] level 10
+[22:44:03.640647] level 10
+[22:44:03.640742] level 10
+[22:44:03.651164] level 10
+[22:44:03.651307] level 10
+[22:44:03.651394] level 10
+[22:44:03.654978] level 10
+[22:44:03.655098] level 10
+[22:44:03.655180] level 10
+[22:44:03.655257] level 10
+[22:44:03.655365] level 10
+[22:44:03.655466] level 10
+[22:44:03.655556] level 10
+[22:44:03.665976] level 10
+[22:44:03.666107] level 10
+[22:44:03.666191] level 10
+[22:44:03.669862] level 10
+[22:44:03.669983] level 10
+[22:44:03.670067] level 10
+[22:44:03.670147] level 10
+[22:44:03.670245] level 10
+[22:44:03.670351] level 10
+[22:44:03.670446] level 10
+[22:44:03.680916] level 10
+[22:44:03.681036] level 10
+[22:44:03.681119] level 10
+[22:44:03.684707] level 10
+[22:44:03.684818] level 10
+[22:44:03.684901] level 10
+[22:44:03.684985] level 10
+[22:44:03.685087] level 10
+[22:44:03.685187] level 10
+[22:44:03.685284] level 10
+[22:44:03.695686] level 10
+[22:44:03.695804] level 10
+[22:44:03.695888] level 10
+[22:44:03.699459] level 10
+[22:44:03.699571] level 10
+[22:44:03.699653] level 10
+[22:44:03.699739] level 10
+[22:44:03.699842] level 10
+[22:44:03.699939] level 10
+[22:44:03.700029] level 10
+[22:44:03.710491] level 10
+[22:44:03.710616] level 10
+[22:44:03.710694] level 10
+[22:44:03.714263] level 10
+[22:44:03.714387] level 10
+[22:44:03.714473] level 10
+[22:44:03.714555] level 10
+[22:44:03.714654] level 10
+[22:44:03.714755] level 10
+[22:44:03.714848] level 10
+[22:44:03.725324] level 10
+[22:44:03.725455] level 10
+[22:44:03.725536] level 10
+[22:44:03.729100] level 10
+[22:44:03.729219] level 10
+[22:44:03.729305] level 10
+[22:44:03.729382] level 10
+[22:44:03.729482] level 10
+[22:44:03.729575] level 10
+[22:44:03.729670] level 10
+[22:44:03.740071] level 10
+[22:44:03.740187] level 10
+[22:44:03.740267] level 10
+[22:44:03.743846] level 10
+[22:44:03.744007] level 10
+[22:44:03.744089] level 10
+[22:44:03.744166] level 10
+[22:44:03.744263] level 10
+[22:44:03.744367] level 10
+[22:44:03.744456] level 10
+[22:44:03.754864] level 10
+[22:44:03.754990] level 10
+[22:44:03.755068] level 10
+[22:44:03.758638] level 10
+[22:44:03.758747] level 10
+[22:44:03.758825] level 10
+[22:44:03.758902] level 10
+[22:44:03.759000] level 10
+[22:44:03.759094] level 10
+[22:44:03.759182] level 10
+[22:44:03.769580] level 10
+[22:44:03.769698] level 10
+[22:44:03.769778] level 10
+[22:44:03.773356] level 10
+[22:44:03.773466] level 10
+[22:44:03.773544] level 10
+[22:44:03.773620] level 10
+[22:44:03.773717] level 10
+[22:44:03.773829] level 10
+[22:44:03.773917] level 10
+[22:44:03.784384] level 10
+[22:44:03.784502] level 10
+[22:44:03.784574] level 10
+[22:44:03.788128] level 10
+[22:44:03.788235] level 10
+[22:44:03.788314] level 10
+[22:44:03.788390] level 10
+[22:44:03.788482] level 10
+[22:44:03.788571] level 10
+[22:44:03.788653] level 10
+[22:44:03.799049] level 10
+[22:44:03.799165] level 10
+[22:44:03.799237] level 10
+[22:44:03.802804] level 10
+[22:44:03.802912] level 10
+[22:44:03.802984] level 10
+[22:44:03.803055] level 10
+[22:44:03.803150] level 10
+[22:44:03.803242] level 10
+[22:44:03.803333] level 10
+[22:44:03.813804] level 10
+[22:44:03.813932] level 10
+[22:44:03.814010] level 10
+[22:44:03.817572] level 10
+[22:44:03.817727] level 10
+[22:44:03.817803] level 10
+[22:44:03.817874] level 10
+[22:44:03.817965] level 10
+[22:44:03.818053] level 10
+[22:44:03.818134] level 10
+[22:44:03.828538] level 10
+[22:44:03.828650] level 10
+[22:44:03.828734] level 10
+[22:44:03.832305] level 10
+[22:44:03.832416] level 10
+[22:44:03.832492] level 10
+[22:44:03.832566] level 10
+[22:44:03.832663] level 10
+[22:44:03.832752] level 10
+[22:44:03.832834] level 10
+[22:44:03.843226] level 10
+[22:44:03.843341] level 10
+[22:44:03.843418] level 10
+[22:44:03.846970] level 10
+[22:44:03.847085] level 10
+[22:44:03.847164] level 10
+[22:44:03.847234] level 10
+[22:44:03.847335] level 10
+[22:44:03.847429] level 10
+[22:44:03.847511] level 10
+[22:44:03.858005] level 10
+[22:44:03.858208] level 10
+[22:44:03.858290] level 10
+[22:44:03.861934] level 10
+[22:44:03.862075] level 10
+[22:44:03.862148] level 10
+[22:44:03.862219] level 10
+[22:44:03.862327] level 10
+[22:44:03.862433] level 10
+[22:44:03.862519] level 10
+[22:44:03.873004] level 10
+[22:44:03.873201] level 10
+[22:44:03.873283] level 10
+[22:44:03.876965] level 10
+[22:44:03.877115] level 10
+[22:44:03.877192] level 10
+[22:44:03.877263] level 10
+[22:44:03.877375] level 10
+[22:44:03.877480] level 10
+[22:44:03.877568] level 10
+[22:44:03.888065] level 10
+[22:44:03.888266] level 10
+[22:44:03.888352] level 10
+[22:44:03.892019] level 10
+[22:44:03.892243] level 10
+[22:44:03.892330] level 10
+[22:44:03.892403] level 10
+[22:44:03.892504] level 10
+[22:44:03.892605] level 10
+[22:44:03.892693] level 10
+[22:44:03.903170] level 10
+[22:44:03.903392] level 10
+[22:44:03.903475] level 10
+[22:44:03.907124] level 10
+[22:44:03.907278] level 10
+[22:44:03.907357] level 10
+[22:44:03.907429] level 10
+[22:44:03.907547] level 10
+[22:44:03.907649] level 10
+[22:44:03.907733] level 10
+[22:44:03.918209] level 10
+[22:44:03.918409] level 10
+[22:44:03.918484] level 10
+[22:44:03.922140] level 10
+[22:44:03.922306] level 10
+[22:44:03.922388] level 10
+[22:44:03.922463] level 10
+[22:44:03.922568] level 10
+[22:44:03.922666] level 10
+[22:44:03.922754] level 10
+[22:44:03.934550] level 10
+[22:44:03.934762] level 10
+[22:44:03.934842] level 10
+[22:44:03.938501] level 10
+[22:44:03.938651] level 10
+[22:44:03.938728] level 10
+[22:44:03.938800] level 10
+[22:44:03.938898] level 10
+[22:44:03.938999] level 10
+[22:44:03.939091] level 10
+[22:44:03.949550] level 10
+[22:44:03.949726] level 10
+[22:44:03.949800] level 10
+[22:44:03.953429] level 10
+[22:44:03.953572] level 10
+[22:44:03.953645] level 10
+[22:44:03.953714] level 10
+[22:44:03.953812] level 10
+[22:44:03.953914] level 10
+[22:44:03.953999] level 10
+[22:44:03.964543] level 10
+[22:44:03.964740] level 10
+[22:44:03.964812] level 10
+[22:44:03.968448] level 10
+[22:44:03.968663] level 10
+[22:44:03.968742] level 10
+[22:44:03.968813] level 10
+[22:44:03.968912] level 10
+[22:44:03.969010] level 10
+[22:44:03.969096] level 10
+[22:44:03.979618] level 10
+[22:44:03.979826] level 10
+[22:44:03.979908] level 10
+[22:44:03.983655] level 10
+[22:44:03.983829] level 10
+[22:44:03.983912] level 10
+[22:44:03.983991] level 10
+[22:44:03.984101] level 10
+[22:44:03.984208] level 10
+[22:44:03.984306] level 10
+[22:44:03.984434] level 10
+[22:44:03.984525] ======================== QANN model =======================
+[22:44:04.405132] Model = VisionTransformer(
+  (patch_embed): PatchEmbed(
+    (proj): Conv2d(3, 1024, kernel_size=(16, 16), stride=(16, 16))
+    (norm): Identity()
+  )
+  (pos_drop): Dropout(p=0.0, inplace=False)
+  (blocks): Sequential(
+    (0): Block(
+      (norm1): Sequential(
+        (0): LayerNorm((1024,), eps=1e-06, elementwise_affine=True)
+        (1): MyQuan(level=10, sym=True, pos_max=4.0, neg_min=-4.0, s=1.0,s_max=Parameter containing:
+        tensor(1000., device='cuda:0'))
+      )
+      (attn): QAttention(
+        (qkv): Linear(in_features=1024, out_features=3072, bias=True)
+        (quan_q): MyQuan(level=10, sym=True, pos_max=4.0, neg_min=-4.0, s=1.0,s_max=Parameter containing:
+        tensor(1000., device='cuda:0'))
+        (quan_k): MyQuan(level=10, sym=True, pos_max=4.0, neg_min=-4.0, s=1.0,s_max=Parameter containing:
+        tensor(1000., device='cuda:0'))
+        (quan_v): MyQuan(level=10, sym=True, pos_max=4.0, neg_min=-4.0, s=1.0,s_max=Parameter containing:
+        tensor(1000., device='cuda:0'))
+        (attn_drop): Dropout(p=0.0, inplace=False)
+        (proj): Linear(in_features=1024, out_features=1024, bias=True)
+        (attn_quan): MyQuan(level=10, sym=False, pos_max=4.0, neg_min=0.0, s=1.0,s_max=Parameter containing:
+        tensor(1000., device='cuda:0'))
+        (proj_drop): Dropout(p=0.0, inplace=False)
+        (attn_softmax_quan): MyQuan(level=10, sym=True, pos_max=4.0, neg_min=-4.0, s=1.0,s_max=Parameter containing:
+        tensor(1000., device='cuda:0'))
+        (after_attn_quan): MyQuan(level=10, sym=True, pos_max=4.0, neg_min=-4.0, s=1.0,s_max=Parameter containing:
+        tensor(1000., device='cuda:0'))
+        (quan_proj): MyQuan(level=10, sym=True, pos_max=4.0, neg_min=-4.0, s=1.0,s_max=Parameter containing:
+        tensor(1000., device='cuda:0'))
+      )
+      (drop_path): Identity()
+      (norm2): Sequential(
+        (0): LayerNorm((1024,), eps=1e-06, elementwise_affine=True)
+        (1): MyQuan(level=10, sym=True, pos_max=4.0, neg_min=-4.0, s=1.0,s_max=Parameter containing:
+        tensor(1000., device='cuda:0'))
+      )
+      (mlp): Mlp(
+        (fc1): Linear(in_features=1024, out_features=4096, bias=True)
+        (act): Sequential(
+          (0): ReLU()
+          (1): MyQuan(level=10, sym=False, pos_max=4.0, neg_min=0.0, s=1.0,s_max=Parameter containing:
+          tensor(1000., device='cuda:0'))
+        )
+        (drop1): Dropout(p=0.0, inplace=False)
+        (fc2): Sequential(
+          (0): Linear(in_features=4096, out_features=1024, bias=True)
+        )
+        (drop2): Dropout(p=0.0, inplace=False)
+      )
+    )
+    (1): Block(
+      (norm1): Sequential(
+        (0): LayerNorm((1024,), eps=1e-06, elementwise_affine=True)
+        (1): MyQuan(level=10, sym=True, pos_max=4.0, neg_min=-4.0, s=1.0,s_max=Parameter containing:
+        tensor(1000., device='cuda:0'))
+      )
+      (attn): QAttention(
+        (qkv): Linear(in_features=1024, out_features=3072, bias=True)
+        (quan_q): MyQuan(level=10, sym=True, pos_max=4.0, neg_min=-4.0, s=1.0,s_max=Parameter containing:
+        tensor(1000., device='cuda:0'))
+        (quan_k): MyQuan(level=10, sym=True, pos_max=4.0, neg_min=-4.0, s=1.0,s_max=Parameter containing:
+        tensor(1000., device='cuda:0'))
+        (quan_v): MyQuan(level=10, sym=True, pos_max=4.0, neg_min=-4.0, s=1.0,s_max=Parameter containing:
+        tensor(1000., device='cuda:0'))
+        (attn_drop): Dropout(p=0.0, inplace=False)
+        (proj): Linear(in_features=1024, out_features=1024, bias=True)
+        (attn_quan): MyQuan(level=10, sym=False, pos_max=4.0, neg_min=0.0, s=1.0,s_max=Parameter containing:
+        tensor(1000., device='cuda:0'))
+        (proj_drop): Dropout(p=0.0, inplace=False)
+        (attn_softmax_quan): MyQuan(level=10, sym=True, pos_max=4.0, neg_min=-4.0, s=1.0,s_max=Parameter containing:
+        tensor(1000., device='cuda:0'))
+        (after_attn_quan): MyQuan(level=10, sym=True, pos_max=4.0, neg_min=-4.0, s=1.0,s_max=Parameter containing:
+        tensor(1000., device='cuda:0'))
+        (quan_proj): MyQuan(level=10, sym=True, pos_max=4.0, neg_min=-4.0, s=1.0,s_max=Parameter containing:
+        tensor(1000., device='cuda:0'))
+      )
+      (drop_path): DropPath()
+      (norm2): Sequential(
+        (0): LayerNorm((1024,), eps=1e-06, elementwise_affine=True)
+        (1): MyQuan(level=10, sym=True, pos_max=4.0, neg_min=-4.0, s=1.0,s_max=Parameter containing:
+        tensor(1000., device='cuda:0'))
+      )
+      (mlp): Mlp(
+        (fc1): Linear(in_features=1024, out_features=4096, bias=True)
+        (act): Sequential(
+          (0): ReLU()
+          (1): MyQuan(level=10, sym=False, pos_max=4.0, neg_min=0.0, s=1.0,s_max=Parameter containing:
+          tensor(1000., device='cuda:0'))
+        )
+        (drop1): Dropout(p=0.0, inplace=False)
+        (fc2): Sequential(
+          (0): Linear(in_features=4096, out_features=1024, bias=True)
+        )
+        (drop2): Dropout(p=0.0, inplace=False)
+      )
+    )
+    (2): Block(
+      (norm1): Sequential(
+        (0): LayerNorm((1024,), eps=1e-06, elementwise_affine=True)
+        (1): MyQuan(level=10, sym=True, pos_max=4.0, neg_min=-4.0, s=1.0,s_max=Parameter containing:
+        tensor(1000., device='cuda:0'))
+      )
+      (attn): QAttention(
+        (qkv): Linear(in_features=1024, out_features=3072, bias=True)
+        (quan_q): MyQuan(level=10, sym=True, pos_max=4.0, neg_min=-4.0, s=1.0,s_max=Parameter containing:
+        tensor(1000., device='cuda:0'))
+        (quan_k): MyQuan(level=10, sym=True, pos_max=4.0, neg_min=-4.0, s=1.0,s_max=Parameter containing:
+        tensor(1000., device='cuda:0'))
+        (quan_v): MyQuan(level=10, sym=True, pos_max=4.0, neg_min=-4.0, s=1.0,s_max=Parameter containing:
+        tensor(1000., device='cuda:0'))
+        (attn_drop): Dropout(p=0.0, inplace=False)
+        (proj): Linear(in_features=1024, out_features=1024, bias=True)
+        (attn_quan): MyQuan(level=10, sym=False, pos_max=4.0, neg_min=0.0, s=1.0,s_max=Parameter containing:
+        tensor(1000., device='cuda:0'))
+        (proj_drop): Dropout(p=0.0, inplace=False)
+        (attn_softmax_quan): MyQuan(level=10, sym=True, pos_max=4.0, neg_min=-4.0, s=1.0,s_max=Parameter containing:
+        tensor(1000., device='cuda:0'))
+        (after_attn_quan): MyQuan(level=10, sym=True, pos_max=4.0, neg_min=-4.0, s=1.0,s_max=Parameter containing:
+        tensor(1000., device='cuda:0'))
+        (quan_proj): MyQuan(level=10, sym=True, pos_max=4.0, neg_min=-4.0, s=1.0,s_max=Parameter containing:
+        tensor(1000., device='cuda:0'))
+      )
+      (drop_path): DropPath()
+      (norm2): Sequential(
+        (0): LayerNorm((1024,), eps=1e-06, elementwise_affine=True)
+        (1): MyQuan(level=10, sym=True, pos_max=4.0, neg_min=-4.0, s=1.0,s_max=Parameter containing:
+        tensor(1000., device='cuda:0'))
+      )
+      (mlp): Mlp(
+        (fc1): Linear(in_features=1024, out_features=4096, bias=True)
+        (act): Sequential(
+          (0): ReLU()
+          (1): MyQuan(level=10, sym=False, pos_max=4.0, neg_min=0.0, s=1.0,s_max=Parameter containing:
+          tensor(1000., device='cuda:0'))
+        )
+        (drop1): Dropout(p=0.0, inplace=False)
+        (fc2): Sequential(
+          (0): Linear(in_features=4096, out_features=1024, bias=True)
+        )
+        (drop2): Dropout(p=0.0, inplace=False)
+      )
+    )
+    (3): Block(
+      (norm1): Sequential(
+        (0): LayerNorm((1024,), eps=1e-06, elementwise_affine=True)
+        (1): MyQuan(level=10, sym=True, pos_max=4.0, neg_min=-4.0, s=1.0,s_max=Parameter containing:
+        tensor(1000., device='cuda:0'))
+      )
+      (attn): QAttention(
+        (qkv): Linear(in_features=1024, out_features=3072, bias=True)
+        (quan_q): MyQuan(level=10, sym=True, pos_max=4.0, neg_min=-4.0, s=1.0,s_max=Parameter containing:
+        tensor(1000., device='cuda:0'))
+        (quan_k): MyQuan(level=10, sym=True, pos_max=4.0, neg_min=-4.0, s=1.0,s_max=Parameter containing:
+        tensor(1000., device='cuda:0'))
+        (quan_v): MyQuan(level=10, sym=True, pos_max=4.0, neg_min=-4.0, s=1.0,s_max=Parameter containing:
+        tensor(1000., device='cuda:0'))
+        (attn_drop): Dropout(p=0.0, inplace=False)
+        (proj): Linear(in_features=1024, out_features=1024, bias=True)
+        (attn_quan): MyQuan(level=10, sym=False, pos_max=4.0, neg_min=0.0, s=1.0,s_max=Parameter containing:
+        tensor(1000., device='cuda:0'))
+        (proj_drop): Dropout(p=0.0, inplace=False)
+        (attn_softmax_quan): MyQuan(level=10, sym=True, pos_max=4.0, neg_min=-4.0, s=1.0,s_max=Parameter containing:
+        tensor(1000., device='cuda:0'))
+        (after_attn_quan): MyQuan(level=10, sym=True, pos_max=4.0, neg_min=-4.0, s=1.0,s_max=Parameter containing:
+        tensor(1000., device='cuda:0'))
+        (quan_proj): MyQuan(level=10, sym=True, pos_max=4.0, neg_min=-4.0, s=1.0,s_max=Parameter containing:
+        tensor(1000., device='cuda:0'))
+      )
+      (drop_path): DropPath()
+      (norm2): Sequential(
+        (0): LayerNorm((1024,), eps=1e-06, elementwise_affine=True)
+        (1): MyQuan(level=10, sym=True, pos_max=4.0, neg_min=-4.0, s=1.0,s_max=Parameter containing:
+        tensor(1000., device='cuda:0'))
+      )
+      (mlp): Mlp(
+        (fc1): Linear(in_features=1024, out_features=4096, bias=True)
+        (act): Sequential(
+          (0): ReLU()
+          (1): MyQuan(level=10, sym=False, pos_max=4.0, neg_min=0.0, s=1.0,s_max=Parameter containing:
+          tensor(1000., device='cuda:0'))
+        )
+        (drop1): Dropout(p=0.0, inplace=False)
+        (fc2): Sequential(
+          (0): Linear(in_features=4096, out_features=1024, bias=True)
+        )
+        (drop2): Dropout(p=0.0, inplace=False)
+      )
+    )
+    (4): Block(
+      (norm1): Sequential(
+        (0): LayerNorm((1024,), eps=1e-06, elementwise_affine=True)
+        (1): MyQuan(level=10, sym=True, pos_max=4.0, neg_min=-4.0, s=1.0,s_max=Parameter containing:
+        tensor(1000., device='cuda:0'))
+      )
+      (attn): QAttention(
+        (qkv): Linear(in_features=1024, out_features=3072, bias=True)
+        (quan_q): MyQuan(level=10, sym=True, pos_max=4.0, neg_min=-4.0, s=1.0,s_max=Parameter containing:
+        tensor(1000., device='cuda:0'))
+        (quan_k): MyQuan(level=10, sym=True, pos_max=4.0, neg_min=-4.0, s=1.0,s_max=Parameter containing:
+        tensor(1000., device='cuda:0'))
+        (quan_v): MyQuan(level=10, sym=True, pos_max=4.0, neg_min=-4.0, s=1.0,s_max=Parameter containing:
+        tensor(1000., device='cuda:0'))
+        (attn_drop): Dropout(p=0.0, inplace=False)
+        (proj): Linear(in_features=1024, out_features=1024, bias=True)
+        (attn_quan): MyQuan(level=10, sym=False, pos_max=4.0, neg_min=0.0, s=1.0,s_max=Parameter containing:
+        tensor(1000., device='cuda:0'))
+        (proj_drop): Dropout(p=0.0, inplace=False)
+        (attn_softmax_quan): MyQuan(level=10, sym=True, pos_max=4.0, neg_min=-4.0, s=1.0,s_max=Parameter containing:
+        tensor(1000., device='cuda:0'))
+        (after_attn_quan): MyQuan(level=10, sym=True, pos_max=4.0, neg_min=-4.0, s=1.0,s_max=Parameter containing:
+        tensor(1000., device='cuda:0'))
+        (quan_proj): MyQuan(level=10, sym=True, pos_max=4.0, neg_min=-4.0, s=1.0,s_max=Parameter containing:
+        tensor(1000., device='cuda:0'))
+      )
+      (drop_path): DropPath()
+      (norm2): Sequential(
+        (0): LayerNorm((1024,), eps=1e-06, elementwise_affine=True)
+        (1): MyQuan(level=10, sym=True, pos_max=4.0, neg_min=-4.0, s=1.0,s_max=Parameter containing:
+        tensor(1000., device='cuda:0'))
+      )
+      (mlp): Mlp(
+        (fc1): Linear(in_features=1024, out_features=4096, bias=True)
+        (act): Sequential(
+          (0): ReLU()
+          (1): MyQuan(level=10, sym=False, pos_max=4.0, neg_min=0.0, s=1.0,s_max=Parameter containing:
+          tensor(1000., device='cuda:0'))
+        )
+        (drop1): Dropout(p=0.0, inplace=False)
+        (fc2): Sequential(
+          (0): Linear(in_features=4096, out_features=1024, bias=True)
+        )
+        (drop2): Dropout(p=0.0, inplace=False)
+      )
+    )
+    (5): Block(
+      (norm1): Sequential(
+        (0): LayerNorm((1024,), eps=1e-06, elementwise_affine=True)
+        (1): MyQuan(level=10, sym=True, pos_max=4.0, neg_min=-4.0, s=1.0,s_max=Parameter containing:
+        tensor(1000., device='cuda:0'))
+      )
+      (attn): QAttention(
+        (qkv): Linear(in_features=1024, out_features=3072, bias=True)
+        (quan_q): MyQuan(level=10, sym=True, pos_max=4.0, neg_min=-4.0, s=1.0,s_max=Parameter containing:
+        tensor(1000., device='cuda:0'))
+        (quan_k): MyQuan(level=10, sym=True, pos_max=4.0, neg_min=-4.0, s=1.0,s_max=Parameter containing:
+        tensor(1000., device='cuda:0'))
+        (quan_v): MyQuan(level=10, sym=True, pos_max=4.0, neg_min=-4.0, s=1.0,s_max=Parameter containing:
+        tensor(1000., device='cuda:0'))
+        (attn_drop): Dropout(p=0.0, inplace=False)
+        (proj): Linear(in_features=1024, out_features=1024, bias=True)
+        (attn_quan): MyQuan(level=10, sym=False, pos_max=4.0, neg_min=0.0, s=1.0,s_max=Parameter containing:
+        tensor(1000., device='cuda:0'))
+        (proj_drop): Dropout(p=0.0, inplace=False)
+        (attn_softmax_quan): MyQuan(level=10, sym=True, pos_max=4.0, neg_min=-4.0, s=1.0,s_max=Parameter containing:
+        tensor(1000., device='cuda:0'))
+        (after_attn_quan): MyQuan(level=10, sym=True, pos_max=4.0, neg_min=-4.0, s=1.0,s_max=Parameter containing:
+        tensor(1000., device='cuda:0'))
+        (quan_proj): MyQuan(level=10, sym=True, pos_max=4.0, neg_min=-4.0, s=1.0,s_max=Parameter containing:
+        tensor(1000., device='cuda:0'))
+      )
+      (drop_path): DropPath()
+      (norm2): Sequential(
+        (0): LayerNorm((1024,), eps=1e-06, elementwise_affine=True)
+        (1): MyQuan(level=10, sym=True, pos_max=4.0, neg_min=-4.0, s=1.0,s_max=Parameter containing:
+        tensor(1000., device='cuda:0'))
+      )
+      (mlp): Mlp(
+        (fc1): Linear(in_features=1024, out_features=4096, bias=True)
+        (act): Sequential(
+          (0): ReLU()
+          (1): MyQuan(level=10, sym=False, pos_max=4.0, neg_min=0.0, s=1.0,s_max=Parameter containing:
+          tensor(1000., device='cuda:0'))
+        )
+        (drop1): Dropout(p=0.0, inplace=False)
+        (fc2): Sequential(
+          (0): Linear(in_features=4096, out_features=1024, bias=True)
+        )
+        (drop2): Dropout(p=0.0, inplace=False)
+      )
+    )
+    (6): Block(
+      (norm1): Sequential(
+        (0): LayerNorm((1024,), eps=1e-06, elementwise_affine=True)
+        (1): MyQuan(level=10, sym=True, pos_max=4.0, neg_min=-4.0, s=1.0,s_max=Parameter containing:
+        tensor(1000., device='cuda:0'))
+      )
+      (attn): QAttention(
+        (qkv): Linear(in_features=1024, out_features=3072, bias=True)
+        (quan_q): MyQuan(level=10, sym=True, pos_max=4.0, neg_min=-4.0, s=1.0,s_max=Parameter containing:
+        tensor(1000., device='cuda:0'))
+        (quan_k): MyQuan(level=10, sym=True, pos_max=4.0, neg_min=-4.0, s=1.0,s_max=Parameter containing:
+        tensor(1000., device='cuda:0'))
+        (quan_v): MyQuan(level=10, sym=True, pos_max=4.0, neg_min=-4.0, s=1.0,s_max=Parameter containing:
+        tensor(1000., device='cuda:0'))
+        (attn_drop): Dropout(p=0.0, inplace=False)
+        (proj): Linear(in_features=1024, out_features=1024, bias=True)
+        (attn_quan): MyQuan(level=10, sym=False, pos_max=4.0, neg_min=0.0, s=1.0,s_max=Parameter containing:
+        tensor(1000., device='cuda:0'))
+        (proj_drop): Dropout(p=0.0, inplace=False)
+        (attn_softmax_quan): MyQuan(level=10, sym=True, pos_max=4.0, neg_min=-4.0, s=1.0,s_max=Parameter containing:
+        tensor(1000., device='cuda:0'))
+        (after_attn_quan): MyQuan(level=10, sym=True, pos_max=4.0, neg_min=-4.0, s=1.0,s_max=Parameter containing:
+        tensor(1000., device='cuda:0'))
+        (quan_proj): MyQuan(level=10, sym=True, pos_max=4.0, neg_min=-4.0, s=1.0,s_max=Parameter containing:
+        tensor(1000., device='cuda:0'))
+      )
+      (drop_path): DropPath()
+      (norm2): Sequential(
+        (0): LayerNorm((1024,), eps=1e-06, elementwise_affine=True)
+        (1): MyQuan(level=10, sym=True, pos_max=4.0, neg_min=-4.0, s=1.0,s_max=Parameter containing:
+        tensor(1000., device='cuda:0'))
+      )
+      (mlp): Mlp(
+        (fc1): Linear(in_features=1024, out_features=4096, bias=True)
+        (act): Sequential(
+          (0): ReLU()
+          (1): MyQuan(level=10, sym=False, pos_max=4.0, neg_min=0.0, s=1.0,s_max=Parameter containing:
+          tensor(1000., device='cuda:0'))
+        )
+        (drop1): Dropout(p=0.0, inplace=False)
+        (fc2): Sequential(
+          (0): Linear(in_features=4096, out_features=1024, bias=True)
+        )
+        (drop2): Dropout(p=0.0, inplace=False)
+      )
+    )
+    (7): Block(
+      (norm1): Sequential(
+        (0): LayerNorm((1024,), eps=1e-06, elementwise_affine=True)
+        (1): MyQuan(level=10, sym=True, pos_max=4.0, neg_min=-4.0, s=1.0,s_max=Parameter containing:
+        tensor(1000., device='cuda:0'))
+      )
+      (attn): QAttention(
+        (qkv): Linear(in_features=1024, out_features=3072, bias=True)
+        (quan_q): MyQuan(level=10, sym=True, pos_max=4.0, neg_min=-4.0, s=1.0,s_max=Parameter containing:
+        tensor(1000., device='cuda:0'))
+        (quan_k): MyQuan(level=10, sym=True, pos_max=4.0, neg_min=-4.0, s=1.0,s_max=Parameter containing:
+        tensor(1000., device='cuda:0'))
+        (quan_v): MyQuan(level=10, sym=True, pos_max=4.0, neg_min=-4.0, s=1.0,s_max=Parameter containing:
+        tensor(1000., device='cuda:0'))
+        (attn_drop): Dropout(p=0.0, inplace=False)
+        (proj): Linear(in_features=1024, out_features=1024, bias=True)
+        (attn_quan): MyQuan(level=10, sym=False, pos_max=4.0, neg_min=0.0, s=1.0,s_max=Parameter containing:
+        tensor(1000., device='cuda:0'))
+        (proj_drop): Dropout(p=0.0, inplace=False)
+        (attn_softmax_quan): MyQuan(level=10, sym=True, pos_max=4.0, neg_min=-4.0, s=1.0,s_max=Parameter containing:
+        tensor(1000., device='cuda:0'))
+        (after_attn_quan): MyQuan(level=10, sym=True, pos_max=4.0, neg_min=-4.0, s=1.0,s_max=Parameter containing:
+        tensor(1000., device='cuda:0'))
+        (quan_proj): MyQuan(level=10, sym=True, pos_max=4.0, neg_min=-4.0, s=1.0,s_max=Parameter containing:
+        tensor(1000., device='cuda:0'))
+      )
+      (drop_path): DropPath()
+      (norm2): Sequential(
+        (0): LayerNorm((1024,), eps=1e-06, elementwise_affine=True)
+        (1): MyQuan(level=10, sym=True, pos_max=4.0, neg_min=-4.0, s=1.0,s_max=Parameter containing:
+        tensor(1000., device='cuda:0'))
+      )
+      (mlp): Mlp(
+        (fc1): Linear(in_features=1024, out_features=4096, bias=True)
+        (act): Sequential(
+          (0): ReLU()
+          (1): MyQuan(level=10, sym=False, pos_max=4.0, neg_min=0.0, s=1.0,s_max=Parameter containing:
+          tensor(1000., device='cuda:0'))
+        )
+        (drop1): Dropout(p=0.0, inplace=False)
+        (fc2): Sequential(
+          (0): Linear(in_features=4096, out_features=1024, bias=True)
+        )
+        (drop2): Dropout(p=0.0, inplace=False)
+      )
+    )
+    (8): Block(
+      (norm1): Sequential(
+        (0): LayerNorm((1024,), eps=1e-06, elementwise_affine=True)
+        (1): MyQuan(level=10, sym=True, pos_max=4.0, neg_min=-4.0, s=1.0,s_max=Parameter containing:
+        tensor(1000., device='cuda:0'))
+      )
+      (attn): QAttention(
+        (qkv): Linear(in_features=1024, out_features=3072, bias=True)
+        (quan_q): MyQuan(level=10, sym=True, pos_max=4.0, neg_min=-4.0, s=1.0,s_max=Parameter containing:
+        tensor(1000., device='cuda:0'))
+        (quan_k): MyQuan(level=10, sym=True, pos_max=4.0, neg_min=-4.0, s=1.0,s_max=Parameter containing:
+        tensor(1000., device='cuda:0'))
+        (quan_v): MyQuan(level=10, sym=True, pos_max=4.0, neg_min=-4.0, s=1.0,s_max=Parameter containing:
+        tensor(1000., device='cuda:0'))
+        (attn_drop): Dropout(p=0.0, inplace=False)
+        (proj): Linear(in_features=1024, out_features=1024, bias=True)
+        (attn_quan): MyQuan(level=10, sym=False, pos_max=4.0, neg_min=0.0, s=1.0,s_max=Parameter containing:
+        tensor(1000., device='cuda:0'))
+        (proj_drop): Dropout(p=0.0, inplace=False)
+        (attn_softmax_quan): MyQuan(level=10, sym=True, pos_max=4.0, neg_min=-4.0, s=1.0,s_max=Parameter containing:
+        tensor(1000., device='cuda:0'))
+        (after_attn_quan): MyQuan(level=10, sym=True, pos_max=4.0, neg_min=-4.0, s=1.0,s_max=Parameter containing:
+        tensor(1000., device='cuda:0'))
+        (quan_proj): MyQuan(level=10, sym=True, pos_max=4.0, neg_min=-4.0, s=1.0,s_max=Parameter containing:
+        tensor(1000., device='cuda:0'))
+      )
+      (drop_path): DropPath()
+      (norm2): Sequential(
+        (0): LayerNorm((1024,), eps=1e-06, elementwise_affine=True)
+        (1): MyQuan(level=10, sym=True, pos_max=4.0, neg_min=-4.0, s=1.0,s_max=Parameter containing:
+        tensor(1000., device='cuda:0'))
+      )
+      (mlp): Mlp(
+        (fc1): Linear(in_features=1024, out_features=4096, bias=True)
+        (act): Sequential(
+          (0): ReLU()
+          (1): MyQuan(level=10, sym=False, pos_max=4.0, neg_min=0.0, s=1.0,s_max=Parameter containing:
+          tensor(1000., device='cuda:0'))
+        )
+        (drop1): Dropout(p=0.0, inplace=False)
+        (fc2): Sequential(
+          (0): Linear(in_features=4096, out_features=1024, bias=True)
+        )
+        (drop2): Dropout(p=0.0, inplace=False)
+      )
+    )
+    (9): Block(
+      (norm1): Sequential(
+        (0): LayerNorm((1024,), eps=1e-06, elementwise_affine=True)
+        (1): MyQuan(level=10, sym=True, pos_max=4.0, neg_min=-4.0, s=1.0,s_max=Parameter containing:
+        tensor(1000., device='cuda:0'))
+      )
+      (attn): QAttention(
+        (qkv): Linear(in_features=1024, out_features=3072, bias=True)
+        (quan_q): MyQuan(level=10, sym=True, pos_max=4.0, neg_min=-4.0, s=1.0,s_max=Parameter containing:
+        tensor(1000., device='cuda:0'))
+        (quan_k): MyQuan(level=10, sym=True, pos_max=4.0, neg_min=-4.0, s=1.0,s_max=Parameter containing:
+        tensor(1000., device='cuda:0'))
+        (quan_v): MyQuan(level=10, sym=True, pos_max=4.0, neg_min=-4.0, s=1.0,s_max=Parameter containing:
+        tensor(1000., device='cuda:0'))
+        (attn_drop): Dropout(p=0.0, inplace=False)
+        (proj): Linear(in_features=1024, out_features=1024, bias=True)
+        (attn_quan): MyQuan(level=10, sym=False, pos_max=4.0, neg_min=0.0, s=1.0,s_max=Parameter containing:
+        tensor(1000., device='cuda:0'))
+        (proj_drop): Dropout(p=0.0, inplace=False)
+        (attn_softmax_quan): MyQuan(level=10, sym=True, pos_max=4.0, neg_min=-4.0, s=1.0,s_max=Parameter containing:
+        tensor(1000., device='cuda:0'))
+        (after_attn_quan): MyQuan(level=10, sym=True, pos_max=4.0, neg_min=-4.0, s=1.0,s_max=Parameter containing:
+        tensor(1000., device='cuda:0'))
+        (quan_proj): MyQuan(level=10, sym=True, pos_max=4.0, neg_min=-4.0, s=1.0,s_max=Parameter containing:
+        tensor(1000., device='cuda:0'))
+      )
+      (drop_path): DropPath()
+      (norm2): Sequential(
+        (0): LayerNorm((1024,), eps=1e-06, elementwise_affine=True)
+        (1): MyQuan(level=10, sym=True, pos_max=4.0, neg_min=-4.0, s=1.0,s_max=Parameter containing:
+        tensor(1000., device='cuda:0'))
+      )
+      (mlp): Mlp(
+        (fc1): Linear(in_features=1024, out_features=4096, bias=True)
+        (act): Sequential(
+          (0): ReLU()
+          (1): MyQuan(level=10, sym=False, pos_max=4.0, neg_min=0.0, s=1.0,s_max=Parameter containing:
+          tensor(1000., device='cuda:0'))
+        )
+        (drop1): Dropout(p=0.0, inplace=False)
+        (fc2): Sequential(
+          (0): Linear(in_features=4096, out_features=1024, bias=True)
+        )
+        (drop2): Dropout(p=0.0, inplace=False)
+      )
+    )
+    (10): Block(
+      (norm1): Sequential(
+        (0): LayerNorm((1024,), eps=1e-06, elementwise_affine=True)
+        (1): MyQuan(level=10, sym=True, pos_max=4.0, neg_min=-4.0, s=1.0,s_max=Parameter containing:
+        tensor(1000., device='cuda:0'))
+      )
+      (attn): QAttention(
+        (qkv): Linear(in_features=1024, out_features=3072, bias=True)
+        (quan_q): MyQuan(level=10, sym=True, pos_max=4.0, neg_min=-4.0, s=1.0,s_max=Parameter containing:
+        tensor(1000., device='cuda:0'))
+        (quan_k): MyQuan(level=10, sym=True, pos_max=4.0, neg_min=-4.0, s=1.0,s_max=Parameter containing:
+        tensor(1000., device='cuda:0'))
+        (quan_v): MyQuan(level=10, sym=True, pos_max=4.0, neg_min=-4.0, s=1.0,s_max=Parameter containing:
+        tensor(1000., device='cuda:0'))
+        (attn_drop): Dropout(p=0.0, inplace=False)
+        (proj): Linear(in_features=1024, out_features=1024, bias=True)
+        (attn_quan): MyQuan(level=10, sym=False, pos_max=4.0, neg_min=0.0, s=1.0,s_max=Parameter containing:
+        tensor(1000., device='cuda:0'))
+        (proj_drop): Dropout(p=0.0, inplace=False)
+        (attn_softmax_quan): MyQuan(level=10, sym=True, pos_max=4.0, neg_min=-4.0, s=1.0,s_max=Parameter containing:
+        tensor(1000., device='cuda:0'))
+        (after_attn_quan): MyQuan(level=10, sym=True, pos_max=4.0, neg_min=-4.0, s=1.0,s_max=Parameter containing:
+        tensor(1000., device='cuda:0'))
+        (quan_proj): MyQuan(level=10, sym=True, pos_max=4.0, neg_min=-4.0, s=1.0,s_max=Parameter containing:
+        tensor(1000., device='cuda:0'))
+      )
+      (drop_path): DropPath()
+      (norm2): Sequential(
+        (0): LayerNorm((1024,), eps=1e-06, elementwise_affine=True)
+        (1): MyQuan(level=10, sym=True, pos_max=4.0, neg_min=-4.0, s=1.0,s_max=Parameter containing:
+        tensor(1000., device='cuda:0'))
+      )
+      (mlp): Mlp(
+        (fc1): Linear(in_features=1024, out_features=4096, bias=True)
+        (act): Sequential(
+          (0): ReLU()
+          (1): MyQuan(level=10, sym=False, pos_max=4.0, neg_min=0.0, s=1.0,s_max=Parameter containing:
+          tensor(1000., device='cuda:0'))
+        )
+        (drop1): Dropout(p=0.0, inplace=False)
+        (fc2): Sequential(
+          (0): Linear(in_features=4096, out_features=1024, bias=True)
+        )
+        (drop2): Dropout(p=0.0, inplace=False)
+      )
+    )
+    (11): Block(
+      (norm1): Sequential(
+        (0): LayerNorm((1024,), eps=1e-06, elementwise_affine=True)
+        (1): MyQuan(level=10, sym=True, pos_max=4.0, neg_min=-4.0, s=1.0,s_max=Parameter containing:
+        tensor(1000., device='cuda:0'))
+      )
+      (attn): QAttention(
+        (qkv): Linear(in_features=1024, out_features=3072, bias=True)
+        (quan_q): MyQuan(level=10, sym=True, pos_max=4.0, neg_min=-4.0, s=1.0,s_max=Parameter containing:
+        tensor(1000., device='cuda:0'))
+        (quan_k): MyQuan(level=10, sym=True, pos_max=4.0, neg_min=-4.0, s=1.0,s_max=Parameter containing:
+        tensor(1000., device='cuda:0'))
+        (quan_v): MyQuan(level=10, sym=True, pos_max=4.0, neg_min=-4.0, s=1.0,s_max=Parameter containing:
+        tensor(1000., device='cuda:0'))
+        (attn_drop): Dropout(p=0.0, inplace=False)
+        (proj): Linear(in_features=1024, out_features=1024, bias=True)
+        (attn_quan): MyQuan(level=10, sym=False, pos_max=4.0, neg_min=0.0, s=1.0,s_max=Parameter containing:
+        tensor(1000., device='cuda:0'))
+        (proj_drop): Dropout(p=0.0, inplace=False)
+        (attn_softmax_quan): MyQuan(level=10, sym=True, pos_max=4.0, neg_min=-4.0, s=1.0,s_max=Parameter containing:
+        tensor(1000., device='cuda:0'))
+        (after_attn_quan): MyQuan(level=10, sym=True, pos_max=4.0, neg_min=-4.0, s=1.0,s_max=Parameter containing:
+        tensor(1000., device='cuda:0'))
+        (quan_proj): MyQuan(level=10, sym=True, pos_max=4.0, neg_min=-4.0, s=1.0,s_max=Parameter containing:
+        tensor(1000., device='cuda:0'))
+      )
+      (drop_path): DropPath()
+      (norm2): Sequential(
+        (0): LayerNorm((1024,), eps=1e-06, elementwise_affine=True)
+        (1): MyQuan(level=10, sym=True, pos_max=4.0, neg_min=-4.0, s=1.0,s_max=Parameter containing:
+        tensor(1000., device='cuda:0'))
+      )
+      (mlp): Mlp(
+        (fc1): Linear(in_features=1024, out_features=4096, bias=True)
+        (act): Sequential(
+          (0): ReLU()
+          (1): MyQuan(level=10, sym=False, pos_max=4.0, neg_min=0.0, s=1.0,s_max=Parameter containing:
+          tensor(1000., device='cuda:0'))
+        )
+        (drop1): Dropout(p=0.0, inplace=False)
+        (fc2): Sequential(
+          (0): Linear(in_features=4096, out_features=1024, bias=True)
+        )
+        (drop2): Dropout(p=0.0, inplace=False)
+      )
+    )
+    (12): Block(
+      (norm1): Sequential(
+        (0): LayerNorm((1024,), eps=1e-06, elementwise_affine=True)
+        (1): MyQuan(level=10, sym=True, pos_max=4.0, neg_min=-4.0, s=1.0,s_max=Parameter containing:
+        tensor(1000., device='cuda:0'))
+      )
+      (attn): QAttention(
+        (qkv): Linear(in_features=1024, out_features=3072, bias=True)
+        (quan_q): MyQuan(level=10, sym=True, pos_max=4.0, neg_min=-4.0, s=1.0,s_max=Parameter containing:
+        tensor(1000., device='cuda:0'))
+        (quan_k): MyQuan(level=10, sym=True, pos_max=4.0, neg_min=-4.0, s=1.0,s_max=Parameter containing:
+        tensor(1000., device='cuda:0'))
+        (quan_v): MyQuan(level=10, sym=True, pos_max=4.0, neg_min=-4.0, s=1.0,s_max=Parameter containing:
+        tensor(1000., device='cuda:0'))
+        (attn_drop): Dropout(p=0.0, inplace=False)
+        (proj): Linear(in_features=1024, out_features=1024, bias=True)
+        (attn_quan): MyQuan(level=10, sym=False, pos_max=4.0, neg_min=0.0, s=1.0,s_max=Parameter containing:
+        tensor(1000., device='cuda:0'))
+        (proj_drop): Dropout(p=0.0, inplace=False)
+        (attn_softmax_quan): MyQuan(level=10, sym=True, pos_max=4.0, neg_min=-4.0, s=1.0,s_max=Parameter containing:
+        tensor(1000., device='cuda:0'))
+        (after_attn_quan): MyQuan(level=10, sym=True, pos_max=4.0, neg_min=-4.0, s=1.0,s_max=Parameter containing:
+        tensor(1000., device='cuda:0'))
+        (quan_proj): MyQuan(level=10, sym=True, pos_max=4.0, neg_min=-4.0, s=1.0,s_max=Parameter containing:
+        tensor(1000., device='cuda:0'))
+      )
+      (drop_path): DropPath()
+      (norm2): Sequential(
+        (0): LayerNorm((1024,), eps=1e-06, elementwise_affine=True)
+        (1): MyQuan(level=10, sym=True, pos_max=4.0, neg_min=-4.0, s=1.0,s_max=Parameter containing:
+        tensor(1000., device='cuda:0'))
+      )
+      (mlp): Mlp(
+        (fc1): Linear(in_features=1024, out_features=4096, bias=True)
+        (act): Sequential(
+          (0): ReLU()
+          (1): MyQuan(level=10, sym=False, pos_max=4.0, neg_min=0.0, s=1.0,s_max=Parameter containing:
+          tensor(1000., device='cuda:0'))
+        )
+        (drop1): Dropout(p=0.0, inplace=False)
+        (fc2): Sequential(
+          (0): Linear(in_features=4096, out_features=1024, bias=True)
+        )
+        (drop2): Dropout(p=0.0, inplace=False)
+      )
+    )
+    (13): Block(
+      (norm1): Sequential(
+        (0): LayerNorm((1024,), eps=1e-06, elementwise_affine=True)
+        (1): MyQuan(level=10, sym=True, pos_max=4.0, neg_min=-4.0, s=1.0,s_max=Parameter containing:
+        tensor(1000., device='cuda:0'))
+      )
+      (attn): QAttention(
+        (qkv): Linear(in_features=1024, out_features=3072, bias=True)
+        (quan_q): MyQuan(level=10, sym=True, pos_max=4.0, neg_min=-4.0, s=1.0,s_max=Parameter containing:
+        tensor(1000., device='cuda:0'))
+        (quan_k): MyQuan(level=10, sym=True, pos_max=4.0, neg_min=-4.0, s=1.0,s_max=Parameter containing:
+        tensor(1000., device='cuda:0'))
+        (quan_v): MyQuan(level=10, sym=True, pos_max=4.0, neg_min=-4.0, s=1.0,s_max=Parameter containing:
+        tensor(1000., device='cuda:0'))
+        (attn_drop): Dropout(p=0.0, inplace=False)
+        (proj): Linear(in_features=1024, out_features=1024, bias=True)
+        (attn_quan): MyQuan(level=10, sym=False, pos_max=4.0, neg_min=0.0, s=1.0,s_max=Parameter containing:
+        tensor(1000., device='cuda:0'))
+        (proj_drop): Dropout(p=0.0, inplace=False)
+        (attn_softmax_quan): MyQuan(level=10, sym=True, pos_max=4.0, neg_min=-4.0, s=1.0,s_max=Parameter containing:
+        tensor(1000., device='cuda:0'))
+        (after_attn_quan): MyQuan(level=10, sym=True, pos_max=4.0, neg_min=-4.0, s=1.0,s_max=Parameter containing:
+        tensor(1000., device='cuda:0'))
+        (quan_proj): MyQuan(level=10, sym=True, pos_max=4.0, neg_min=-4.0, s=1.0,s_max=Parameter containing:
+        tensor(1000., device='cuda:0'))
+      )
+      (drop_path): DropPath()
+      (norm2): Sequential(
+        (0): LayerNorm((1024,), eps=1e-06, elementwise_affine=True)
+        (1): MyQuan(level=10, sym=True, pos_max=4.0, neg_min=-4.0, s=1.0,s_max=Parameter containing:
+        tensor(1000., device='cuda:0'))
+      )
+      (mlp): Mlp(
+        (fc1): Linear(in_features=1024, out_features=4096, bias=True)
+        (act): Sequential(
+          (0): ReLU()
+          (1): MyQuan(level=10, sym=False, pos_max=4.0, neg_min=0.0, s=1.0,s_max=Parameter containing:
+          tensor(1000., device='cuda:0'))
+        )
+        (drop1): Dropout(p=0.0, inplace=False)
+        (fc2): Sequential(
+          (0): Linear(in_features=4096, out_features=1024, bias=True)
+        )
+        (drop2): Dropout(p=0.0, inplace=False)
+      )
+    )
+    (14): Block(
+      (norm1): Sequential(
+        (0): LayerNorm((1024,), eps=1e-06, elementwise_affine=True)
+        (1): MyQuan(level=10, sym=True, pos_max=4.0, neg_min=-4.0, s=1.0,s_max=Parameter containing:
+        tensor(1000., device='cuda:0'))
+      )
+      (attn): QAttention(
+        (qkv): Linear(in_features=1024, out_features=3072, bias=True)
+        (quan_q): MyQuan(level=10, sym=True, pos_max=4.0, neg_min=-4.0, s=1.0,s_max=Parameter containing:
+        tensor(1000., device='cuda:0'))
+        (quan_k): MyQuan(level=10, sym=True, pos_max=4.0, neg_min=-4.0, s=1.0,s_max=Parameter containing:
+        tensor(1000., device='cuda:0'))
+        (quan_v): MyQuan(level=10, sym=True, pos_max=4.0, neg_min=-4.0, s=1.0,s_max=Parameter containing:
+        tensor(1000., device='cuda:0'))
+        (attn_drop): Dropout(p=0.0, inplace=False)
+        (proj): Linear(in_features=1024, out_features=1024, bias=True)
+        (attn_quan): MyQuan(level=10, sym=False, pos_max=4.0, neg_min=0.0, s=1.0,s_max=Parameter containing:
+        tensor(1000., device='cuda:0'))
+        (proj_drop): Dropout(p=0.0, inplace=False)
+        (attn_softmax_quan): MyQuan(level=10, sym=True, pos_max=4.0, neg_min=-4.0, s=1.0,s_max=Parameter containing:
+        tensor(1000., device='cuda:0'))
+        (after_attn_quan): MyQuan(level=10, sym=True, pos_max=4.0, neg_min=-4.0, s=1.0,s_max=Parameter containing:
+        tensor(1000., device='cuda:0'))
+        (quan_proj): MyQuan(level=10, sym=True, pos_max=4.0, neg_min=-4.0, s=1.0,s_max=Parameter containing:
+        tensor(1000., device='cuda:0'))
+      )
+      (drop_path): DropPath()
+      (norm2): Sequential(
+        (0): LayerNorm((1024,), eps=1e-06, elementwise_affine=True)
+        (1): MyQuan(level=10, sym=True, pos_max=4.0, neg_min=-4.0, s=1.0,s_max=Parameter containing:
+        tensor(1000., device='cuda:0'))
+      )
+      (mlp): Mlp(
+        (fc1): Linear(in_features=1024, out_features=4096, bias=True)
+        (act): Sequential(
+          (0): ReLU()
+          (1): MyQuan(level=10, sym=False, pos_max=4.0, neg_min=0.0, s=1.0,s_max=Parameter containing:
+          tensor(1000., device='cuda:0'))
+        )
+        (drop1): Dropout(p=0.0, inplace=False)
+        (fc2): Sequential(
+          (0): Linear(in_features=4096, out_features=1024, bias=True)
+        )
+        (drop2): Dropout(p=0.0, inplace=False)
+      )
+    )
+    (15): Block(
+      (norm1): Sequential(
+        (0): LayerNorm((1024,), eps=1e-06, elementwise_affine=True)
+        (1): MyQuan(level=10, sym=True, pos_max=4.0, neg_min=-4.0, s=1.0,s_max=Parameter containing:
+        tensor(1000., device='cuda:0'))
+      )
+      (attn): QAttention(
+        (qkv): Linear(in_features=1024, out_features=3072, bias=True)
+        (quan_q): MyQuan(level=10, sym=True, pos_max=4.0, neg_min=-4.0, s=1.0,s_max=Parameter containing:
+        tensor(1000., device='cuda:0'))
+        (quan_k): MyQuan(level=10, sym=True, pos_max=4.0, neg_min=-4.0, s=1.0,s_max=Parameter containing:
+        tensor(1000., device='cuda:0'))
+        (quan_v): MyQuan(level=10, sym=True, pos_max=4.0, neg_min=-4.0, s=1.0,s_max=Parameter containing:
+        tensor(1000., device='cuda:0'))
+        (attn_drop): Dropout(p=0.0, inplace=False)
+        (proj): Linear(in_features=1024, out_features=1024, bias=True)
+        (attn_quan): MyQuan(level=10, sym=False, pos_max=4.0, neg_min=0.0, s=1.0,s_max=Parameter containing:
+        tensor(1000., device='cuda:0'))
+        (proj_drop): Dropout(p=0.0, inplace=False)
+        (attn_softmax_quan): MyQuan(level=10, sym=True, pos_max=4.0, neg_min=-4.0, s=1.0,s_max=Parameter containing:
+        tensor(1000., device='cuda:0'))
+        (after_attn_quan): MyQuan(level=10, sym=True, pos_max=4.0, neg_min=-4.0, s=1.0,s_max=Parameter containing:
+        tensor(1000., device='cuda:0'))
+        (quan_proj): MyQuan(level=10, sym=True, pos_max=4.0, neg_min=-4.0, s=1.0,s_max=Parameter containing:
+        tensor(1000., device='cuda:0'))
+      )
+      (drop_path): DropPath()
+      (norm2): Sequential(
+        (0): LayerNorm((1024,), eps=1e-06, elementwise_affine=True)
+        (1): MyQuan(level=10, sym=True, pos_max=4.0, neg_min=-4.0, s=1.0,s_max=Parameter containing:
+        tensor(1000., device='cuda:0'))
+      )
+      (mlp): Mlp(
+        (fc1): Linear(in_features=1024, out_features=4096, bias=True)
+        (act): Sequential(
+          (0): ReLU()
+          (1): MyQuan(level=10, sym=False, pos_max=4.0, neg_min=0.0, s=1.0,s_max=Parameter containing:
+          tensor(1000., device='cuda:0'))
+        )
+        (drop1): Dropout(p=0.0, inplace=False)
+        (fc2): Sequential(
+          (0): Linear(in_features=4096, out_features=1024, bias=True)
+        )
+        (drop2): Dropout(p=0.0, inplace=False)
+      )
+    )
+    (16): Block(
+      (norm1): Sequential(
+        (0): LayerNorm((1024,), eps=1e-06, elementwise_affine=True)
+        (1): MyQuan(level=10, sym=True, pos_max=4.0, neg_min=-4.0, s=1.0,s_max=Parameter containing:
+        tensor(1000., device='cuda:0'))
+      )
+      (attn): QAttention(
+        (qkv): Linear(in_features=1024, out_features=3072, bias=True)
+        (quan_q): MyQuan(level=10, sym=True, pos_max=4.0, neg_min=-4.0, s=1.0,s_max=Parameter containing:
+        tensor(1000., device='cuda:0'))
+        (quan_k): MyQuan(level=10, sym=True, pos_max=4.0, neg_min=-4.0, s=1.0,s_max=Parameter containing:
+        tensor(1000., device='cuda:0'))
+        (quan_v): MyQuan(level=10, sym=True, pos_max=4.0, neg_min=-4.0, s=1.0,s_max=Parameter containing:
+        tensor(1000., device='cuda:0'))
+        (attn_drop): Dropout(p=0.0, inplace=False)
+        (proj): Linear(in_features=1024, out_features=1024, bias=True)
+        (attn_quan): MyQuan(level=10, sym=False, pos_max=4.0, neg_min=0.0, s=1.0,s_max=Parameter containing:
+        tensor(1000., device='cuda:0'))
+        (proj_drop): Dropout(p=0.0, inplace=False)
+        (attn_softmax_quan): MyQuan(level=10, sym=True, pos_max=4.0, neg_min=-4.0, s=1.0,s_max=Parameter containing:
+        tensor(1000., device='cuda:0'))
+        (after_attn_quan): MyQuan(level=10, sym=True, pos_max=4.0, neg_min=-4.0, s=1.0,s_max=Parameter containing:
+        tensor(1000., device='cuda:0'))
+        (quan_proj): MyQuan(level=10, sym=True, pos_max=4.0, neg_min=-4.0, s=1.0,s_max=Parameter containing:
+        tensor(1000., device='cuda:0'))
+      )
+      (drop_path): DropPath()
+      (norm2): Sequential(
+        (0): LayerNorm((1024,), eps=1e-06, elementwise_affine=True)
+        (1): MyQuan(level=10, sym=True, pos_max=4.0, neg_min=-4.0, s=1.0,s_max=Parameter containing:
+        tensor(1000., device='cuda:0'))
+      )
+      (mlp): Mlp(
+        (fc1): Linear(in_features=1024, out_features=4096, bias=True)
+        (act): Sequential(
+          (0): ReLU()
+          (1): MyQuan(level=10, sym=False, pos_max=4.0, neg_min=0.0, s=1.0,s_max=Parameter containing:
+          tensor(1000., device='cuda:0'))
+        )
+        (drop1): Dropout(p=0.0, inplace=False)
+        (fc2): Sequential(
+          (0): Linear(in_features=4096, out_features=1024, bias=True)
+        )
+        (drop2): Dropout(p=0.0, inplace=False)
+      )
+    )
+    (17): Block(
+      (norm1): Sequential(
+        (0): LayerNorm((1024,), eps=1e-06, elementwise_affine=True)
+        (1): MyQuan(level=10, sym=True, pos_max=4.0, neg_min=-4.0, s=1.0,s_max=Parameter containing:
+        tensor(1000., device='cuda:0'))
+      )
+      (attn): QAttention(
+        (qkv): Linear(in_features=1024, out_features=3072, bias=True)
+        (quan_q): MyQuan(level=10, sym=True, pos_max=4.0, neg_min=-4.0, s=1.0,s_max=Parameter containing:
+        tensor(1000., device='cuda:0'))
+        (quan_k): MyQuan(level=10, sym=True, pos_max=4.0, neg_min=-4.0, s=1.0,s_max=Parameter containing:
+        tensor(1000., device='cuda:0'))
+        (quan_v): MyQuan(level=10, sym=True, pos_max=4.0, neg_min=-4.0, s=1.0,s_max=Parameter containing:
+        tensor(1000., device='cuda:0'))
+        (attn_drop): Dropout(p=0.0, inplace=False)
+        (proj): Linear(in_features=1024, out_features=1024, bias=True)
+        (attn_quan): MyQuan(level=10, sym=False, pos_max=4.0, neg_min=0.0, s=1.0,s_max=Parameter containing:
+        tensor(1000., device='cuda:0'))
+        (proj_drop): Dropout(p=0.0, inplace=False)
+        (attn_softmax_quan): MyQuan(level=10, sym=True, pos_max=4.0, neg_min=-4.0, s=1.0,s_max=Parameter containing:
+        tensor(1000., device='cuda:0'))
+        (after_attn_quan): MyQuan(level=10, sym=True, pos_max=4.0, neg_min=-4.0, s=1.0,s_max=Parameter containing:
+        tensor(1000., device='cuda:0'))
+        (quan_proj): MyQuan(level=10, sym=True, pos_max=4.0, neg_min=-4.0, s=1.0,s_max=Parameter containing:
+        tensor(1000., device='cuda:0'))
+      )
+      (drop_path): DropPath()
+      (norm2): Sequential(
+        (0): LayerNorm((1024,), eps=1e-06, elementwise_affine=True)
+        (1): MyQuan(level=10, sym=True, pos_max=4.0, neg_min=-4.0, s=1.0,s_max=Parameter containing:
+        tensor(1000., device='cuda:0'))
+      )
+      (mlp): Mlp(
+        (fc1): Linear(in_features=1024, out_features=4096, bias=True)
+        (act): Sequential(
+          (0): ReLU()
+          (1): MyQuan(level=10, sym=False, pos_max=4.0, neg_min=0.0, s=1.0,s_max=Parameter containing:
+          tensor(1000., device='cuda:0'))
+        )
+        (drop1): Dropout(p=0.0, inplace=False)
+        (fc2): Sequential(
+          (0): Linear(in_features=4096, out_features=1024, bias=True)
+        )
+        (drop2): Dropout(p=0.0, inplace=False)
+      )
+    )
+    (18): Block(
+      (norm1): Sequential(
+        (0): LayerNorm((1024,), eps=1e-06, elementwise_affine=True)
+        (1): MyQuan(level=10, sym=True, pos_max=4.0, neg_min=-4.0, s=1.0,s_max=Parameter containing:
+        tensor(1000., device='cuda:0'))
+      )
+      (attn): QAttention(
+        (qkv): Linear(in_features=1024, out_features=3072, bias=True)
+        (quan_q): MyQuan(level=10, sym=True, pos_max=4.0, neg_min=-4.0, s=1.0,s_max=Parameter containing:
+        tensor(1000., device='cuda:0'))
+        (quan_k): MyQuan(level=10, sym=True, pos_max=4.0, neg_min=-4.0, s=1.0,s_max=Parameter containing:
+        tensor(1000., device='cuda:0'))
+        (quan_v): MyQuan(level=10, sym=True, pos_max=4.0, neg_min=-4.0, s=1.0,s_max=Parameter containing:
+        tensor(1000., device='cuda:0'))
+        (attn_drop): Dropout(p=0.0, inplace=False)
+        (proj): Linear(in_features=1024, out_features=1024, bias=True)
+        (attn_quan): MyQuan(level=10, sym=False, pos_max=4.0, neg_min=0.0, s=1.0,s_max=Parameter containing:
+        tensor(1000., device='cuda:0'))
+        (proj_drop): Dropout(p=0.0, inplace=False)
+        (attn_softmax_quan): MyQuan(level=10, sym=True, pos_max=4.0, neg_min=-4.0, s=1.0,s_max=Parameter containing:
+        tensor(1000., device='cuda:0'))
+        (after_attn_quan): MyQuan(level=10, sym=True, pos_max=4.0, neg_min=-4.0, s=1.0,s_max=Parameter containing:
+        tensor(1000., device='cuda:0'))
+        (quan_proj): MyQuan(level=10, sym=True, pos_max=4.0, neg_min=-4.0, s=1.0,s_max=Parameter containing:
+        tensor(1000., device='cuda:0'))
+      )
+      (drop_path): DropPath()
+      (norm2): Sequential(
+        (0): LayerNorm((1024,), eps=1e-06, elementwise_affine=True)
+        (1): MyQuan(level=10, sym=True, pos_max=4.0, neg_min=-4.0, s=1.0,s_max=Parameter containing:
+        tensor(1000., device='cuda:0'))
+      )
+      (mlp): Mlp(
+        (fc1): Linear(in_features=1024, out_features=4096, bias=True)
+        (act): Sequential(
+          (0): ReLU()
+          (1): MyQuan(level=10, sym=False, pos_max=4.0, neg_min=0.0, s=1.0,s_max=Parameter containing:
+          tensor(1000., device='cuda:0'))
+        )
+        (drop1): Dropout(p=0.0, inplace=False)
+        (fc2): Sequential(
+          (0): Linear(in_features=4096, out_features=1024, bias=True)
+        )
+        (drop2): Dropout(p=0.0, inplace=False)
+      )
+    )
+    (19): Block(
+      (norm1): Sequential(
+        (0): LayerNorm((1024,), eps=1e-06, elementwise_affine=True)
+        (1): MyQuan(level=10, sym=True, pos_max=4.0, neg_min=-4.0, s=1.0,s_max=Parameter containing:
+        tensor(1000., device='cuda:0'))
+      )
+      (attn): QAttention(
+        (qkv): Linear(in_features=1024, out_features=3072, bias=True)
+        (quan_q): MyQuan(level=10, sym=True, pos_max=4.0, neg_min=-4.0, s=1.0,s_max=Parameter containing:
+        tensor(1000., device='cuda:0'))
+        (quan_k): MyQuan(level=10, sym=True, pos_max=4.0, neg_min=-4.0, s=1.0,s_max=Parameter containing:
+        tensor(1000., device='cuda:0'))
+        (quan_v): MyQuan(level=10, sym=True, pos_max=4.0, neg_min=-4.0, s=1.0,s_max=Parameter containing:
+        tensor(1000., device='cuda:0'))
+        (attn_drop): Dropout(p=0.0, inplace=False)
+        (proj): Linear(in_features=1024, out_features=1024, bias=True)
+        (attn_quan): MyQuan(level=10, sym=False, pos_max=4.0, neg_min=0.0, s=1.0,s_max=Parameter containing:
+        tensor(1000., device='cuda:0'))
+        (proj_drop): Dropout(p=0.0, inplace=False)
+        (attn_softmax_quan): MyQuan(level=10, sym=True, pos_max=4.0, neg_min=-4.0, s=1.0,s_max=Parameter containing:
+        tensor(1000., device='cuda:0'))
+        (after_attn_quan): MyQuan(level=10, sym=True, pos_max=4.0, neg_min=-4.0, s=1.0,s_max=Parameter containing:
+        tensor(1000., device='cuda:0'))
+        (quan_proj): MyQuan(level=10, sym=True, pos_max=4.0, neg_min=-4.0, s=1.0,s_max=Parameter containing:
+        tensor(1000., device='cuda:0'))
+      )
+      (drop_path): DropPath()
+      (norm2): Sequential(
+        (0): LayerNorm((1024,), eps=1e-06, elementwise_affine=True)
+        (1): MyQuan(level=10, sym=True, pos_max=4.0, neg_min=-4.0, s=1.0,s_max=Parameter containing:
+        tensor(1000., device='cuda:0'))
+      )
+      (mlp): Mlp(
+        (fc1): Linear(in_features=1024, out_features=4096, bias=True)
+        (act): Sequential(
+          (0): ReLU()
+          (1): MyQuan(level=10, sym=False, pos_max=4.0, neg_min=0.0, s=1.0,s_max=Parameter containing:
+          tensor(1000., device='cuda:0'))
+        )
+        (drop1): Dropout(p=0.0, inplace=False)
+        (fc2): Sequential(
+          (0): Linear(in_features=4096, out_features=1024, bias=True)
+        )
+        (drop2): Dropout(p=0.0, inplace=False)
+      )
+    )
+    (20): Block(
+      (norm1): Sequential(
+        (0): LayerNorm((1024,), eps=1e-06, elementwise_affine=True)
+        (1): MyQuan(level=10, sym=True, pos_max=4.0, neg_min=-4.0, s=1.0,s_max=Parameter containing:
+        tensor(1000., device='cuda:0'))
+      )
+      (attn): QAttention(
+        (qkv): Linear(in_features=1024, out_features=3072, bias=True)
+        (quan_q): MyQuan(level=10, sym=True, pos_max=4.0, neg_min=-4.0, s=1.0,s_max=Parameter containing:
+        tensor(1000., device='cuda:0'))
+        (quan_k): MyQuan(level=10, sym=True, pos_max=4.0, neg_min=-4.0, s=1.0,s_max=Parameter containing:
+        tensor(1000., device='cuda:0'))
+        (quan_v): MyQuan(level=10, sym=True, pos_max=4.0, neg_min=-4.0, s=1.0,s_max=Parameter containing:
+        tensor(1000., device='cuda:0'))
+        (attn_drop): Dropout(p=0.0, inplace=False)
+        (proj): Linear(in_features=1024, out_features=1024, bias=True)
+        (attn_quan): MyQuan(level=10, sym=False, pos_max=4.0, neg_min=0.0, s=1.0,s_max=Parameter containing:
+        tensor(1000., device='cuda:0'))
+        (proj_drop): Dropout(p=0.0, inplace=False)
+        (attn_softmax_quan): MyQuan(level=10, sym=True, pos_max=4.0, neg_min=-4.0, s=1.0,s_max=Parameter containing:
+        tensor(1000., device='cuda:0'))
+        (after_attn_quan): MyQuan(level=10, sym=True, pos_max=4.0, neg_min=-4.0, s=1.0,s_max=Parameter containing:
+        tensor(1000., device='cuda:0'))
+        (quan_proj): MyQuan(level=10, sym=True, pos_max=4.0, neg_min=-4.0, s=1.0,s_max=Parameter containing:
+        tensor(1000., device='cuda:0'))
+      )
+      (drop_path): DropPath()
+      (norm2): Sequential(
+        (0): LayerNorm((1024,), eps=1e-06, elementwise_affine=True)
+        (1): MyQuan(level=10, sym=True, pos_max=4.0, neg_min=-4.0, s=1.0,s_max=Parameter containing:
+        tensor(1000., device='cuda:0'))
+      )
+      (mlp): Mlp(
+        (fc1): Linear(in_features=1024, out_features=4096, bias=True)
+        (act): Sequential(
+          (0): ReLU()
+          (1): MyQuan(level=10, sym=False, pos_max=4.0, neg_min=0.0, s=1.0,s_max=Parameter containing:
+          tensor(1000., device='cuda:0'))
+        )
+        (drop1): Dropout(p=0.0, inplace=False)
+        (fc2): Sequential(
+          (0): Linear(in_features=4096, out_features=1024, bias=True)
+        )
+        (drop2): Dropout(p=0.0, inplace=False)
+      )
+    )
+    (21): Block(
+      (norm1): Sequential(
+        (0): LayerNorm((1024,), eps=1e-06, elementwise_affine=True)
+        (1): MyQuan(level=10, sym=True, pos_max=4.0, neg_min=-4.0, s=1.0,s_max=Parameter containing:
+        tensor(1000., device='cuda:0'))
+      )
+      (attn): QAttention(
+        (qkv): Linear(in_features=1024, out_features=3072, bias=True)
+        (quan_q): MyQuan(level=10, sym=True, pos_max=4.0, neg_min=-4.0, s=1.0,s_max=Parameter containing:
+        tensor(1000., device='cuda:0'))
+        (quan_k): MyQuan(level=10, sym=True, pos_max=4.0, neg_min=-4.0, s=1.0,s_max=Parameter containing:
+        tensor(1000., device='cuda:0'))
+        (quan_v): MyQuan(level=10, sym=True, pos_max=4.0, neg_min=-4.0, s=1.0,s_max=Parameter containing:
+        tensor(1000., device='cuda:0'))
+        (attn_drop): Dropout(p=0.0, inplace=False)
+        (proj): Linear(in_features=1024, out_features=1024, bias=True)
+        (attn_quan): MyQuan(level=10, sym=False, pos_max=4.0, neg_min=0.0, s=1.0,s_max=Parameter containing:
+        tensor(1000., device='cuda:0'))
+        (proj_drop): Dropout(p=0.0, inplace=False)
+        (attn_softmax_quan): MyQuan(level=10, sym=True, pos_max=4.0, neg_min=-4.0, s=1.0,s_max=Parameter containing:
+        tensor(1000., device='cuda:0'))
+        (after_attn_quan): MyQuan(level=10, sym=True, pos_max=4.0, neg_min=-4.0, s=1.0,s_max=Parameter containing:
+        tensor(1000., device='cuda:0'))
+        (quan_proj): MyQuan(level=10, sym=True, pos_max=4.0, neg_min=-4.0, s=1.0,s_max=Parameter containing:
+        tensor(1000., device='cuda:0'))
+      )
+      (drop_path): DropPath()
+      (norm2): Sequential(
+        (0): LayerNorm((1024,), eps=1e-06, elementwise_affine=True)
+        (1): MyQuan(level=10, sym=True, pos_max=4.0, neg_min=-4.0, s=1.0,s_max=Parameter containing:
+        tensor(1000., device='cuda:0'))
+      )
+      (mlp): Mlp(
+        (fc1): Linear(in_features=1024, out_features=4096, bias=True)
+        (act): Sequential(
+          (0): ReLU()
+          (1): MyQuan(level=10, sym=False, pos_max=4.0, neg_min=0.0, s=1.0,s_max=Parameter containing:
+          tensor(1000., device='cuda:0'))
+        )
+        (drop1): Dropout(p=0.0, inplace=False)
+        (fc2): Sequential(
+          (0): Linear(in_features=4096, out_features=1024, bias=True)
+        )
+        (drop2): Dropout(p=0.0, inplace=False)
+      )
+    )
+    (22): Block(
+      (norm1): Sequential(
+        (0): LayerNorm((1024,), eps=1e-06, elementwise_affine=True)
+        (1): MyQuan(level=10, sym=True, pos_max=4.0, neg_min=-4.0, s=1.0,s_max=Parameter containing:
+        tensor(1000., device='cuda:0'))
+      )
+      (attn): QAttention(
+        (qkv): Linear(in_features=1024, out_features=3072, bias=True)
+        (quan_q): MyQuan(level=10, sym=True, pos_max=4.0, neg_min=-4.0, s=1.0,s_max=Parameter containing:
+        tensor(1000., device='cuda:0'))
+        (quan_k): MyQuan(level=10, sym=True, pos_max=4.0, neg_min=-4.0, s=1.0,s_max=Parameter containing:
+        tensor(1000., device='cuda:0'))
+        (quan_v): MyQuan(level=10, sym=True, pos_max=4.0, neg_min=-4.0, s=1.0,s_max=Parameter containing:
+        tensor(1000., device='cuda:0'))
+        (attn_drop): Dropout(p=0.0, inplace=False)
+        (proj): Linear(in_features=1024, out_features=1024, bias=True)
+        (attn_quan): MyQuan(level=10, sym=False, pos_max=4.0, neg_min=0.0, s=1.0,s_max=Parameter containing:
+        tensor(1000., device='cuda:0'))
+        (proj_drop): Dropout(p=0.0, inplace=False)
+        (attn_softmax_quan): MyQuan(level=10, sym=True, pos_max=4.0, neg_min=-4.0, s=1.0,s_max=Parameter containing:
+        tensor(1000., device='cuda:0'))
+        (after_attn_quan): MyQuan(level=10, sym=True, pos_max=4.0, neg_min=-4.0, s=1.0,s_max=Parameter containing:
+        tensor(1000., device='cuda:0'))
+        (quan_proj): MyQuan(level=10, sym=True, pos_max=4.0, neg_min=-4.0, s=1.0,s_max=Parameter containing:
+        tensor(1000., device='cuda:0'))
+      )
+      (drop_path): DropPath()
+      (norm2): Sequential(
+        (0): LayerNorm((1024,), eps=1e-06, elementwise_affine=True)
+        (1): MyQuan(level=10, sym=True, pos_max=4.0, neg_min=-4.0, s=1.0,s_max=Parameter containing:
+        tensor(1000., device='cuda:0'))
+      )
+      (mlp): Mlp(
+        (fc1): Linear(in_features=1024, out_features=4096, bias=True)
+        (act): Sequential(
+          (0): ReLU()
+          (1): MyQuan(level=10, sym=False, pos_max=4.0, neg_min=0.0, s=1.0,s_max=Parameter containing:
+          tensor(1000., device='cuda:0'))
+        )
+        (drop1): Dropout(p=0.0, inplace=False)
+        (fc2): Sequential(
+          (0): Linear(in_features=4096, out_features=1024, bias=True)
+        )
+        (drop2): Dropout(p=0.0, inplace=False)
+      )
+    )
+    (23): Block(
+      (norm1): Sequential(
+        (0): LayerNorm((1024,), eps=1e-06, elementwise_affine=True)
+        (1): MyQuan(level=10, sym=True, pos_max=4.0, neg_min=-4.0, s=1.0,s_max=Parameter containing:
+        tensor(1000., device='cuda:0'))
+      )
+      (attn): QAttention(
+        (qkv): Linear(in_features=1024, out_features=3072, bias=True)
+        (quan_q): MyQuan(level=10, sym=True, pos_max=4.0, neg_min=-4.0, s=1.0,s_max=Parameter containing:
+        tensor(1000., device='cuda:0'))
+        (quan_k): MyQuan(level=10, sym=True, pos_max=4.0, neg_min=-4.0, s=1.0,s_max=Parameter containing:
+        tensor(1000., device='cuda:0'))
+        (quan_v): MyQuan(level=10, sym=True, pos_max=4.0, neg_min=-4.0, s=1.0,s_max=Parameter containing:
+        tensor(1000., device='cuda:0'))
+        (attn_drop): Dropout(p=0.0, inplace=False)
+        (proj): Linear(in_features=1024, out_features=1024, bias=True)
+        (attn_quan): MyQuan(level=10, sym=False, pos_max=4.0, neg_min=0.0, s=1.0,s_max=Parameter containing:
+        tensor(1000., device='cuda:0'))
+        (proj_drop): Dropout(p=0.0, inplace=False)
+        (attn_softmax_quan): MyQuan(level=10, sym=True, pos_max=4.0, neg_min=-4.0, s=1.0,s_max=Parameter containing:
+        tensor(1000., device='cuda:0'))
+        (after_attn_quan): MyQuan(level=10, sym=True, pos_max=4.0, neg_min=-4.0, s=1.0,s_max=Parameter containing:
+        tensor(1000., device='cuda:0'))
+        (quan_proj): MyQuan(level=10, sym=True, pos_max=4.0, neg_min=-4.0, s=1.0,s_max=Parameter containing:
+        tensor(1000., device='cuda:0'))
+      )
+      (drop_path): DropPath()
+      (norm2): Sequential(
+        (0): LayerNorm((1024,), eps=1e-06, elementwise_affine=True)
+        (1): MyQuan(level=10, sym=True, pos_max=4.0, neg_min=-4.0, s=1.0,s_max=Parameter containing:
+        tensor(1000., device='cuda:0'))
+      )
+      (mlp): Mlp(
+        (fc1): Linear(in_features=1024, out_features=4096, bias=True)
+        (act): Sequential(
+          (0): ReLU()
+          (1): MyQuan(level=10, sym=False, pos_max=4.0, neg_min=0.0, s=1.0,s_max=Parameter containing:
+          tensor(1000., device='cuda:0'))
+        )
+        (drop1): Dropout(p=0.0, inplace=False)
+        (fc2): Sequential(
+          (0): Linear(in_features=4096, out_features=1024, bias=True)
+        )
+        (drop2): Dropout(p=0.0, inplace=False)
+      )
+    )
+  )
+  (pre_logits): Identity()
+  (head): Linear(in_features=1024, out_features=1000, bias=True)
+  (fc_norm): Sequential(
+    (0): LayerNorm((1024,), eps=1e-06, elementwise_affine=True)
+    (1): MyQuan(level=10, sym=True, pos_max=4.0, neg_min=-4.0, s=1.0,s_max=Parameter containing:
+    tensor(1000., device='cuda:0'))
+  )
+)
+[22:44:04.405283] number of params (M): 304.65
+[22:44:04.405308] base lr: 3.00e-05
+[22:44:04.405325] actual lr: 3.00e-05
+[22:44:04.405343] accumulate grad iterations: 4
+[22:44:04.405361] effective batch size: 256
+[22:44:04.571677] criterion = LabelSmoothingCrossEntropy()
+[22:44:04.571790] Start training for 100 epochs
+[22:44:09.427106] Test:  [  0/782]  eta: 1:03:15  loss: 0.7805 (0.7805)  acc1: 100.0000 (100.0000)  acc5: 100.0000 (100.0000)  time: 4.8537  data: 4.1872  max mem: 4729
+[22:44:09.464147] Test:  [  1/782]  eta: 0:31:49  loss: 0.7805 (1.0496)  acc1: 87.5000 (93.7500)  acc5: 87.5000 (93.7500)  time: 2.4450  data: 2.0937  max mem: 4729
+[22:44:09.497354] Test:  [  2/782]  eta: 0:21:19  loss: 1.3187 (1.2185)  acc1: 87.5000 (87.5000)  acc5: 100.0000 (95.8333)  time: 1.6409  data: 1.3958  max mem: 4729
+[22:44:09.530628] Test:  [  3/782]  eta: 0:16:05  loss: 1.3187 (1.3257)  acc1: 75.0000 (84.3750)  acc5: 100.0000 (96.8750)  time: 1.2389  data: 1.0469  max mem: 4729
+[22:44:09.568189] Test:  [  4/782]  eta: 0:12:56  loss: 1.3187 (1.2611)  acc1: 87.5000 (87.5000)  acc5: 100.0000 (97.5000)  time: 0.9985  data: 0.8376  max mem: 4729
+[22:44:09.601518] Test:  [  5/782]  eta: 0:10:50  loss: 1.3187 (1.2832)  acc1: 75.0000 (85.4167)  acc5: 100.0000 (97.9167)  time: 0.8375  data: 0.6980  max mem: 4729
+[22:44:09.639150] Test:  [  6/782]  eta: 0:09:21  loss: 1.3187 (1.2614)  acc1: 75.0000 (83.9286)  acc5: 100.0000 (98.2143)  time: 0.7232  data: 0.5983  max mem: 4729
+[22:44:09.672295] Test:  [  7/782]  eta: 0:08:13  loss: 1.1303 (1.2181)  acc1: 75.0000 (85.9375)  acc5: 100.0000 (98.4375)  time: 0.6368  data: 0.5235  max mem: 4729
+[22:44:09.705449] Test:  [  8/782]  eta: 0:07:20  loss: 1.1303 (1.1761)  acc1: 87.5000 (87.5000)  acc5: 100.0000 (98.6111)  time: 0.5697  data: 0.4654  max mem: 4729
+[22:44:09.738353] Test:  [  9/782]  eta: 0:06:38  loss: 1.1303 (1.1841)  acc1: 75.0000 (85.0000)  acc5: 100.0000 (98.7500)  time: 0.5160  data: 0.4189  max mem: 4729
+[22:44:09.771220] Test:  [ 10/782]  eta: 0:06:04  loss: 1.2567 (1.1974)  acc1: 87.5000 (85.2273)  acc5: 100.0000 (98.8636)  time: 0.4720  data: 0.3808  max mem: 4729
+[22:44:09.804343] Test:  [ 11/782]  eta: 0:05:35  loss: 1.1303 (1.1815)  acc1: 87.5000 (86.4583)  acc5: 100.0000 (98.9583)  time: 0.4354  data: 0.3491  max mem: 4729
+[22:44:09.837404] Test:  [ 12/782]  eta: 0:05:11  loss: 1.1303 (1.1586)  acc1: 87.5000 (87.5000)  acc5: 100.0000 (99.0385)  time: 0.4044  data: 0.3222  max mem: 4729
+[22:44:09.870254] Test:  [ 13/782]  eta: 0:04:50  loss: 1.1303 (1.1808)  acc1: 87.5000 (86.6071)  acc5: 100.0000 (99.1071)  time: 0.3778  data: 0.2992  max mem: 4729
+[22:44:09.903135] Test:  [ 14/782]  eta: 0:04:32  loss: 1.1303 (1.1670)  acc1: 87.5000 (86.6667)  acc5: 100.0000 (99.1667)  time: 0.3548  data: 0.2793  max mem: 4729
+[22:44:09.935980] Test:  [ 15/782]  eta: 0:04:16  loss: 1.0068 (1.1438)  acc1: 87.5000 (87.5000)  acc5: 100.0000 (99.2188)  time: 0.3346  data: 0.2618  max mem: 4729
+[22:44:09.968965] Test:  [ 16/782]  eta: 0:04:02  loss: 1.1303 (1.1871)  acc1: 87.5000 (86.7647)  acc5: 100.0000 (98.5294)  time: 0.3169  data: 0.2464  max mem: 4729
+[22:44:10.002158] Test:  [ 17/782]  eta: 0:03:50  loss: 1.1303 (1.2097)  acc1: 87.5000 (86.8056)  acc5: 100.0000 (97.9167)  time: 0.3011  data: 0.2328  max mem: 4729
+[22:44:10.034923] Test:  [ 18/782]  eta: 0:03:39  loss: 1.2567 (1.2226)  acc1: 87.5000 (86.8421)  acc5: 100.0000 (98.0263)  time: 0.2869  data: 0.2205  max mem: 4729
+[22:44:10.067856] Test:  [ 19/782]  eta: 0:03:29  loss: 1.2567 (1.2420)  acc1: 87.5000 (86.8750)  acc5: 100.0000 (97.5000)  time: 0.2742  data: 0.2095  max mem: 4729
+[22:44:10.100676] Test:  [ 20/782]  eta: 0:03:20  loss: 1.2567 (1.2424)  acc1: 87.5000 (86.9048)  acc5: 100.0000 (97.6190)  time: 0.0331  data: 0.0001  max mem: 4729
+[22:44:10.133465] Test:  [ 21/782]  eta: 0:03:11  loss: 1.2567 (1.2494)  acc1: 87.5000 (86.9318)  acc5: 100.0000 (97.7273)  time: 0.0329  data: 0.0001  max mem: 4729
+[22:44:10.166172] Test:  [ 22/782]  eta: 0:03:04  loss: 1.2500 (1.2358)  acc1: 87.5000 (87.5000)  acc5: 100.0000 (97.8261)  time: 0.0329  data: 0.0001  max mem: 4729
+[22:44:10.199147] Test:  [ 23/782]  eta: 0:02:57  loss: 1.2310 (1.2356)  acc1: 87.5000 (87.5000)  acc5: 100.0000 (97.9167)  time: 0.0329  data: 0.0001  max mem: 4729
+[22:44:10.232155] Test:  [ 24/782]  eta: 0:02:51  loss: 1.2500 (1.2492)  acc1: 87.5000 (87.5000)  acc5: 100.0000 (97.5000)  time: 0.0327  data: 0.0001  max mem: 4729
+[22:44:10.265108] Test:  [ 25/782]  eta: 0:02:45  loss: 1.2500 (1.2510)  acc1: 87.5000 (87.5000)  acc5: 100.0000 (97.1154)  time: 0.0327  data: 0.0001  max mem: 4729
+[22:44:10.297936] Test:  [ 26/782]  eta: 0:02:39  loss: 1.2567 (1.3003)  acc1: 87.5000 (86.5741)  acc5: 100.0000 (96.2963)  time: 0.0324  data: 0.0001  max mem: 4729
+[22:44:10.330835] Test:  [ 27/782]  eta: 0:02:34  loss: 1.2960 (1.3062)  acc1: 87.5000 (86.6071)  acc5: 100.0000 (96.4286)  time: 0.0324  data: 0.0001  max mem: 4729
+[22:44:10.364001] Test:  [ 28/782]  eta: 0:02:30  loss: 1.2960 (1.2994)  acc1: 87.5000 (86.6379)  acc5: 100.0000 (96.5517)  time: 0.0324  data: 0.0001  max mem: 4729
+[22:44:10.397012] Test:  [ 29/782]  eta: 0:02:25  loss: 1.2960 (1.2917)  acc1: 87.5000 (86.6667)  acc5: 100.0000 (96.6667)  time: 0.0324  data: 0.0001  max mem: 4729
+[22:44:10.429856] Test:  [ 30/782]  eta: 0:02:21  loss: 1.2500 (1.2770)  acc1: 87.5000 (87.0968)  acc5: 100.0000 (96.7742)  time: 0.0324  data: 0.0001  max mem: 4729
+[22:44:10.462864] Test:  [ 31/782]  eta: 0:02:17  loss: 1.2500 (1.2619)  acc1: 87.5000 (87.5000)  acc5: 100.0000 (96.8750)  time: 0.0324  data: 0.0001  max mem: 4729
+[22:44:10.495997] Test:  [ 32/782]  eta: 0:02:14  loss: 1.2500 (1.2484)  acc1: 87.5000 (87.8788)  acc5: 100.0000 (96.9697)  time: 0.0324  data: 0.0001  max mem: 4729
+[22:44:10.528972] Test:  [ 33/782]  eta: 0:02:10  loss: 1.2310 (1.2360)  acc1: 87.5000 (88.2353)  acc5: 100.0000 (97.0588)  time: 0.0324  data: 0.0001  max mem: 4729
+[22:44:10.561694] Test:  [ 34/782]  eta: 0:02:07  loss: 1.2310 (1.2312)  acc1: 87.5000 (88.2143)  acc5: 100.0000 (97.1429)  time: 0.0324  data: 0.0001  max mem: 4729
+[22:44:10.594391] Test:  [ 35/782]  eta: 0:02:04  loss: 1.2310 (1.2197)  acc1: 87.5000 (88.5417)  acc5: 100.0000 (97.2222)  time: 0.0324  data: 0.0001  max mem: 4729
+[22:44:10.628359] Test:  [ 36/782]  eta: 0:02:01  loss: 1.2310 (1.2387)  acc1: 87.5000 (87.8378)  acc5: 100.0000 (97.2973)  time: 0.0325  data: 0.0001  max mem: 4729
+[22:44:10.661345] Test:  [ 37/782]  eta: 0:01:58  loss: 1.1745 (1.2370)  acc1: 87.5000 (87.8289)  acc5: 100.0000 (97.3684)  time: 0.0325  data: 0.0001  max mem: 4729
+[22:44:10.694210] Test:  [ 38/782]  eta: 0:01:56  loss: 1.1745 (1.2638)  acc1: 87.5000 (87.1795)  acc5: 100.0000 (97.1154)  time: 0.0325  data: 0.0001  max mem: 4729
+[22:44:10.726965] Test:  [ 39/782]  eta: 0:01:53  loss: 1.1745 (1.2625)  acc1: 87.5000 (87.1875)  acc5: 100.0000 (97.1875)  time: 0.0325  data: 0.0001  max mem: 4729
+[22:44:10.759869] Test:  [ 40/782]  eta: 0:01:51  loss: 1.1745 (1.2627)  acc1: 87.5000 (87.1951)  acc5: 100.0000 (97.2561)  time: 0.0325  data: 0.0001  max mem: 4729
+[22:44:10.792973] Test:  [ 41/782]  eta: 0:01:49  loss: 1.1745 (1.2712)  acc1: 87.5000 (87.2024)  acc5: 100.0000 (97.0238)  time: 0.0325  data: 0.0001  max mem: 4729
+[22:44:10.826193] Test:  [ 42/782]  eta: 0:01:47  loss: 1.1745 (1.2580)  acc1: 87.5000 (87.5000)  acc5: 100.0000 (97.0930)  time: 0.0325  data: 0.0001  max mem: 4729
+[22:44:10.859166] Test:  [ 43/782]  eta: 0:01:45  loss: 1.1745 (1.2722)  acc1: 87.5000 (87.5000)  acc5: 100.0000 (96.8750)  time: 0.0325  data: 0.0001  max mem: 4729
+[22:44:10.892079] Test:  [ 44/782]  eta: 0:01:43  loss: 1.1101 (1.2605)  acc1: 87.5000 (87.7778)  acc5: 100.0000 (96.9444)  time: 0.0325  data: 0.0001  max mem: 4729
+[22:44:10.925016] Test:  [ 45/782]  eta: 0:01:41  loss: 1.1101 (1.2825)  acc1: 87.5000 (87.2283)  acc5: 100.0000 (96.7391)  time: 0.0325  data: 0.0001  max mem: 4729
+[22:44:10.957915] Test:  [ 46/782]  eta: 0:01:39  loss: 1.1080 (1.2788)  acc1: 87.5000 (87.2340)  acc5: 100.0000 (96.8085)  time: 0.0325  data: 0.0001  max mem: 4729
+[22:44:10.990764] Test:  [ 47/782]  eta: 0:01:37  loss: 1.0685 (1.2737)  acc1: 87.5000 (87.2396)  acc5: 100.0000 (96.8750)  time: 0.0325  data: 0.0001  max mem: 4729
+[22:44:11.023686] Test:  [ 48/782]  eta: 0:01:36  loss: 1.0681 (1.2662)  acc1: 87.5000 (87.5000)  acc5: 100.0000 (96.9388)  time: 0.0325  data: 0.0001  max mem: 4729
+[22:44:11.056563] Test:  [ 49/782]  eta: 0:01:34  loss: 1.0685 (1.2707)  acc1: 87.5000 (87.2500)  acc5: 100.0000 (97.0000)  time: 0.0325  data: 0.0001  max mem: 4729
+[22:44:11.089341] Test:  [ 50/782]  eta: 0:01:33  loss: 1.0865 (1.2671)  acc1: 87.5000 (87.2549)  acc5: 100.0000 (97.0588)  time: 0.0325  data: 0.0001  max mem: 4729
+[22:44:11.122207] Test:  [ 51/782]  eta: 0:01:31  loss: 1.1080 (1.2655)  acc1: 87.5000 (87.2596)  acc5: 100.0000 (97.1154)  time: 0.0325  data: 0.0001  max mem: 4729
+[22:44:11.155045] Test:  [ 52/782]  eta: 0:01:30  loss: 1.1106 (1.2626)  acc1: 87.5000 (87.0283)  acc5: 100.0000 (97.1698)  time: 0.0325  data: 0.0001  max mem: 4729
+[22:44:11.187825] Test:  [ 53/782]  eta: 0:01:28  loss: 1.1106 (1.2566)  acc1: 87.5000 (87.2685)  acc5: 100.0000 (97.2222)  time: 0.0325  data: 0.0001  max mem: 4729
+[22:44:11.220568] Test:  [ 54/782]  eta: 0:01:27  loss: 1.1745 (1.2654)  acc1: 87.5000 (86.8182)  acc5: 100.0000 (97.2727)  time: 0.0325  data: 0.0001  max mem: 4729
+[22:44:11.253832] Test:  [ 55/782]  eta: 0:01:26  loss: 1.1847 (1.2647)  acc1: 87.5000 (86.8304)  acc5: 100.0000 (97.3214)  time: 0.0325  data: 0.0001  max mem: 4729
+[22:44:11.286717] Test:  [ 56/782]  eta: 0:01:25  loss: 1.1745 (1.2592)  acc1: 87.5000 (87.0614)  acc5: 100.0000 (97.3684)  time: 0.0324  data: 0.0001  max mem: 4729
+[22:44:11.319532] Test:  [ 57/782]  eta: 0:01:23  loss: 1.1847 (1.2610)  acc1: 87.5000 (87.0690)  acc5: 100.0000 (97.4138)  time: 0.0324  data: 0.0001  max mem: 4729
+[22:44:11.352387] Test:  [ 58/782]  eta: 0:01:22  loss: 1.1106 (1.2569)  acc1: 87.5000 (87.0763)  acc5: 100.0000 (97.4576)  time: 0.0324  data: 0.0001  max mem: 4729
+[22:44:11.385388] Test:  [ 59/782]  eta: 0:01:21  loss: 1.1080 (1.2503)  acc1: 87.5000 (87.2917)  acc5: 100.0000 (97.5000)  time: 0.0324  data: 0.0001  max mem: 4729
+[22:44:11.418391] Test:  [ 60/782]  eta: 0:01:20  loss: 1.1080 (1.2523)  acc1: 87.5000 (87.2951)  acc5: 100.0000 (97.5410)  time: 0.0324  data: 0.0001  max mem: 4729
+[22:44:11.451297] Test:  [ 61/782]  eta: 0:01:19  loss: 1.0865 (1.2489)  acc1: 87.5000 (87.0968)  acc5: 100.0000 (97.5806)  time: 0.0324  data: 0.0001  max mem: 4729
+[22:44:11.484283] Test:  [ 62/782]  eta: 0:01:18  loss: 1.0865 (1.2451)  acc1: 87.5000 (87.3016)  acc5: 100.0000 (97.6190)  time: 0.0324  data: 0.0001  max mem: 4729
+[22:44:11.517358] Test:  [ 63/782]  eta: 0:01:17  loss: 1.0405 (1.2418)  acc1: 87.5000 (87.3047)  acc5: 100.0000 (97.6562)  time: 0.0324  data: 0.0001  max mem: 4729
+[22:44:11.550284] Test:  [ 64/782]  eta: 0:01:16  loss: 1.0865 (1.2406)  acc1: 87.5000 (87.3077)  acc5: 100.0000 (97.6923)  time: 0.0324  data: 0.0001  max mem: 4729
+[22:44:11.583196] Test:  [ 65/782]  eta: 0:01:15  loss: 1.0865 (1.2440)  acc1: 87.5000 (87.1212)  acc5: 100.0000 (97.7273)  time: 0.0324  data: 0.0001  max mem: 4729
+[22:44:11.615976] Test:  [ 66/782]  eta: 0:01:14  loss: 1.0865 (1.2465)  acc1: 87.5000 (87.1269)  acc5: 100.0000 (97.7612)  time: 0.0324  data: 0.0001  max mem: 4729
+[22:44:11.648797] Test:  [ 67/782]  eta: 0:01:14  loss: 1.1106 (1.2585)  acc1: 87.5000 (86.5809)  acc5: 100.0000 (97.6103)  time: 0.0324  data: 0.0001  max mem: 4729
+[22:44:11.681819] Test:  [ 68/782]  eta: 0:01:13  loss: 1.1106 (1.2548)  acc1: 87.5000 (86.7754)  acc5: 100.0000 (97.6449)  time: 0.0324  data: 0.0001  max mem: 4729
+[22:44:11.714793] Test:  [ 69/782]  eta: 0:01:12  loss: 1.0865 (1.2502)  acc1: 87.5000 (86.9643)  acc5: 100.0000 (97.6786)  time: 0.0324  data: 0.0001  max mem: 4729
+[22:44:11.747781] Test:  [ 70/782]  eta: 0:01:11  loss: 1.1106 (1.2555)  acc1: 87.5000 (86.7958)  acc5: 100.0000 (97.5352)  time: 0.0324  data: 0.0001  max mem: 4729
+[22:44:11.780539] Test:  [ 71/782]  eta: 0:01:10  loss: 1.1106 (1.2600)  acc1: 87.5000 (86.6319)  acc5: 100.0000 (97.3958)  time: 0.0324  data: 0.0001  max mem: 4729
+[22:44:11.813428] Test:  [ 72/782]  eta: 0:01:10  loss: 1.1669 (1.2625)  acc1: 87.5000 (86.6438)  acc5: 100.0000 (97.2603)  time: 0.0324  data: 0.0001  max mem: 4729
+[22:44:11.846327] Test:  [ 73/782]  eta: 0:01:09  loss: 1.2272 (1.2634)  acc1: 87.5000 (86.6554)  acc5: 100.0000 (97.2973)  time: 0.0324  data: 0.0001  max mem: 4729
+[22:44:11.879360] Test:  [ 74/782]  eta: 0:01:08  loss: 1.2272 (1.2664)  acc1: 87.5000 (86.6667)  acc5: 100.0000 (97.3333)  time: 0.0324  data: 0.0001  max mem: 4729
+[22:44:11.912395] Test:  [ 75/782]  eta: 0:01:07  loss: 1.1669 (1.2604)  acc1: 87.5000 (86.8421)  acc5: 100.0000 (97.3684)  time: 0.0324  data: 0.0001  max mem: 4729
+[22:44:11.945395] Test:  [ 76/782]  eta: 0:01:07  loss: 1.3284 (1.2640)  acc1: 87.5000 (86.8506)  acc5: 100.0000 (97.2403)  time: 0.0324  data: 0.0001  max mem: 4729
+[22:44:11.978845] Test:  [ 77/782]  eta: 0:01:06  loss: 1.1669 (1.2583)  acc1: 87.5000 (87.0192)  acc5: 100.0000 (97.2756)  time: 0.0325  data: 0.0001  max mem: 4729
+[22:44:12.011798] Test:  [ 78/782]  eta: 0:01:05  loss: 1.3284 (1.2594)  acc1: 87.5000 (87.0253)  acc5: 100.0000 (97.3101)  time: 0.0325  data: 0.0001  max mem: 4729
+[22:44:12.044831] Test:  [ 79/782]  eta: 0:01:05  loss: 1.3423 (1.2668)  acc1: 87.5000 (86.8750)  acc5: 100.0000 (97.3438)  time: 0.0325  data: 0.0001  max mem: 4729
+[22:44:12.077833] Test:  [ 80/782]  eta: 0:01:04  loss: 1.3284 (1.2614)  acc1: 87.5000 (87.0370)  acc5: 100.0000 (97.3765)  time: 0.0325  data: 0.0001  max mem: 4729
+[22:44:12.110851] Test:  [ 81/782]  eta: 0:01:04  loss: 1.3284 (1.2589)  acc1: 87.5000 (87.1951)  acc5: 100.0000 (97.4085)  time: 0.0325  data: 0.0001  max mem: 4729
+[22:44:12.143761] Test:  [ 82/782]  eta: 0:01:03  loss: 1.3284 (1.2587)  acc1: 87.5000 (87.1988)  acc5: 100.0000 (97.4398)  time: 0.0325  data: 0.0001  max mem: 4729
+[22:44:12.176771] Test:  [ 83/782]  eta: 0:01:02  loss: 1.3284 (1.2594)  acc1: 87.5000 (87.2024)  acc5: 100.0000 (97.4702)  time: 0.0325  data: 0.0001  max mem: 4729
+[22:44:12.209760] Test:  [ 84/782]  eta: 0:01:02  loss: 1.3284 (1.2545)  acc1: 87.5000 (87.3529)  acc5: 100.0000 (97.5000)  time: 0.0325  data: 0.0001  max mem: 4729
+[22:44:12.242645] Test:  [ 85/782]  eta: 0:01:01  loss: 1.3166 (1.2504)  acc1: 87.5000 (87.5000)  acc5: 100.0000 (97.5291)  time: 0.0325  data: 0.0001  max mem: 4729
+[22:44:12.275472] Test:  [ 86/782]  eta: 0:01:01  loss: 1.2447 (1.2466)  acc1: 87.5000 (87.6437)  acc5: 100.0000 (97.5575)  time: 0.0325  data: 0.0001  max mem: 4729
+[22:44:12.308371] Test:  [ 87/782]  eta: 0:01:00  loss: 1.2447 (1.2489)  acc1: 87.5000 (87.5000)  acc5: 100.0000 (97.5852)  time: 0.0325  data: 0.0001  max mem: 4729
+[22:44:12.341192] Test:  [ 88/782]  eta: 0:01:00  loss: 1.3166 (1.2503)  acc1: 87.5000 (87.3596)  acc5: 100.0000 (97.6124)  time: 0.0325  data: 0.0001  max mem: 4729
+[22:44:12.374052] Test:  [ 89/782]  eta: 0:00:59  loss: 1.3166 (1.2488)  acc1: 87.5000 (87.3611)  acc5: 100.0000 (97.6389)  time: 0.0325  data: 0.0001  max mem: 4729
+[22:44:12.406888] Test:  [ 90/782]  eta: 0:00:59  loss: 1.3166 (1.2511)  acc1: 87.5000 (87.3626)  acc5: 100.0000 (97.6648)  time: 0.0324  data: 0.0001  max mem: 4729
+[22:44:12.439799] Test:  [ 91/782]  eta: 0:00:58  loss: 1.2447 (1.2500)  acc1: 87.5000 (87.3641)  acc5: 100.0000 (97.6902)  time: 0.0325  data: 0.0001  max mem: 4729
+[22:44:12.472720] Test:  [ 92/782]  eta: 0:00:58  loss: 1.2447 (1.2517)  acc1: 87.5000 (87.3656)  acc5: 100.0000 (97.5806)  time: 0.0325  data: 0.0001  max mem: 4729
+[22:44:12.505707] Test:  [ 93/782]  eta: 0:00:57  loss: 1.1515 (1.2505)  acc1: 87.5000 (87.2340)  acc5: 100.0000 (97.6064)  time: 0.0325  data: 0.0001  max mem: 4729
+[22:44:12.538653] Test:  [ 94/782]  eta: 0:00:57  loss: 1.1515 (1.2605)  acc1: 87.5000 (87.1053)  acc5: 100.0000 (97.3684)  time: 0.0325  data: 0.0001  max mem: 4729
+[22:44:12.571456] Test:  [ 95/782]  eta: 0:00:56  loss: 1.2447 (1.2642)  acc1: 87.5000 (86.9792)  acc5: 100.0000 (97.3958)  time: 0.0325  data: 0.0001  max mem: 4729
+[22:44:12.604398] Test:  [ 96/782]  eta: 0:00:56  loss: 1.2447 (1.2658)  acc1: 87.5000 (86.8557)  acc5: 100.0000 (97.4227)  time: 0.0325  data: 0.0001  max mem: 4729
+[22:44:12.637825] Test:  [ 97/782]  eta: 0:00:56  loss: 1.2447 (1.2630)  acc1: 87.5000 (86.9898)  acc5: 100.0000 (97.4490)  time: 0.0325  data: 0.0001  max mem: 4729
+[22:44:12.670795] Test:  [ 98/782]  eta: 0:00:55  loss: 1.1515 (1.2617)  acc1: 87.5000 (86.9949)  acc5: 100.0000 (97.4747)  time: 0.0325  data: 0.0001  max mem: 4729
+[22:44:12.703622] Test:  [ 99/782]  eta: 0:00:55  loss: 1.1402 (1.2571)  acc1: 87.5000 (87.1250)  acc5: 100.0000 (97.5000)  time: 0.0325  data: 0.0001  max mem: 4729
+[22:44:12.736623] Test:  [100/782]  eta: 0:00:54  loss: 1.1515 (1.2562)  acc1: 87.5000 (87.1287)  acc5: 100.0000 (97.5248)  time: 0.0325  data: 0.0001  max mem: 4729
+[22:44:12.769577] Test:  [101/782]  eta: 0:00:54  loss: 1.1515 (1.2521)  acc1: 87.5000 (87.2549)  acc5: 100.0000 (97.5490)  time: 0.0324  data: 0.0001  max mem: 4729
+[22:44:12.802453] Test:  [102/782]  eta: 0:00:53  loss: 1.1402 (1.2502)  acc1: 87.5000 (87.3786)  acc5: 100.0000 (97.5728)  time: 0.0324  data: 0.0001  max mem: 4729
+[22:44:12.835316] Test:  [103/782]  eta: 0:00:53  loss: 1.1380 (1.2467)  acc1: 87.5000 (87.5000)  acc5: 100.0000 (97.5962)  time: 0.0324  data: 0.0001  max mem: 4729
+[22:44:12.868236] Test:  [104/782]  eta: 0:00:53  loss: 1.1402 (1.2483)  acc1: 87.5000 (87.5000)  acc5: 100.0000 (97.5000)  time: 0.0324  data: 0.0001  max mem: 4729
+[22:44:12.901120] Test:  [105/782]  eta: 0:00:52  loss: 1.1515 (1.2568)  acc1: 87.5000 (87.3821)  acc5: 100.0000 (97.4057)  time: 0.0324  data: 0.0001  max mem: 4729
+[22:44:12.934001] Test:  [106/782]  eta: 0:00:52  loss: 1.1515 (1.2543)  acc1: 87.5000 (87.3832)  acc5: 100.0000 (97.4299)  time: 0.0324  data: 0.0001  max mem: 4729
+[22:44:12.966844] Test:  [107/782]  eta: 0:00:52  loss: 1.1402 (1.2499)  acc1: 87.5000 (87.5000)  acc5: 100.0000 (97.4537)  time: 0.0324  data: 0.0001  max mem: 4729
+[22:44:12.999829] Test:  [108/782]  eta: 0:00:51  loss: 1.1402 (1.2497)  acc1: 87.5000 (87.5000)  acc5: 100.0000 (97.4771)  time: 0.0324  data: 0.0001  max mem: 4729
+[22:44:13.032887] Test:  [109/782]  eta: 0:00:51  loss: 1.1515 (1.2556)  acc1: 87.5000 (87.3864)  acc5: 100.0000 (97.3864)  time: 0.0325  data: 0.0001  max mem: 4729
+[22:44:13.065903] Test:  [110/782]  eta: 0:00:51  loss: 1.1515 (1.2565)  acc1: 87.5000 (87.3874)  acc5: 100.0000 (97.4099)  time: 0.0325  data: 0.0001  max mem: 4729
+[22:44:13.098779] Test:  [111/782]  eta: 0:00:50  loss: 1.1585 (1.2626)  acc1: 87.5000 (87.0536)  acc5: 100.0000 (97.3214)  time: 0.0325  data: 0.0001  max mem: 4729
+[22:44:13.131679] Test:  [112/782]  eta: 0:00:50  loss: 1.1402 (1.2584)  acc1: 87.5000 (87.1681)  acc5: 100.0000 (97.3451)  time: 0.0325  data: 0.0001  max mem: 4729
+[22:44:13.164586] Test:  [113/782]  eta: 0:00:50  loss: 1.1468 (1.2574)  acc1: 87.5000 (87.1711)  acc5: 100.0000 (97.3684)  time: 0.0325  data: 0.0001  max mem: 4729
+[22:44:13.197521] Test:  [114/782]  eta: 0:00:49  loss: 1.1468 (1.2614)  acc1: 87.5000 (87.1739)  acc5: 100.0000 (97.2826)  time: 0.0325  data: 0.0001  max mem: 4729
+[22:44:13.230442] Test:  [115/782]  eta: 0:00:49  loss: 1.1468 (1.2618)  acc1: 87.5000 (87.1767)  acc5: 100.0000 (97.3060)  time: 0.0325  data: 0.0001  max mem: 4729
+[22:44:13.263329] Test:  [116/782]  eta: 0:00:49  loss: 1.1380 (1.2581)  acc1: 87.5000 (87.2863)  acc5: 100.0000 (97.3291)  time: 0.0325  data: 0.0001  max mem: 4729
+[22:44:13.296621] Test:  [117/782]  eta: 0:00:48  loss: 1.1468 (1.2615)  acc1: 87.5000 (87.2881)  acc5: 100.0000 (97.2458)  time: 0.0325  data: 0.0001  max mem: 4729
+[22:44:13.329380] Test:  [118/782]  eta: 0:00:48  loss: 1.1585 (1.2617)  acc1: 87.5000 (87.1849)  acc5: 100.0000 (97.2689)  time: 0.0324  data: 0.0001  max mem: 4729
+[22:44:13.362237] Test:  [119/782]  eta: 0:00:48  loss: 1.1585 (1.2595)  acc1: 87.5000 (87.2917)  acc5: 100.0000 (97.2917)  time: 0.0324  data: 0.0001  max mem: 4729
+[22:44:13.395110] Test:  [120/782]  eta: 0:00:47  loss: 1.1468 (1.2574)  acc1: 87.5000 (87.3967)  acc5: 100.0000 (97.3140)  time: 0.0324  data: 0.0001  max mem: 4729
+[22:44:13.428052] Test:  [121/782]  eta: 0:00:47  loss: 1.2292 (1.2595)  acc1: 87.5000 (87.2951)  acc5: 100.0000 (97.3361)  time: 0.0324  data: 0.0001  max mem: 4729
+[22:44:13.460995] Test:  [122/782]  eta: 0:00:47  loss: 1.2292 (1.2554)  acc1: 87.5000 (87.3984)  acc5: 100.0000 (97.3577)  time: 0.0324  data: 0.0001  max mem: 4729
+[22:44:13.493893] Test:  [123/782]  eta: 0:00:47  loss: 1.2292 (1.2510)  acc1: 87.5000 (87.5000)  acc5: 100.0000 (97.3790)  time: 0.0324  data: 0.0001  max mem: 4729
+[22:44:13.527013] Test:  [124/782]  eta: 0:00:46  loss: 1.1468 (1.2485)  acc1: 87.5000 (87.5000)  acc5: 100.0000 (97.4000)  time: 0.0324  data: 0.0001  max mem: 4729
+[22:44:13.560170] Test:  [125/782]  eta: 0:00:46  loss: 1.1107 (1.2474)  acc1: 87.5000 (87.5000)  acc5: 100.0000 (97.4206)  time: 0.0325  data: 0.0001  max mem: 4729
+[22:44:13.593025] Test:  [126/782]  eta: 0:00:46  loss: 1.1468 (1.2511)  acc1: 87.5000 (87.4016)  acc5: 100.0000 (97.4409)  time: 0.0325  data: 0.0001  max mem: 4729
+[22:44:13.625992] Test:  [127/782]  eta: 0:00:45  loss: 1.1468 (1.2479)  acc1: 87.5000 (87.5000)  acc5: 100.0000 (97.4609)  time: 0.0325  data: 0.0001  max mem: 4729
+[22:44:13.658858] Test:  [128/782]  eta: 0:00:45  loss: 1.1107 (1.2457)  acc1: 87.5000 (87.5969)  acc5: 100.0000 (97.4806)  time: 0.0325  data: 0.0001  max mem: 4729
+[22:44:13.691812] Test:  [129/782]  eta: 0:00:45  loss: 1.0283 (1.2440)  acc1: 87.5000 (87.5962)  acc5: 100.0000 (97.5000)  time: 0.0325  data: 0.0001  max mem: 4729
+[22:44:13.724860] Test:  [130/782]  eta: 0:00:45  loss: 1.0283 (1.2480)  acc1: 87.5000 (87.5000)  acc5: 100.0000 (97.4237)  time: 0.0325  data: 0.0001  max mem: 4729
+[22:44:13.757727] Test:  [131/782]  eta: 0:00:44  loss: 1.0283 (1.2557)  acc1: 87.5000 (87.3106)  acc5: 100.0000 (97.2538)  time: 0.0325  data: 0.0001  max mem: 4729
+[22:44:13.790742] Test:  [132/782]  eta: 0:00:44  loss: 1.1107 (1.2585)  acc1: 87.5000 (87.1241)  acc5: 100.0000 (97.2744)  time: 0.0325  data: 0.0001  max mem: 4729
+[22:44:13.823716] Test:  [133/782]  eta: 0:00:44  loss: 1.0591 (1.2570)  acc1: 87.5000 (86.9403)  acc5: 100.0000 (97.2948)  time: 0.0325  data: 0.0001  max mem: 4729
+[22:44:13.856682] Test:  [134/782]  eta: 0:00:44  loss: 1.0283 (1.2536)  acc1: 87.5000 (87.0370)  acc5: 100.0000 (97.3148)  time: 0.0325  data: 0.0001  max mem: 4729
+[22:44:13.889691] Test:  [135/782]  eta: 0:00:44  loss: 1.0151 (1.2519)  acc1: 87.5000 (87.1324)  acc5: 100.0000 (97.3346)  time: 0.0325  data: 0.0001  max mem: 4729
+[22:44:13.922632] Test:  [136/782]  eta: 0:00:43  loss: 1.0283 (1.2525)  acc1: 87.5000 (87.1350)  acc5: 100.0000 (97.3540)  time: 0.0325  data: 0.0001  max mem: 4729
+[22:44:13.955594] Test:  [137/782]  eta: 0:00:43  loss: 1.0283 (1.2518)  acc1: 87.5000 (87.0471)  acc5: 100.0000 (97.3732)  time: 0.0325  data: 0.0001  max mem: 4729
+[22:44:13.988700] Test:  [138/782]  eta: 0:00:43  loss: 1.0283 (1.2512)  acc1: 87.5000 (87.0504)  acc5: 100.0000 (97.3921)  time: 0.0325  data: 0.0001  max mem: 4729
+[22:44:14.022156] Test:  [139/782]  eta: 0:00:43  loss: 1.0591 (1.2506)  acc1: 87.5000 (87.0536)  acc5: 100.0000 (97.4107)  time: 0.0325  data: 0.0001  max mem: 4729
+[22:44:14.055091] Test:  [140/782]  eta: 0:00:42  loss: 1.1107 (1.2528)  acc1: 87.5000 (86.9681)  acc5: 100.0000 (97.4291)  time: 0.0325  data: 0.0001  max mem: 4729
+[22:44:14.088135] Test:  [141/782]  eta: 0:00:42  loss: 1.0591 (1.2512)  acc1: 87.5000 (86.9718)  acc5: 100.0000 (97.4472)  time: 0.0325  data: 0.0001  max mem: 4729
+[22:44:14.121101] Test:  [142/782]  eta: 0:00:42  loss: 1.1107 (1.2505)  acc1: 87.5000 (87.0629)  acc5: 100.0000 (97.4650)  time: 0.0325  data: 0.0001  max mem: 4729
+[22:44:14.153959] Test:  [143/782]  eta: 0:00:42  loss: 1.1107 (1.2485)  acc1: 87.5000 (87.1528)  acc5: 100.0000 (97.4826)  time: 0.0325  data: 0.0001  max mem: 4729
+[22:44:14.186993] Test:  [144/782]  eta: 0:00:41  loss: 1.1512 (1.2496)  acc1: 87.5000 (87.0690)  acc5: 100.0000 (97.5000)  time: 0.0325  data: 0.0001  max mem: 4729
+[22:44:14.219985] Test:  [145/782]  eta: 0:00:41  loss: 1.1512 (1.2470)  acc1: 87.5000 (87.1575)  acc5: 100.0000 (97.5171)  time: 0.0325  data: 0.0001  max mem: 4729
+[22:44:14.252883] Test:  [146/782]  eta: 0:00:41  loss: 1.1512 (1.2475)  acc1: 87.5000 (87.1599)  acc5: 100.0000 (97.5340)  time: 0.0325  data: 0.0001  max mem: 4729
+[22:44:14.285914] Test:  [147/782]  eta: 0:00:41  loss: 1.1512 (1.2455)  acc1: 87.5000 (87.1622)  acc5: 100.0000 (97.5507)  time: 0.0325  data: 0.0001  max mem: 4729
+[22:44:14.318752] Test:  [148/782]  eta: 0:00:41  loss: 1.1612 (1.2474)  acc1: 87.5000 (87.1644)  acc5: 100.0000 (97.5671)  time: 0.0325  data: 0.0001  max mem: 4729
+[22:44:14.351680] Test:  [149/782]  eta: 0:00:40  loss: 1.1621 (1.2511)  acc1: 87.5000 (87.0000)  acc5: 100.0000 (97.5000)  time: 0.0325  data: 0.0001  max mem: 4729
+[22:44:14.384636] Test:  [150/782]  eta: 0:00:40  loss: 1.1621 (1.2563)  acc1: 87.5000 (86.9205)  acc5: 100.0000 (97.4338)  time: 0.0325  data: 0.0001  max mem: 4729
+[22:44:14.417527] Test:  [151/782]  eta: 0:00:40  loss: 1.1621 (1.2595)  acc1: 87.5000 (86.7599)  acc5: 100.0000 (97.4507)  time: 0.0325  data: 0.0001  max mem: 4729
+[22:44:14.450409] Test:  [152/782]  eta: 0:00:40  loss: 1.1612 (1.2575)  acc1: 87.5000 (86.8464)  acc5: 100.0000 (97.4673)  time: 0.0325  data: 0.0001  max mem: 4729
+[22:44:14.483427] Test:  [153/782]  eta: 0:00:40  loss: 1.1612 (1.2548)  acc1: 87.5000 (86.9318)  acc5: 100.0000 (97.4838)  time: 0.0325  data: 0.0001  max mem: 4729
+[22:44:14.516490] Test:  [154/782]  eta: 0:00:39  loss: 1.1612 (1.2522)  acc1: 87.5000 (87.0161)  acc5: 100.0000 (97.5000)  time: 0.0325  data: 0.0001  max mem: 4729
+[22:44:14.549540] Test:  [155/782]  eta: 0:00:39  loss: 1.1621 (1.2522)  acc1: 87.5000 (87.0192)  acc5: 100.0000 (97.5160)  time: 0.0325  data: 0.0001  max mem: 4729
+[22:44:14.582514] Test:  [156/782]  eta: 0:00:39  loss: 1.1621 (1.2561)  acc1: 87.5000 (86.8631)  acc5: 100.0000 (97.5318)  time: 0.0325  data: 0.0001  max mem: 4729
+[22:44:14.615681] Test:  [157/782]  eta: 0:00:39  loss: 1.1621 (1.2553)  acc1: 87.5000 (86.8671)  acc5: 100.0000 (97.5475)  time: 0.0325  data: 0.0001  max mem: 4729
+[22:44:14.648886] Test:  [158/782]  eta: 0:00:39  loss: 1.1512 (1.2527)  acc1: 87.5000 (86.9497)  acc5: 100.0000 (97.5629)  time: 0.0325  data: 0.0001  max mem: 4729
+[22:44:14.682258] Test:  [159/782]  eta: 0:00:39  loss: 1.1512 (1.2558)  acc1: 87.5000 (86.9531)  acc5: 100.0000 (97.5000)  time: 0.0325  data: 0.0001  max mem: 4729
+[22:44:14.715209] Test:  [160/782]  eta: 0:00:38  loss: 1.1512 (1.2585)  acc1: 87.5000 (86.9565)  acc5: 100.0000 (97.4379)  time: 0.0325  data: 0.0001  max mem: 4729
+[22:44:14.748435] Test:  [161/782]  eta: 0:00:38  loss: 1.1512 (1.2573)  acc1: 87.5000 (86.9599)  acc5: 100.0000 (97.4537)  time: 0.0325  data: 0.0001  max mem: 4729
+[22:44:14.781513] Test:  [162/782]  eta: 0:00:38  loss: 1.2583 (1.2578)  acc1: 87.5000 (86.8865)  acc5: 100.0000 (97.4693)  time: 0.0325  data: 0.0001  max mem: 4729
+[22:44:14.814573] Test:  [163/782]  eta: 0:00:38  loss: 1.3133 (1.2583)  acc1: 87.5000 (86.8902)  acc5: 100.0000 (97.4085)  time: 0.0325  data: 0.0001  max mem: 4729
+[22:44:14.847839] Test:  [164/782]  eta: 0:00:38  loss: 1.3133 (1.2604)  acc1: 87.5000 (86.8182)  acc5: 100.0000 (97.4242)  time: 0.0325  data: 0.0001  max mem: 4729
+[22:44:14.881080] Test:  [165/782]  eta: 0:00:38  loss: 1.3133 (1.2590)  acc1: 87.5000 (86.8223)  acc5: 100.0000 (97.4398)  time: 0.0325  data: 0.0001  max mem: 4729
+[22:44:14.914047] Test:  [166/782]  eta: 0:00:37  loss: 1.3324 (1.2622)  acc1: 87.5000 (86.7515)  acc5: 100.0000 (97.3802)  time: 0.0325  data: 0.0001  max mem: 4729
+[22:44:14.947039] Test:  [167/782]  eta: 0:00:37  loss: 1.3324 (1.2625)  acc1: 87.5000 (86.7560)  acc5: 100.0000 (97.3958)  time: 0.0325  data: 0.0001  max mem: 4729
+[22:44:14.980036] Test:  [168/782]  eta: 0:00:37  loss: 1.3324 (1.2666)  acc1: 87.5000 (86.5385)  acc5: 100.0000 (97.4112)  time: 0.0325  data: 0.0001  max mem: 4729
+[22:44:15.012915] Test:  [169/782]  eta: 0:00:37  loss: 1.3166 (1.2637)  acc1: 87.5000 (86.6176)  acc5: 100.0000 (97.4265)  time: 0.0325  data: 0.0001  max mem: 4729
+[22:44:15.045821] Test:  [170/782]  eta: 0:00:37  loss: 1.2583 (1.2628)  acc1: 87.5000 (86.6228)  acc5: 100.0000 (97.4415)  time: 0.0325  data: 0.0001  max mem: 4729
+[22:44:15.078816] Test:  [171/782]  eta: 0:00:37  loss: 1.2583 (1.2631)  acc1: 87.5000 (86.6279)  acc5: 100.0000 (97.4564)  time: 0.0325  data: 0.0001  max mem: 4729
+[22:44:15.111838] Test:  [172/782]  eta: 0:00:36  loss: 1.3166 (1.2724)  acc1: 87.5000 (86.4884)  acc5: 100.0000 (97.3266)  time: 0.0325  data: 0.0001  max mem: 4729
+[22:44:15.144959] Test:  [173/782]  eta: 0:00:36  loss: 1.3168 (1.2752)  acc1: 87.5000 (86.4943)  acc5: 100.0000 (97.2701)  time: 0.0325  data: 0.0001  max mem: 4729
+[22:44:15.177965] Test:  [174/782]  eta: 0:00:36  loss: 1.3324 (1.2793)  acc1: 87.5000 (86.4286)  acc5: 100.0000 (97.1429)  time: 0.0325  data: 0.0002  max mem: 4729
+[22:44:15.210969] Test:  [175/782]  eta: 0:00:36  loss: 1.3324 (1.2780)  acc1: 87.5000 (86.5057)  acc5: 100.0000 (97.1591)  time: 0.0325  data: 0.0002  max mem: 4729
+[22:44:15.243961] Test:  [176/782]  eta: 0:00:36  loss: 1.3168 (1.2781)  acc1: 87.5000 (86.5113)  acc5: 100.0000 (97.1045)  time: 0.0325  data: 0.0002  max mem: 4729
+[22:44:15.277485] Test:  [177/782]  eta: 0:00:36  loss: 1.3324 (1.2826)  acc1: 87.5000 (86.4466)  acc5: 100.0000 (97.1208)  time: 0.0326  data: 0.0002  max mem: 4729
+[22:44:15.320923] Test:  [178/782]  eta: 0:00:35  loss: 1.3517 (1.2839)  acc1: 87.5000 (86.3827)  acc5: 100.0000 (97.1369)  time: 0.0331  data: 0.0002  max mem: 4729
+[22:44:15.353718] Test:  [179/782]  eta: 0:00:35  loss: 1.3324 (1.2814)  acc1: 87.5000 (86.4583)  acc5: 100.0000 (97.1528)  time: 0.0331  data: 0.0002  max mem: 4729
+[22:44:15.387192] Test:  [180/782]  eta: 0:00:35  loss: 1.3324 (1.2832)  acc1: 87.5000 (86.3950)  acc5: 100.0000 (97.0994)  time: 0.0331  data: 0.0002  max mem: 4729
+[22:44:15.420312] Test:  [181/782]  eta: 0:00:35  loss: 1.3324 (1.2807)  acc1: 87.5000 (86.4698)  acc5: 100.0000 (97.1154)  time: 0.0331  data: 0.0002  max mem: 4729
+[22:44:15.453324] Test:  [182/782]  eta: 0:00:35  loss: 1.3517 (1.2818)  acc1: 87.5000 (86.4754)  acc5: 100.0000 (97.0628)  time: 0.0331  data: 0.0002  max mem: 4729
+[22:44:15.486322] Test:  [183/782]  eta: 0:00:35  loss: 1.3168 (1.2804)  acc1: 87.5000 (86.4810)  acc5: 100.0000 (97.0788)  time: 0.0331  data: 0.0002  max mem: 4729
+[22:44:15.519404] Test:  [184/782]  eta: 0:00:35  loss: 1.3168 (1.2856)  acc1: 87.5000 (86.3514)  acc5: 100.0000 (97.0946)  time: 0.0331  data: 0.0002  max mem: 4729
+[22:44:15.552328] Test:  [185/782]  eta: 0:00:34  loss: 1.4727 (1.2874)  acc1: 87.5000 (86.2903)  acc5: 100.0000 (97.1102)  time: 0.0331  data: 0.0002  max mem: 4729
+[22:44:15.585390] Test:  [186/782]  eta: 0:00:34  loss: 1.4727 (1.2889)  acc1: 87.5000 (86.1631)  acc5: 100.0000 (97.1257)  time: 0.0331  data: 0.0002  max mem: 4729
+[22:44:15.618494] Test:  [187/782]  eta: 0:00:34  loss: 1.4727 (1.2881)  acc1: 87.5000 (86.1702)  acc5: 100.0000 (97.1410)  time: 0.0331  data: 0.0002  max mem: 4729
+[22:44:15.651677] Test:  [188/782]  eta: 0:00:34  loss: 1.3168 (1.2859)  acc1: 87.5000 (86.2434)  acc5: 100.0000 (97.1561)  time: 0.0331  data: 0.0002  max mem: 4729
+[22:44:15.684806] Test:  [189/782]  eta: 0:00:34  loss: 1.4727 (1.2887)  acc1: 87.5000 (86.2500)  acc5: 100.0000 (97.1053)  time: 0.0331  data: 0.0002  max mem: 4729
+[22:44:15.717817] Test:  [190/782]  eta: 0:00:34  loss: 1.4727 (1.2864)  acc1: 87.5000 (86.3220)  acc5: 100.0000 (97.1204)  time: 0.0331  data: 0.0002  max mem: 4729
+[22:44:15.750654] Test:  [191/782]  eta: 0:00:34  loss: 1.4727 (1.2839)  acc1: 87.5000 (86.3932)  acc5: 100.0000 (97.1354)  time: 0.0331  data: 0.0002  max mem: 4729
+[22:44:15.783629] Test:  [192/782]  eta: 0:00:33  loss: 1.2969 (1.2827)  acc1: 87.5000 (86.3990)  acc5: 100.0000 (97.1503)  time: 0.0331  data: 0.0002  max mem: 4729
+[22:44:15.816778] Test:  [193/782]  eta: 0:00:33  loss: 1.2969 (1.2857)  acc1: 87.5000 (86.3402)  acc5: 100.0000 (97.1005)  time: 0.0331  data: 0.0002  max mem: 4729
+[22:44:15.849818] Test:  [194/782]  eta: 0:00:33  loss: 1.2969 (1.2888)  acc1: 87.5000 (86.2821)  acc5: 100.0000 (97.1154)  time: 0.0331  data: 0.0002  max mem: 4729
+[22:44:15.882745] Test:  [195/782]  eta: 0:00:33  loss: 1.2969 (1.2885)  acc1: 87.5000 (86.2883)  acc5: 100.0000 (97.1301)  time: 0.0331  data: 0.0002  max mem: 4729
+[22:44:15.915933] Test:  [196/782]  eta: 0:00:33  loss: 1.4727 (1.2906)  acc1: 87.5000 (86.2310)  acc5: 100.0000 (97.1447)  time: 0.0331  data: 0.0002  max mem: 4729
+[22:44:15.949202] Test:  [197/782]  eta: 0:00:33  loss: 1.4098 (1.2912)  acc1: 87.5000 (86.2374)  acc5: 100.0000 (97.1591)  time: 0.0331  data: 0.0002  max mem: 4729
+[22:44:15.982200] Test:  [198/782]  eta: 0:00:33  loss: 1.2241 (1.2905)  acc1: 87.5000 (86.1809)  acc5: 100.0000 (97.1734)  time: 0.0326  data: 0.0002  max mem: 4729
+[22:44:16.015168] Test:  [199/782]  eta: 0:00:33  loss: 1.2241 (1.2892)  acc1: 87.5000 (86.1875)  acc5: 100.0000 (97.1875)  time: 0.0326  data: 0.0002  max mem: 4729
+[22:44:16.048139] Test:  [200/782]  eta: 0:00:32  loss: 1.1560 (1.2880)  acc1: 87.5000 (86.1940)  acc5: 100.0000 (97.2015)  time: 0.0326  data: 0.0001  max mem: 4729
+[22:44:16.081150] Test:  [201/782]  eta: 0:00:32  loss: 1.2241 (1.2897)  acc1: 87.5000 (86.2005)  acc5: 100.0000 (97.2153)  time: 0.0325  data: 0.0001  max mem: 4729
+[22:44:16.114676] Test:  [202/782]  eta: 0:00:32  loss: 1.2241 (1.2911)  acc1: 87.5000 (86.1453)  acc5: 100.0000 (97.2291)  time: 0.0326  data: 0.0001  max mem: 4729
+[22:44:16.147752] Test:  [203/782]  eta: 0:00:32  loss: 1.4098 (1.2922)  acc1: 87.5000 (86.1520)  acc5: 100.0000 (97.1814)  time: 0.0326  data: 0.0001  max mem: 4729
+[22:44:16.180816] Test:  [204/782]  eta: 0:00:32  loss: 1.4098 (1.2958)  acc1: 87.5000 (86.0976)  acc5: 100.0000 (97.0732)  time: 0.0326  data: 0.0001  max mem: 4729
+[22:44:16.214011] Test:  [205/782]  eta: 0:00:32  loss: 1.4098 (1.2965)  acc1: 87.5000 (86.1044)  acc5: 100.0000 (97.0874)  time: 0.0326  data: 0.0001  max mem: 4729
+[22:44:16.247322] Test:  [206/782]  eta: 0:00:32  loss: 1.2241 (1.2958)  acc1: 87.5000 (86.1111)  acc5: 100.0000 (97.1014)  time: 0.0326  data: 0.0001  max mem: 4729
+[22:44:16.280379] Test:  [207/782]  eta: 0:00:32  loss: 1.4098 (1.2973)  acc1: 87.5000 (85.9976)  acc5: 100.0000 (97.1154)  time: 0.0326  data: 0.0001  max mem: 4729
+[22:44:16.313366] Test:  [208/782]  eta: 0:00:31  loss: 1.4098 (1.2979)  acc1: 87.5000 (85.9450)  acc5: 100.0000 (97.0694)  time: 0.0326  data: 0.0001  max mem: 4729
+[22:44:16.346383] Test:  [209/782]  eta: 0:00:31  loss: 1.4039 (1.2970)  acc1: 87.5000 (85.9524)  acc5: 100.0000 (97.0833)  time: 0.0326  data: 0.0001  max mem: 4729
+[22:44:16.379668] Test:  [210/782]  eta: 0:00:31  loss: 1.4098 (1.2977)  acc1: 87.5000 (85.9005)  acc5: 100.0000 (97.0972)  time: 0.0326  data: 0.0001  max mem: 4729
+[22:44:16.413058] Test:  [211/782]  eta: 0:00:31  loss: 1.4098 (1.2964)  acc1: 87.5000 (85.9080)  acc5: 100.0000 (97.1108)  time: 0.0326  data: 0.0001  max mem: 4729
+[22:44:16.446206] Test:  [212/782]  eta: 0:00:31  loss: 1.4098 (1.2957)  acc1: 87.5000 (85.9155)  acc5: 100.0000 (97.1244)  time: 0.0326  data: 0.0001  max mem: 4729
+[22:44:16.479244] Test:  [213/782]  eta: 0:00:31  loss: 1.4098 (1.2974)  acc1: 87.5000 (85.8061)  acc5: 100.0000 (97.1379)  time: 0.0326  data: 0.0001  max mem: 4729
+[22:44:16.512236] Test:  [214/782]  eta: 0:00:31  loss: 1.4098 (1.2995)  acc1: 87.5000 (85.7558)  acc5: 100.0000 (97.1512)  time: 0.0326  data: 0.0001  max mem: 4729
+[22:44:16.545467] Test:  [215/782]  eta: 0:00:31  loss: 1.4400 (1.3002)  acc1: 87.5000 (85.7639)  acc5: 100.0000 (97.1065)  time: 0.0326  data: 0.0001  max mem: 4729
+[22:44:16.578579] Test:  [216/782]  eta: 0:00:31  loss: 1.4098 (1.3003)  acc1: 87.5000 (85.7719)  acc5: 100.0000 (97.1198)  time: 0.0326  data: 0.0001  max mem: 4729
+[22:44:16.611655] Test:  [217/782]  eta: 0:00:30  loss: 1.4039 (1.2981)  acc1: 87.5000 (85.8372)  acc5: 100.0000 (97.1330)  time: 0.0326  data: 0.0002  max mem: 4729
+[22:44:16.644867] Test:  [218/782]  eta: 0:00:30  loss: 1.4400 (1.3003)  acc1: 87.5000 (85.8447)  acc5: 100.0000 (97.0890)  time: 0.0326  data: 0.0002  max mem: 4729
+[22:44:16.678236] Test:  [219/782]  eta: 0:00:30  loss: 1.4400 (1.2989)  acc1: 87.5000 (85.9091)  acc5: 100.0000 (97.1023)  time: 0.0326  data: 0.0002  max mem: 4729
+[22:44:16.712026] Test:  [220/782]  eta: 0:00:30  loss: 1.4404 (1.3033)  acc1: 87.5000 (85.8597)  acc5: 100.0000 (97.0023)  time: 0.0327  data: 0.0002  max mem: 4729
+[22:44:16.745119] Test:  [221/782]  eta: 0:00:30  loss: 1.4400 (1.3031)  acc1: 87.5000 (85.8671)  acc5: 100.0000 (97.0158)  time: 0.0327  data: 0.0002  max mem: 4729
+[22:44:16.778185] Test:  [222/782]  eta: 0:00:30  loss: 1.4039 (1.3021)  acc1: 87.5000 (85.8744)  acc5: 100.0000 (97.0291)  time: 0.0326  data: 0.0002  max mem: 4729
+[22:44:16.811166] Test:  [223/782]  eta: 0:00:30  loss: 1.4039 (1.3065)  acc1: 87.5000 (85.7701)  acc5: 100.0000 (96.9866)  time: 0.0326  data: 0.0002  max mem: 4729
+[22:44:16.844162] Test:  [224/782]  eta: 0:00:30  loss: 1.4039 (1.3070)  acc1: 87.5000 (85.7778)  acc5: 100.0000 (97.0000)  time: 0.0326  data: 0.0002  max mem: 4729
+[22:44:16.877173] Test:  [225/782]  eta: 0:00:30  loss: 1.4039 (1.3089)  acc1: 87.5000 (85.6748)  acc5: 100.0000 (97.0133)  time: 0.0326  data: 0.0002  max mem: 4729
+[22:44:16.910260] Test:  [226/782]  eta: 0:00:29  loss: 1.4280 (1.3122)  acc1: 87.5000 (85.5176)  acc5: 100.0000 (97.0264)  time: 0.0326  data: 0.0002  max mem: 4729
+[22:44:16.943235] Test:  [227/782]  eta: 0:00:29  loss: 1.4039 (1.3107)  acc1: 87.5000 (85.5811)  acc5: 100.0000 (97.0395)  time: 0.0326  data: 0.0002  max mem: 4729
+[22:44:16.976479] Test:  [228/782]  eta: 0:00:29  loss: 1.3104 (1.3096)  acc1: 87.5000 (85.5895)  acc5: 100.0000 (97.0524)  time: 0.0326  data: 0.0002  max mem: 4729
+[22:44:17.009763] Test:  [229/782]  eta: 0:00:29  loss: 1.4280 (1.3152)  acc1: 87.5000 (85.4891)  acc5: 100.0000 (96.9565)  time: 0.0326  data: 0.0002  max mem: 4729
+[22:44:17.042785] Test:  [230/782]  eta: 0:00:29  loss: 1.3104 (1.3135)  acc1: 87.5000 (85.5519)  acc5: 100.0000 (96.9697)  time: 0.0326  data: 0.0002  max mem: 4729
+[22:44:17.075807] Test:  [231/782]  eta: 0:00:29  loss: 1.3104 (1.3125)  acc1: 87.5000 (85.5603)  acc5: 100.0000 (96.9828)  time: 0.0326  data: 0.0002  max mem: 4729
+[22:44:17.108788] Test:  [232/782]  eta: 0:00:29  loss: 1.3104 (1.3116)  acc1: 87.5000 (85.5687)  acc5: 100.0000 (96.9957)  time: 0.0326  data: 0.0002  max mem: 4729
+[22:44:17.141939] Test:  [233/782]  eta: 0:00:29  loss: 1.2696 (1.3098)  acc1: 87.5000 (85.6303)  acc5: 100.0000 (97.0085)  time: 0.0326  data: 0.0002  max mem: 4729
+[22:44:17.175126] Test:  [234/782]  eta: 0:00:29  loss: 1.2696 (1.3101)  acc1: 87.5000 (85.5319)  acc5: 100.0000 (97.0213)  time: 0.0326  data: 0.0002  max mem: 4729
+[22:44:17.208063] Test:  [235/782]  eta: 0:00:29  loss: 1.2696 (1.3105)  acc1: 87.5000 (85.4873)  acc5: 100.0000 (97.0339)  time: 0.0326  data: 0.0002  max mem: 4729
+[22:44:17.241129] Test:  [236/782]  eta: 0:00:28  loss: 1.2696 (1.3140)  acc1: 87.5000 (85.4430)  acc5: 100.0000 (96.9409)  time: 0.0326  data: 0.0002  max mem: 4729
+[22:44:17.274238] Test:  [237/782]  eta: 0:00:28  loss: 1.2696 (1.3126)  acc1: 87.5000 (85.4517)  acc5: 100.0000 (96.9538)  time: 0.0326  data: 0.0002  max mem: 4729
+[22:44:17.307301] Test:  [238/782]  eta: 0:00:28  loss: 1.1744 (1.3120)  acc1: 87.5000 (85.4603)  acc5: 100.0000 (96.9665)  time: 0.0326  data: 0.0002  max mem: 4729
+[22:44:17.340313] Test:  [239/782]  eta: 0:00:28  loss: 1.1744 (1.3107)  acc1: 87.5000 (85.4688)  acc5: 100.0000 (96.9792)  time: 0.0326  data: 0.0002  max mem: 4729
+[22:44:17.373345] Test:  [240/782]  eta: 0:00:28  loss: 1.1011 (1.3092)  acc1: 87.5000 (85.4772)  acc5: 100.0000 (96.9917)  time: 0.0326  data: 0.0001  max mem: 4729
+[22:44:17.406324] Test:  [241/782]  eta: 0:00:28  loss: 1.1011 (1.3114)  acc1: 87.5000 (85.4339)  acc5: 100.0000 (96.9008)  time: 0.0326  data: 0.0001  max mem: 4729
+[22:44:17.439969] Test:  [242/782]  eta: 0:00:28  loss: 1.1744 (1.3112)  acc1: 87.5000 (85.4424)  acc5: 100.0000 (96.9136)  time: 0.0326  data: 0.0001  max mem: 4729
+[22:44:17.473371] Test:  [243/782]  eta: 0:00:28  loss: 1.1744 (1.3111)  acc1: 87.5000 (85.4508)  acc5: 100.0000 (96.9262)  time: 0.0326  data: 0.0001  max mem: 4729
+[22:44:17.506345] Test:  [244/782]  eta: 0:00:28  loss: 1.1011 (1.3094)  acc1: 87.5000 (85.5102)  acc5: 100.0000 (96.9388)  time: 0.0326  data: 0.0001  max mem: 4729
+[22:44:17.539387] Test:  [245/782]  eta: 0:00:28  loss: 1.0939 (1.3076)  acc1: 87.5000 (85.5691)  acc5: 100.0000 (96.9512)  time: 0.0326  data: 0.0001  max mem: 4729
+[22:44:17.572389] Test:  [246/782]  eta: 0:00:27  loss: 1.0939 (1.3093)  acc1: 87.5000 (85.5263)  acc5: 100.0000 (96.9636)  time: 0.0326  data: 0.0001  max mem: 4729
+[22:44:17.605433] Test:  [247/782]  eta: 0:00:27  loss: 1.0939 (1.3077)  acc1: 87.5000 (85.5847)  acc5: 100.0000 (96.9758)  time: 0.0326  data: 0.0001  max mem: 4729
+[22:44:17.638449] Test:  [248/782]  eta: 0:00:27  loss: 1.1011 (1.3101)  acc1: 87.5000 (85.4920)  acc5: 100.0000 (96.9880)  time: 0.0326  data: 0.0001  max mem: 4729
+[22:44:17.671616] Test:  [249/782]  eta: 0:00:27  loss: 1.0939 (1.3086)  acc1: 87.5000 (85.5500)  acc5: 100.0000 (97.0000)  time: 0.0326  data: 0.0001  max mem: 4729
+[22:44:17.705399] Test:  [250/782]  eta: 0:00:27  loss: 1.1011 (1.3093)  acc1: 87.5000 (85.5578)  acc5: 100.0000 (97.0120)  time: 0.0326  data: 0.0001  max mem: 4729
+[22:44:17.738486] Test:  [251/782]  eta: 0:00:27  loss: 1.1744 (1.3092)  acc1: 87.5000 (85.5159)  acc5: 100.0000 (97.0238)  time: 0.0326  data: 0.0001  max mem: 4729
+[22:44:17.771384] Test:  [252/782]  eta: 0:00:27  loss: 1.2648 (1.3100)  acc1: 87.5000 (85.5237)  acc5: 100.0000 (96.9862)  time: 0.0326  data: 0.0001  max mem: 4729
+[22:44:17.804426] Test:  [253/782]  eta: 0:00:27  loss: 1.2916 (1.3100)  acc1: 87.5000 (85.5315)  acc5: 100.0000 (96.9980)  time: 0.0326  data: 0.0001  max mem: 4729
+[22:44:17.837517] Test:  [254/782]  eta: 0:00:27  loss: 1.2648 (1.3093)  acc1: 87.5000 (85.5392)  acc5: 100.0000 (97.0098)  time: 0.0326  data: 0.0001  max mem: 4729
+[22:44:17.870687] Test:  [255/782]  eta: 0:00:27  loss: 1.1744 (1.3079)  acc1: 87.5000 (85.5957)  acc5: 100.0000 (97.0215)  time: 0.0326  data: 0.0001  max mem: 4729
+[22:44:17.903629] Test:  [256/782]  eta: 0:00:27  loss: 1.1744 (1.3092)  acc1: 87.5000 (85.5545)  acc5: 100.0000 (97.0331)  time: 0.0326  data: 0.0001  max mem: 4729
+[22:44:17.936660] Test:  [257/782]  eta: 0:00:26  loss: 1.2648 (1.3115)  acc1: 87.5000 (85.5136)  acc5: 100.0000 (96.9961)  time: 0.0326  data: 0.0001  max mem: 4729
+[22:44:17.969667] Test:  [258/782]  eta: 0:00:26  loss: 1.2648 (1.3110)  acc1: 87.5000 (85.5212)  acc5: 100.0000 (97.0077)  time: 0.0326  data: 0.0001  max mem: 4729
+[22:44:18.002655] Test:  [259/782]  eta: 0:00:26  loss: 1.2648 (1.3104)  acc1: 87.5000 (85.5288)  acc5: 100.0000 (97.0192)  time: 0.0326  data: 0.0001  max mem: 4729
+[22:44:18.035929] Test:  [260/782]  eta: 0:00:26  loss: 1.2648 (1.3084)  acc1: 87.5000 (85.5843)  acc5: 100.0000 (97.0307)  time: 0.0326  data: 0.0001  max mem: 4729
+[22:44:18.069133] Test:  [261/782]  eta: 0:00:26  loss: 1.1602 (1.3079)  acc1: 87.5000 (85.6393)  acc5: 100.0000 (97.0420)  time: 0.0326  data: 0.0001  max mem: 4729
+[22:44:18.102104] Test:  [262/782]  eta: 0:00:26  loss: 1.1602 (1.3088)  acc1: 87.5000 (85.5513)  acc5: 100.0000 (97.0532)  time: 0.0326  data: 0.0001  max mem: 4729
+[22:44:18.135055] Test:  [263/782]  eta: 0:00:26  loss: 1.1602 (1.3083)  acc1: 87.5000 (85.5587)  acc5: 100.0000 (97.0644)  time: 0.0326  data: 0.0001  max mem: 4729
+[22:44:18.168595] Test:  [264/782]  eta: 0:00:26  loss: 1.1860 (1.3088)  acc1: 87.5000 (85.5660)  acc5: 100.0000 (97.0283)  time: 0.0326  data: 0.0001  max mem: 4729
+[22:44:18.201618] Test:  [265/782]  eta: 0:00:26  loss: 1.1860 (1.3080)  acc1: 87.5000 (85.5733)  acc5: 100.0000 (97.0395)  time: 0.0326  data: 0.0001  max mem: 4729
+[22:44:18.234552] Test:  [266/782]  eta: 0:00:26  loss: 1.1860 (1.3108)  acc1: 87.5000 (85.5337)  acc5: 100.0000 (97.0037)  time: 0.0326  data: 0.0001  max mem: 4729
+[22:44:18.267520] Test:  [267/782]  eta: 0:00:26  loss: 1.2916 (1.3132)  acc1: 87.5000 (85.4944)  acc5: 100.0000 (96.9683)  time: 0.0326  data: 0.0001  max mem: 4729
+[22:44:18.300460] Test:  [268/782]  eta: 0:00:25  loss: 1.2916 (1.3134)  acc1: 87.5000 (85.5019)  acc5: 100.0000 (96.9796)  time: 0.0326  data: 0.0001  max mem: 4729
+[22:44:18.333792] Test:  [269/782]  eta: 0:00:25  loss: 1.2916 (1.3116)  acc1: 87.5000 (85.5556)  acc5: 100.0000 (96.9907)  time: 0.0326  data: 0.0001  max mem: 4729
+[22:44:18.366784] Test:  [270/782]  eta: 0:00:25  loss: 1.2916 (1.3137)  acc1: 87.5000 (85.5166)  acc5: 100.0000 (97.0018)  time: 0.0326  data: 0.0001  max mem: 4729
+[22:44:18.399782] Test:  [271/782]  eta: 0:00:25  loss: 1.3123 (1.3167)  acc1: 87.5000 (85.4320)  acc5: 100.0000 (96.9669)  time: 0.0325  data: 0.0001  max mem: 4729
+[22:44:18.432832] Test:  [272/782]  eta: 0:00:25  loss: 1.1860 (1.3150)  acc1: 87.5000 (85.4853)  acc5: 100.0000 (96.9780)  time: 0.0326  data: 0.0001  max mem: 4729
+[22:44:18.465836] Test:  [273/782]  eta: 0:00:25  loss: 1.1602 (1.3137)  acc1: 87.5000 (85.4927)  acc5: 100.0000 (96.9891)  time: 0.0326  data: 0.0001  max mem: 4729
+[22:44:18.498916] Test:  [274/782]  eta: 0:00:25  loss: 1.1602 (1.3121)  acc1: 87.5000 (85.5455)  acc5: 100.0000 (97.0000)  time: 0.0326  data: 0.0001  max mem: 4729
+[22:44:18.531865] Test:  [275/782]  eta: 0:00:25  loss: 1.1860 (1.3119)  acc1: 87.5000 (85.5072)  acc5: 100.0000 (97.0109)  time: 0.0325  data: 0.0001  max mem: 4729
+[22:44:18.564877] Test:  [276/782]  eta: 0:00:25  loss: 1.1602 (1.3107)  acc1: 87.5000 (85.5596)  acc5: 100.0000 (97.0217)  time: 0.0325  data: 0.0001  max mem: 4729
+[22:44:18.597856] Test:  [277/782]  eta: 0:00:25  loss: 1.1567 (1.3090)  acc1: 87.5000 (85.6115)  acc5: 100.0000 (97.0324)  time: 0.0325  data: 0.0001  max mem: 4729
+[22:44:18.631320] Test:  [278/782]  eta: 0:00:25  loss: 1.1567 (1.3110)  acc1: 87.5000 (85.5735)  acc5: 100.0000 (97.0430)  time: 0.0326  data: 0.0001  max mem: 4729
+[22:44:18.664508] Test:  [279/782]  eta: 0:00:25  loss: 1.1860 (1.3152)  acc1: 87.5000 (85.4911)  acc5: 100.0000 (97.0089)  time: 0.0326  data: 0.0001  max mem: 4729
+[22:44:18.697560] Test:  [280/782]  eta: 0:00:24  loss: 1.2524 (1.3151)  acc1: 87.5000 (85.4982)  acc5: 100.0000 (96.9751)  time: 0.0326  data: 0.0001  max mem: 4729
+[22:44:18.730419] Test:  [281/782]  eta: 0:00:24  loss: 1.2685 (1.3157)  acc1: 87.5000 (85.5053)  acc5: 100.0000 (96.9858)  time: 0.0326  data: 0.0001  max mem: 4729
+[22:44:18.766285] Test:  [282/782]  eta: 0:00:24  loss: 1.2524 (1.3154)  acc1: 87.5000 (85.5124)  acc5: 100.0000 (96.9965)  time: 0.0327  data: 0.0001  max mem: 4729
+[22:44:18.799320] Test:  [283/782]  eta: 0:00:24  loss: 1.2524 (1.3134)  acc1: 87.5000 (85.5634)  acc5: 100.0000 (97.0070)  time: 0.0327  data: 0.0001  max mem: 4729
+[22:44:18.833213] Test:  [284/782]  eta: 0:00:24  loss: 1.2524 (1.3136)  acc1: 87.5000 (85.5702)  acc5: 100.0000 (96.9737)  time: 0.0327  data: 0.0001  max mem: 4729
+[22:44:18.866390] Test:  [285/782]  eta: 0:00:24  loss: 1.2685 (1.3142)  acc1: 87.5000 (85.5769)  acc5: 100.0000 (96.9406)  time: 0.0327  data: 0.0001  max mem: 4729
+[22:44:18.899485] Test:  [286/782]  eta: 0:00:24  loss: 1.2685 (1.3160)  acc1: 87.5000 (85.5401)  acc5: 100.0000 (96.9077)  time: 0.0327  data: 0.0001  max mem: 4729
+[22:44:18.932442] Test:  [287/782]  eta: 0:00:24  loss: 1.2685 (1.3159)  acc1: 87.5000 (85.5469)  acc5: 100.0000 (96.9184)  time: 0.0327  data: 0.0001  max mem: 4729
+[22:44:18.965481] Test:  [288/782]  eta: 0:00:24  loss: 1.2524 (1.3153)  acc1: 87.5000 (85.5969)  acc5: 100.0000 (96.9291)  time: 0.0327  data: 0.0001  max mem: 4729
+[22:44:18.998327] Test:  [289/782]  eta: 0:00:24  loss: 1.2685 (1.3175)  acc1: 87.5000 (85.5603)  acc5: 100.0000 (96.8966)  time: 0.0327  data: 0.0001  max mem: 4729
+[22:44:19.031171] Test:  [290/782]  eta: 0:00:24  loss: 1.2524 (1.3166)  acc1: 87.5000 (85.5670)  acc5: 100.0000 (96.9072)  time: 0.0327  data: 0.0001  max mem: 4729
+[22:44:19.064261] Test:  [291/782]  eta: 0:00:24  loss: 1.2524 (1.3168)  acc1: 87.5000 (85.5308)  acc5: 100.0000 (96.9178)  time: 0.0327  data: 0.0001  max mem: 4729
+[22:44:19.097496] Test:  [292/782]  eta: 0:00:24  loss: 1.2524 (1.3157)  acc1: 87.5000 (85.5375)  acc5: 100.0000 (96.9283)  time: 0.0327  data: 0.0001  max mem: 4729
+[22:44:19.130772] Test:  [293/782]  eta: 0:00:23  loss: 1.2685 (1.3181)  acc1: 87.5000 (85.5017)  acc5: 100.0000 (96.8537)  time: 0.0327  data: 0.0001  max mem: 4729
+[22:44:19.163947] Test:  [294/782]  eta: 0:00:23  loss: 1.2685 (1.3167)  acc1: 87.5000 (85.5508)  acc5: 100.0000 (96.8644)  time: 0.0327  data: 0.0001  max mem: 4729
+[22:44:19.196993] Test:  [295/782]  eta: 0:00:23  loss: 1.2685 (1.3161)  acc1: 87.5000 (85.5574)  acc5: 100.0000 (96.8750)  time: 0.0327  data: 0.0001  max mem: 4729
+[22:44:19.230069] Test:  [296/782]  eta: 0:00:23  loss: 1.2685 (1.3153)  acc1: 87.5000 (85.6061)  acc5: 100.0000 (96.8855)  time: 0.0327  data: 0.0001  max mem: 4729
+[22:44:19.263081] Test:  [297/782]  eta: 0:00:23  loss: 1.2866 (1.3169)  acc1: 87.5000 (85.5705)  acc5: 100.0000 (96.8960)  time: 0.0327  data: 0.0001  max mem: 4729
+[22:44:19.295973] Test:  [298/782]  eta: 0:00:23  loss: 1.2685 (1.3156)  acc1: 87.5000 (85.6187)  acc5: 100.0000 (96.9064)  time: 0.0327  data: 0.0001  max mem: 4729
+[22:44:19.328866] Test:  [299/782]  eta: 0:00:23  loss: 1.2685 (1.3159)  acc1: 87.5000 (85.6250)  acc5: 100.0000 (96.8750)  time: 0.0327  data: 0.0001  max mem: 4729
+[22:44:19.361774] Test:  [300/782]  eta: 0:00:23  loss: 1.2192 (1.3146)  acc1: 87.5000 (85.6728)  acc5: 100.0000 (96.8854)  time: 0.0327  data: 0.0001  max mem: 4729
+[22:44:19.394804] Test:  [301/782]  eta: 0:00:23  loss: 1.1397 (1.3135)  acc1: 87.5000 (85.6788)  acc5: 100.0000 (96.8957)  time: 0.0327  data: 0.0001  max mem: 4729
+[22:44:19.427873] Test:  [302/782]  eta: 0:00:23  loss: 1.1397 (1.3137)  acc1: 87.5000 (85.6848)  acc5: 100.0000 (96.9059)  time: 0.0326  data: 0.0001  max mem: 4729
+[22:44:19.460910] Test:  [303/782]  eta: 0:00:23  loss: 1.2866 (1.3164)  acc1: 87.5000 (85.6497)  acc5: 100.0000 (96.8339)  time: 0.0326  data: 0.0001  max mem: 4729
+[22:44:19.494340] Test:  [304/782]  eta: 0:00:23  loss: 1.1731 (1.3159)  acc1: 87.5000 (85.6967)  acc5: 100.0000 (96.8443)  time: 0.0326  data: 0.0001  max mem: 4729
+[22:44:19.527387] Test:  [305/782]  eta: 0:00:23  loss: 1.1731 (1.3163)  acc1: 87.5000 (85.6618)  acc5: 100.0000 (96.8546)  time: 0.0326  data: 0.0001  max mem: 4729
+[22:44:19.560544] Test:  [306/782]  eta: 0:00:22  loss: 1.1731 (1.3181)  acc1: 87.5000 (85.6270)  acc5: 100.0000 (96.8241)  time: 0.0326  data: 0.0001  max mem: 4729
+[22:44:19.593926] Test:  [307/782]  eta: 0:00:22  loss: 1.1731 (1.3179)  acc1: 87.5000 (85.6331)  acc5: 100.0000 (96.8344)  time: 0.0326  data: 0.0001  max mem: 4729
+[22:44:19.627141] Test:  [308/782]  eta: 0:00:22  loss: 1.2564 (1.3186)  acc1: 87.5000 (85.5987)  acc5: 100.0000 (96.8447)  time: 0.0326  data: 0.0001  max mem: 4729
+[22:44:19.660169] Test:  [309/782]  eta: 0:00:22  loss: 1.2564 (1.3192)  acc1: 87.5000 (85.6048)  acc5: 100.0000 (96.8145)  time: 0.0326  data: 0.0001  max mem: 4729
+[22:44:19.693187] Test:  [310/782]  eta: 0:00:22  loss: 1.2564 (1.3189)  acc1: 87.5000 (85.5707)  acc5: 100.0000 (96.8248)  time: 0.0326  data: 0.0001  max mem: 4729
+[22:44:19.726035] Test:  [311/782]  eta: 0:00:22  loss: 1.2369 (1.3176)  acc1: 87.5000 (85.6170)  acc5: 100.0000 (96.8349)  time: 0.0326  data: 0.0001  max mem: 4729
+[22:44:19.758934] Test:  [312/782]  eta: 0:00:22  loss: 1.2564 (1.3216)  acc1: 87.5000 (85.5431)  acc5: 100.0000 (96.7652)  time: 0.0326  data: 0.0001  max mem: 4729
+[22:44:19.791976] Test:  [313/782]  eta: 0:00:22  loss: 1.2564 (1.3218)  acc1: 87.5000 (85.5096)  acc5: 100.0000 (96.7755)  time: 0.0326  data: 0.0001  max mem: 4729
+[22:44:19.825010] Test:  [314/782]  eta: 0:00:22  loss: 1.3867 (1.3249)  acc1: 87.5000 (85.3968)  acc5: 100.0000 (96.7460)  time: 0.0326  data: 0.0001  max mem: 4729
+[22:44:19.857798] Test:  [315/782]  eta: 0:00:22  loss: 1.3880 (1.3258)  acc1: 75.0000 (85.3639)  acc5: 100.0000 (96.7168)  time: 0.0326  data: 0.0001  max mem: 4729
+[22:44:19.890674] Test:  [316/782]  eta: 0:00:22  loss: 1.4139 (1.3261)  acc1: 75.0000 (85.3312)  acc5: 100.0000 (96.7271)  time: 0.0326  data: 0.0001  max mem: 4729
+[22:44:19.923710] Test:  [317/782]  eta: 0:00:22  loss: 1.3880 (1.3256)  acc1: 75.0000 (85.3381)  acc5: 100.0000 (96.7374)  time: 0.0325  data: 0.0001  max mem: 4729
+[22:44:19.956877] Test:  [318/782]  eta: 0:00:22  loss: 1.3880 (1.3247)  acc1: 75.0000 (85.3840)  acc5: 100.0000 (96.7476)  time: 0.0326  data: 0.0001  max mem: 4729
+[22:44:19.989878] Test:  [319/782]  eta: 0:00:22  loss: 1.3867 (1.3232)  acc1: 75.0000 (85.4297)  acc5: 100.0000 (96.7578)  time: 0.0326  data: 0.0001  max mem: 4729
+[22:44:20.022934] Test:  [320/782]  eta: 0:00:22  loss: 1.3867 (1.3234)  acc1: 75.0000 (85.3972)  acc5: 100.0000 (96.7679)  time: 0.0326  data: 0.0001  max mem: 4729
+[22:44:20.056059] Test:  [321/782]  eta: 0:00:21  loss: 1.3867 (1.3232)  acc1: 75.0000 (85.4037)  acc5: 100.0000 (96.7780)  time: 0.0326  data: 0.0001  max mem: 4729
+[22:44:20.089320] Test:  [322/782]  eta: 0:00:21  loss: 1.3854 (1.3220)  acc1: 75.0000 (85.4102)  acc5: 100.0000 (96.7879)  time: 0.0326  data: 0.0001  max mem: 4729
+[22:44:20.122476] Test:  [323/782]  eta: 0:00:21  loss: 1.2564 (1.3205)  acc1: 75.0000 (85.4552)  acc5: 100.0000 (96.7978)  time: 0.0326  data: 0.0001  max mem: 4729
+[22:44:20.155543] Test:  [324/782]  eta: 0:00:21  loss: 1.2564 (1.3201)  acc1: 75.0000 (85.4615)  acc5: 100.0000 (96.8077)  time: 0.0326  data: 0.0001  max mem: 4729
+[22:44:20.188581] Test:  [325/782]  eta: 0:00:21  loss: 1.2414 (1.3186)  acc1: 87.5000 (85.5061)  acc5: 100.0000 (96.8175)  time: 0.0326  data: 0.0001  max mem: 4729
+[22:44:20.221532] Test:  [326/782]  eta: 0:00:21  loss: 1.2414 (1.3195)  acc1: 87.5000 (85.4740)  acc5: 100.0000 (96.8272)  time: 0.0326  data: 0.0001  max mem: 4729
+[22:44:20.254560] Test:  [327/782]  eta: 0:00:21  loss: 1.2369 (1.3185)  acc1: 87.5000 (85.5183)  acc5: 100.0000 (96.8369)  time: 0.0325  data: 0.0001  max mem: 4729
+[22:44:20.288148] Test:  [328/782]  eta: 0:00:21  loss: 1.1883 (1.3180)  acc1: 87.5000 (85.4863)  acc5: 100.0000 (96.8465)  time: 0.0326  data: 0.0001  max mem: 4729
+[22:44:20.321068] Test:  [329/782]  eta: 0:00:21  loss: 1.1883 (1.3197)  acc1: 75.0000 (85.4545)  acc5: 100.0000 (96.8182)  time: 0.0326  data: 0.0001  max mem: 4729
+[22:44:20.353989] Test:  [330/782]  eta: 0:00:21  loss: 1.1883 (1.3216)  acc1: 75.0000 (85.3852)  acc5: 100.0000 (96.7900)  time: 0.0326  data: 0.0001  max mem: 4729
+[22:44:20.386868] Test:  [331/782]  eta: 0:00:21  loss: 1.1883 (1.3209)  acc1: 75.0000 (85.4292)  acc5: 100.0000 (96.7997)  time: 0.0326  data: 0.0001  max mem: 4729
+[22:44:20.419738] Test:  [332/782]  eta: 0:00:21  loss: 1.1883 (1.3235)  acc1: 75.0000 (85.3979)  acc5: 100.0000 (96.7718)  time: 0.0326  data: 0.0001  max mem: 4729
+[22:44:20.452571] Test:  [333/782]  eta: 0:00:21  loss: 1.1883 (1.3243)  acc1: 75.0000 (85.3668)  acc5: 100.0000 (96.7440)  time: 0.0325  data: 0.0001  max mem: 4729
+[22:44:20.485435] Test:  [334/782]  eta: 0:00:21  loss: 1.1883 (1.3270)  acc1: 75.0000 (85.2985)  acc5: 100.0000 (96.7537)  time: 0.0325  data: 0.0001  max mem: 4729
+[22:44:20.518286] Test:  [335/782]  eta: 0:00:20  loss: 1.1834 (1.3264)  acc1: 75.0000 (85.2679)  acc5: 100.0000 (96.7634)  time: 0.0325  data: 0.0001  max mem: 4729
+[22:44:20.551124] Test:  [336/782]  eta: 0:00:20  loss: 1.1834 (1.3267)  acc1: 75.0000 (85.2374)  acc5: 100.0000 (96.7730)  time: 0.0325  data: 0.0001  max mem: 4729
+[22:44:20.584068] Test:  [337/782]  eta: 0:00:20  loss: 1.1834 (1.3282)  acc1: 75.0000 (85.2071)  acc5: 100.0000 (96.7456)  time: 0.0325  data: 0.0001  max mem: 4729
+[22:44:20.617012] Test:  [338/782]  eta: 0:00:20  loss: 1.1834 (1.3277)  acc1: 75.0000 (85.2139)  acc5: 100.0000 (96.7552)  time: 0.0325  data: 0.0001  max mem: 4729
+[22:44:20.649982] Test:  [339/782]  eta: 0:00:20  loss: 1.2414 (1.3283)  acc1: 75.0000 (85.1838)  acc5: 100.0000 (96.7647)  time: 0.0325  data: 0.0001  max mem: 4729
+[22:44:20.682929] Test:  [340/782]  eta: 0:00:20  loss: 1.1834 (1.3268)  acc1: 75.0000 (85.2273)  acc5: 100.0000 (96.7742)  time: 0.0325  data: 0.0001  max mem: 4729
+[22:44:20.715968] Test:  [341/782]  eta: 0:00:20  loss: 1.1834 (1.3276)  acc1: 75.0000 (85.1974)  acc5: 100.0000 (96.7836)  time: 0.0325  data: 0.0001  max mem: 4729
+[22:44:20.748852] Test:  [342/782]  eta: 0:00:20  loss: 1.2630 (1.3274)  acc1: 75.0000 (85.2041)  acc5: 100.0000 (96.7930)  time: 0.0325  data: 0.0001  max mem: 4729
+[22:44:20.781830] Test:  [343/782]  eta: 0:00:20  loss: 1.4530 (1.3295)  acc1: 75.0000 (85.1017)  acc5: 100.0000 (96.7660)  time: 0.0325  data: 0.0001  max mem: 4729
+[22:44:20.814725] Test:  [344/782]  eta: 0:00:20  loss: 1.4530 (1.3294)  acc1: 75.0000 (85.0725)  acc5: 100.0000 (96.7754)  time: 0.0325  data: 0.0001  max mem: 4729
+[22:44:20.847786] Test:  [345/782]  eta: 0:00:20  loss: 1.4530 (1.3279)  acc1: 75.0000 (85.1156)  acc5: 100.0000 (96.7847)  time: 0.0325  data: 0.0001  max mem: 4729
+[22:44:20.880864] Test:  [346/782]  eta: 0:00:20  loss: 1.4530 (1.3320)  acc1: 75.0000 (85.0144)  acc5: 100.0000 (96.7219)  time: 0.0325  data: 0.0001  max mem: 4729
+[22:44:20.913777] Test:  [347/782]  eta: 0:00:20  loss: 1.4530 (1.3307)  acc1: 75.0000 (85.0575)  acc5: 100.0000 (96.7313)  time: 0.0325  data: 0.0001  max mem: 4729
+[22:44:20.947359] Test:  [348/782]  eta: 0:00:20  loss: 1.5113 (1.3322)  acc1: 75.0000 (85.0287)  acc5: 100.0000 (96.7407)  time: 0.0325  data: 0.0001  max mem: 4729
+[22:44:20.980489] Test:  [349/782]  eta: 0:00:20  loss: 1.5113 (1.3351)  acc1: 75.0000 (84.9643)  acc5: 100.0000 (96.6786)  time: 0.0325  data: 0.0001  max mem: 4729
+[22:44:21.013581] Test:  [350/782]  eta: 0:00:20  loss: 1.5113 (1.3362)  acc1: 75.0000 (84.9359)  acc5: 100.0000 (96.6880)  time: 0.0325  data: 0.0001  max mem: 4729
+[22:44:21.046582] Test:  [351/782]  eta: 0:00:19  loss: 1.5907 (1.3375)  acc1: 75.0000 (84.9077)  acc5: 100.0000 (96.6619)  time: 0.0325  data: 0.0001  max mem: 4729
+[22:44:21.079527] Test:  [352/782]  eta: 0:00:19  loss: 1.5907 (1.3388)  acc1: 75.0000 (84.9150)  acc5: 100.0000 (96.6360)  time: 0.0325  data: 0.0001  max mem: 4729
+[22:44:21.112382] Test:  [353/782]  eta: 0:00:19  loss: 1.5113 (1.3372)  acc1: 75.0000 (84.9576)  acc5: 100.0000 (96.6455)  time: 0.0325  data: 0.0001  max mem: 4729
+[22:44:21.145859] Test:  [354/782]  eta: 0:00:19  loss: 1.4530 (1.3365)  acc1: 75.0000 (85.0000)  acc5: 100.0000 (96.6549)  time: 0.0325  data: 0.0001  max mem: 4729
+[22:44:21.179169] Test:  [355/782]  eta: 0:00:19  loss: 1.4530 (1.3358)  acc1: 75.0000 (85.0070)  acc5: 100.0000 (96.6643)  time: 0.0325  data: 0.0001  max mem: 4729
+[22:44:21.212314] Test:  [356/782]  eta: 0:00:19  loss: 1.2965 (1.3351)  acc1: 75.0000 (85.0140)  acc5: 100.0000 (96.6737)  time: 0.0326  data: 0.0001  max mem: 4729
+[22:44:21.245254] Test:  [357/782]  eta: 0:00:19  loss: 1.2630 (1.3346)  acc1: 75.0000 (84.9511)  acc5: 100.0000 (96.6830)  time: 0.0326  data: 0.0001  max mem: 4729
+[22:44:21.278255] Test:  [358/782]  eta: 0:00:19  loss: 1.2965 (1.3349)  acc1: 75.0000 (84.9234)  acc5: 100.0000 (96.6922)  time: 0.0326  data: 0.0001  max mem: 4729
+[22:44:21.311164] Test:  [359/782]  eta: 0:00:19  loss: 1.2965 (1.3352)  acc1: 75.0000 (84.9306)  acc5: 100.0000 (96.6667)  time: 0.0325  data: 0.0001  max mem: 4729
+[22:44:21.344186] Test:  [360/782]  eta: 0:00:19  loss: 1.4351 (1.3371)  acc1: 75.0000 (84.8684)  acc5: 100.0000 (96.6759)  time: 0.0326  data: 0.0001  max mem: 4729
+[22:44:21.377133] Test:  [361/782]  eta: 0:00:19  loss: 1.4351 (1.3385)  acc1: 75.0000 (84.8412)  acc5: 100.0000 (96.6506)  time: 0.0325  data: 0.0001  max mem: 4729
+[22:44:21.410038] Test:  [362/782]  eta: 0:00:19  loss: 1.4563 (1.3430)  acc1: 75.0000 (84.7796)  acc5: 100.0000 (96.5565)  time: 0.0325  data: 0.0001  max mem: 4729
+[22:44:21.442943] Test:  [363/782]  eta: 0:00:19  loss: 1.4351 (1.3416)  acc1: 75.0000 (84.8214)  acc5: 100.0000 (96.5659)  time: 0.0325  data: 0.0001  max mem: 4729
+[22:44:21.475793] Test:  [364/782]  eta: 0:00:19  loss: 1.4351 (1.3406)  acc1: 75.0000 (84.8630)  acc5: 100.0000 (96.5753)  time: 0.0325  data: 0.0001  max mem: 4729
+[22:44:21.508662] Test:  [365/782]  eta: 0:00:19  loss: 1.4351 (1.3399)  acc1: 75.0000 (84.8702)  acc5: 100.0000 (96.5847)  time: 0.0325  data: 0.0001  max mem: 4729
+[22:44:21.541514] Test:  [366/782]  eta: 0:00:19  loss: 1.1562 (1.3392)  acc1: 87.5000 (84.8774)  acc5: 100.0000 (96.5940)  time: 0.0325  data: 0.0001  max mem: 4729
+[22:44:21.574435] Test:  [367/782]  eta: 0:00:18  loss: 1.1562 (1.3380)  acc1: 87.5000 (84.9185)  acc5: 100.0000 (96.6033)  time: 0.0325  data: 0.0001  max mem: 4729
+[22:44:21.607876] Test:  [368/782]  eta: 0:00:18  loss: 1.0943 (1.3367)  acc1: 87.5000 (84.9593)  acc5: 100.0000 (96.6125)  time: 0.0325  data: 0.0001  max mem: 4729
+[22:44:21.640867] Test:  [369/782]  eta: 0:00:18  loss: 1.0943 (1.3375)  acc1: 87.5000 (84.9662)  acc5: 100.0000 (96.5878)  time: 0.0325  data: 0.0001  max mem: 4729
+[22:44:21.673869] Test:  [370/782]  eta: 0:00:18  loss: 1.0943 (1.3387)  acc1: 87.5000 (84.9394)  acc5: 100.0000 (96.5633)  time: 0.0325  data: 0.0001  max mem: 4729
+[22:44:21.706884] Test:  [371/782]  eta: 0:00:18  loss: 1.0943 (1.3381)  acc1: 87.5000 (84.9462)  acc5: 100.0000 (96.5726)  time: 0.0325  data: 0.0001  max mem: 4729
+[22:44:21.739905] Test:  [372/782]  eta: 0:00:18  loss: 1.0943 (1.3390)  acc1: 87.5000 (84.9196)  acc5: 100.0000 (96.5818)  time: 0.0325  data: 0.0001  max mem: 4729
+[22:44:21.773001] Test:  [373/782]  eta: 0:00:18  loss: 1.1106 (1.3392)  acc1: 87.5000 (84.9265)  acc5: 100.0000 (96.5909)  time: 0.0325  data: 0.0001  max mem: 4729
+[22:44:21.805986] Test:  [374/782]  eta: 0:00:18  loss: 1.1562 (1.3402)  acc1: 87.5000 (84.9000)  acc5: 100.0000 (96.5667)  time: 0.0325  data: 0.0001  max mem: 4729
+[22:44:21.838867] Test:  [375/782]  eta: 0:00:18  loss: 1.1562 (1.3391)  acc1: 87.5000 (84.9069)  acc5: 100.0000 (96.5758)  time: 0.0325  data: 0.0001  max mem: 4729
+[22:44:21.871926] Test:  [376/782]  eta: 0:00:18  loss: 1.1562 (1.3379)  acc1: 87.5000 (84.9138)  acc5: 100.0000 (96.5849)  time: 0.0325  data: 0.0001  max mem: 4729
+[22:44:21.905406] Test:  [377/782]  eta: 0:00:18  loss: 1.1106 (1.3368)  acc1: 87.5000 (84.9206)  acc5: 100.0000 (96.5939)  time: 0.0325  data: 0.0001  max mem: 4729
+[22:44:21.938682] Test:  [378/782]  eta: 0:00:18  loss: 1.0943 (1.3356)  acc1: 87.5000 (84.9604)  acc5: 100.0000 (96.6029)  time: 0.0325  data: 0.0001  max mem: 4729
+[22:44:21.971534] Test:  [379/782]  eta: 0:00:18  loss: 1.0943 (1.3366)  acc1: 87.5000 (84.9671)  acc5: 100.0000 (96.5789)  time: 0.0325  data: 0.0001  max mem: 4729
+[22:44:22.004421] Test:  [380/782]  eta: 0:00:18  loss: 1.0943 (1.3362)  acc1: 87.5000 (84.9738)  acc5: 100.0000 (96.5879)  time: 0.0325  data: 0.0001  max mem: 4729
+[22:44:22.037334] Test:  [381/782]  eta: 0:00:18  loss: 1.0943 (1.3370)  acc1: 87.5000 (84.9476)  acc5: 100.0000 (96.5969)  time: 0.0325  data: 0.0001  max mem: 4729
+[22:44:22.070329] Test:  [382/782]  eta: 0:00:18  loss: 1.0913 (1.3363)  acc1: 87.5000 (84.9543)  acc5: 100.0000 (96.6057)  time: 0.0325  data: 0.0001  max mem: 4729
+[22:44:22.103306] Test:  [383/782]  eta: 0:00:18  loss: 1.0943 (1.3358)  acc1: 87.5000 (84.9609)  acc5: 100.0000 (96.6146)  time: 0.0325  data: 0.0001  max mem: 4729
+[22:44:22.136297] Test:  [384/782]  eta: 0:00:17  loss: 1.1106 (1.3358)  acc1: 87.5000 (84.9351)  acc5: 100.0000 (96.6234)  time: 0.0325  data: 0.0001  max mem: 4729
+[22:44:22.169187] Test:  [385/782]  eta: 0:00:17  loss: 1.1283 (1.3356)  acc1: 87.5000 (84.9417)  acc5: 100.0000 (96.6321)  time: 0.0325  data: 0.0001  max mem: 4729
+[22:44:22.202317] Test:  [386/782]  eta: 0:00:17  loss: 1.1809 (1.3358)  acc1: 87.5000 (84.9483)  acc5: 100.0000 (96.6085)  time: 0.0325  data: 0.0001  max mem: 4729
+[22:44:22.235506] Test:  [387/782]  eta: 0:00:17  loss: 1.2616 (1.3357)  acc1: 87.5000 (84.9549)  acc5: 100.0000 (96.6173)  time: 0.0326  data: 0.0001  max mem: 4729
+[22:44:22.268657] Test:  [388/782]  eta: 0:00:17  loss: 1.2616 (1.3355)  acc1: 87.5000 (84.9614)  acc5: 100.0000 (96.5938)  time: 0.0326  data: 0.0001  max mem: 4729
+[22:44:22.301981] Test:  [389/782]  eta: 0:00:17  loss: 1.2616 (1.3382)  acc1: 87.5000 (84.9038)  acc5: 100.0000 (96.5705)  time: 0.0326  data: 0.0001  max mem: 4729
+[22:44:22.335925] Test:  [390/782]  eta: 0:00:17  loss: 1.2567 (1.3379)  acc1: 87.5000 (84.9425)  acc5: 100.0000 (96.5793)  time: 0.0326  data: 0.0001  max mem: 4729
+[22:44:22.369648] Test:  [391/782]  eta: 0:00:17  loss: 1.2616 (1.3398)  acc1: 87.5000 (84.8852)  acc5: 100.0000 (96.5561)  time: 0.0326  data: 0.0001  max mem: 4729
+[22:44:22.402706] Test:  [392/782]  eta: 0:00:17  loss: 1.2567 (1.3388)  acc1: 87.5000 (84.9237)  acc5: 100.0000 (96.5649)  time: 0.0326  data: 0.0001  max mem: 4729
+[22:44:22.435706] Test:  [393/782]  eta: 0:00:17  loss: 1.2567 (1.3395)  acc1: 87.5000 (84.8985)  acc5: 100.0000 (96.5736)  time: 0.0326  data: 0.0001  max mem: 4729
+[22:44:22.468627] Test:  [394/782]  eta: 0:00:17  loss: 1.2567 (1.3402)  acc1: 87.5000 (84.9051)  acc5: 100.0000 (96.5506)  time: 0.0326  data: 0.0001  max mem: 4729
+[22:44:22.501532] Test:  [395/782]  eta: 0:00:17  loss: 1.2616 (1.3409)  acc1: 87.5000 (84.8801)  acc5: 100.0000 (96.5593)  time: 0.0326  data: 0.0001  max mem: 4729
+[22:44:22.534553] Test:  [396/782]  eta: 0:00:17  loss: 1.3193 (1.3420)  acc1: 87.5000 (84.8552)  acc5: 100.0000 (96.5365)  time: 0.0326  data: 0.0002  max mem: 4729
+[22:44:22.567578] Test:  [397/782]  eta: 0:00:17  loss: 1.3193 (1.3408)  acc1: 87.5000 (84.8932)  acc5: 100.0000 (96.5452)  time: 0.0326  data: 0.0002  max mem: 4729
+[22:44:22.600615] Test:  [398/782]  eta: 0:00:17  loss: 1.3358 (1.3409)  acc1: 87.5000 (84.8997)  acc5: 100.0000 (96.5539)  time: 0.0326  data: 0.0002  max mem: 4729
+[22:44:22.633557] Test:  [399/782]  eta: 0:00:17  loss: 1.3193 (1.3399)  acc1: 87.5000 (84.9375)  acc5: 100.0000 (96.5625)  time: 0.0326  data: 0.0002  max mem: 4729
+[22:44:22.666525] Test:  [400/782]  eta: 0:00:17  loss: 1.3193 (1.3391)  acc1: 87.5000 (84.9439)  acc5: 100.0000 (96.5711)  time: 0.0326  data: 0.0002  max mem: 4729
+[22:44:22.699587] Test:  [401/782]  eta: 0:00:16  loss: 1.2616 (1.3386)  acc1: 87.5000 (84.9502)  acc5: 100.0000 (96.5796)  time: 0.0326  data: 0.0002  max mem: 4729
+[22:44:22.732599] Test:  [402/782]  eta: 0:00:16  loss: 1.3193 (1.3390)  acc1: 87.5000 (84.9566)  acc5: 100.0000 (96.5571)  time: 0.0326  data: 0.0002  max mem: 4729
+[22:44:22.765640] Test:  [403/782]  eta: 0:00:16  loss: 1.3193 (1.3379)  acc1: 87.5000 (84.9938)  acc5: 100.0000 (96.5656)  time: 0.0326  data: 0.0002  max mem: 4729
+[22:44:22.798685] Test:  [404/782]  eta: 0:00:16  loss: 1.2616 (1.3368)  acc1: 87.5000 (85.0309)  acc5: 100.0000 (96.5741)  time: 0.0326  data: 0.0002  max mem: 4729
+[22:44:22.831799] Test:  [405/782]  eta: 0:00:16  loss: 1.2567 (1.3361)  acc1: 87.5000 (85.0369)  acc5: 100.0000 (96.5825)  time: 0.0326  data: 0.0002  max mem: 4729
+[22:44:22.864878] Test:  [406/782]  eta: 0:00:16  loss: 1.2210 (1.3350)  acc1: 87.5000 (85.0430)  acc5: 100.0000 (96.5909)  time: 0.0326  data: 0.0002  max mem: 4729
+[22:44:22.897977] Test:  [407/782]  eta: 0:00:16  loss: 1.1292 (1.3339)  acc1: 87.5000 (85.0797)  acc5: 100.0000 (96.5993)  time: 0.0326  data: 0.0002  max mem: 4729
+[22:44:22.931008] Test:  [408/782]  eta: 0:00:16  loss: 1.1292 (1.3361)  acc1: 87.5000 (85.0550)  acc5: 100.0000 (96.5465)  time: 0.0326  data: 0.0002  max mem: 4729
+[22:44:22.964099] Test:  [409/782]  eta: 0:00:16  loss: 1.1292 (1.3358)  acc1: 87.5000 (85.0610)  acc5: 100.0000 (96.5549)  time: 0.0326  data: 0.0002  max mem: 4729
+[22:44:22.997197] Test:  [410/782]  eta: 0:00:16  loss: 1.1292 (1.3371)  acc1: 87.5000 (85.0061)  acc5: 100.0000 (96.5633)  time: 0.0326  data: 0.0001  max mem: 4729
+[22:44:23.030653] Test:  [411/782]  eta: 0:00:16  loss: 1.1292 (1.3375)  acc1: 87.5000 (84.9818)  acc5: 100.0000 (96.5716)  time: 0.0326  data: 0.0001  max mem: 4729
+[22:44:23.063567] Test:  [412/782]  eta: 0:00:16  loss: 1.1872 (1.3376)  acc1: 87.5000 (84.9879)  acc5: 100.0000 (96.5799)  time: 0.0326  data: 0.0001  max mem: 4729
+[22:44:23.096712] Test:  [413/782]  eta: 0:00:16  loss: 1.1872 (1.3374)  acc1: 87.5000 (84.9940)  acc5: 100.0000 (96.5882)  time: 0.0326  data: 0.0001  max mem: 4729
+[22:44:23.129832] Test:  [414/782]  eta: 0:00:16  loss: 1.1872 (1.3390)  acc1: 87.5000 (84.9398)  acc5: 100.0000 (96.5964)  time: 0.0326  data: 0.0001  max mem: 4729
