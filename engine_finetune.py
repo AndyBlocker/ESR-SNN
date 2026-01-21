@@ -9,9 +9,7 @@
 # BEiT: https://github.com/microsoft/unilm/tree/master/beit
 # --------------------------------------------------------
 
-import inspect
 import math
-import os
 import sys
 from typing import Iterable, Optional
 
@@ -30,70 +28,6 @@ from snn.wrapper import cal_l1_loss, open_dropout
 from torch.nn.utils import prune
 import re
 from torch.utils.checkpoint import checkpoint
-
-
-def _should_profile(args, epoch, is_eval):
-    if args is None or not getattr(args, "profile", False):
-        return False
-    if is_eval and not getattr(args, "profile_eval", False):
-        return False
-    if not is_eval:
-        profile_epoch = getattr(args, "profile_epoch", 0)
-        if profile_epoch >= 0 and epoch != profile_epoch:
-            return False
-    return True
-
-
-def _get_profile_base_dir(args, log_writer):
-    if args is not None and getattr(args, "profile_dir", ""):
-        return args.profile_dir
-    if log_writer is not None and getattr(log_writer, "log_dir", ""):
-        return log_writer.log_dir
-    if args is not None and getattr(args, "output_dir", ""):
-        return args.output_dir
-    return "."
-
-
-def _build_profiler(args, epoch, log_writer, rank, is_eval=False):
-    if not _should_profile(args, epoch, is_eval):
-        return None
-    if not getattr(args, "profile_all_ranks", False) and rank != 0:
-        return None
-
-    base_dir = _get_profile_base_dir(args, log_writer)
-    phase = "eval" if is_eval else "train"
-    trace_dir = os.path.join(base_dir, "profiler", phase, f"rank{rank}")
-    os.makedirs(trace_dir, exist_ok=True)
-
-    activities = [torch.profiler.ProfilerActivity.CPU]
-    if torch.cuda.is_available():
-        activities.append(torch.profiler.ProfilerActivity.CUDA)
-
-    schedule = torch.profiler.schedule(
-        wait=getattr(args, "profile_wait", 1),
-        warmup=getattr(args, "profile_warmup", 1),
-        active=getattr(args, "profile_active", 3),
-        repeat=getattr(args, "profile_repeat", 1),
-    )
-
-    sig = inspect.signature(torch.profiler.profile)
-    profile_kwargs = {
-        "record_shapes": getattr(args, "profile_record_shapes", False),
-        "with_stack": getattr(args, "profile_with_stack", False),
-        "profile_memory": getattr(args, "profile_profile_memory", False),
-    }
-    if "with_flops" in sig.parameters:
-        profile_kwargs["with_flops"] = getattr(args, "profile_with_flops", False)
-
-    return torch.profiler.profile(
-        activities=activities,
-        schedule=schedule,
-        on_trace_ready=torch.profiler.tensorboard_trace_handler(
-            trace_dir, worker_name=f"rank{rank}"
-        ),
-        **profile_kwargs,
-    )
-
 
 
 def get_logits_loss(fc_t, fc_s, one_hot_label, temp, num_classes=1000):
@@ -711,7 +645,6 @@ def train_one_epoch_distill_snn(model: torch.nn.Module, model_teacher: torch.nn.
     model.train(True)
     if model_teacher is not None:
         model_teacher.eval()
-    rank = misc.get_rank()
     metric_logger = misc.MetricLogger(delimiter="  ")
     metric_logger.add_meter('lr', misc.SmoothedValue(window_size=1, fmt='{value:.6f}'))
     header = 'Epoch: [{}]'.format(epoch)
@@ -742,10 +675,6 @@ def train_one_epoch_distill_snn(model: torch.nn.Module, model_teacher: torch.nn.
             #     param.requires_grad = False
 
     
-    profiler = _build_profiler(args, epoch, log_writer, rank, is_eval=False)
-    if profiler is not None:
-        profiler.start()
-
     for data_iter_step, (samples, targets) in enumerate(metric_logger.log_every(data_loader, print_freq, header)):
     
         # if data_iter_step > 2000:
@@ -856,12 +785,7 @@ def train_one_epoch_distill_snn(model: torch.nn.Module, model_teacher: torch.nn.
                     wandb.log({'loss_overfire_curve': overfire_loss_value_reduce}, step=epoch_1000x)
                 wandb.log({'lr_curve': max_lr}, step=epoch_1000x)
 
-        if profiler is not None:
-            profiler.step()
-
     # gather the stats from all processes
-    if profiler is not None:
-        profiler.stop()
     metric_logger.synchronize_between_processes()
     print("Averaged stats:", metric_logger)
     return {k: meter.global_avg for k, meter in metric_logger.meters.items()}
@@ -1148,10 +1072,6 @@ def evaluate(data_loader, model, device, snn_aug, mode, args):
 
     # switch to evaluation mode
     model.eval()
-    rank = misc.get_rank()
-    profiler = _build_profiler(args, epoch=0, log_writer=None, rank=rank, is_eval=True)
-    if profiler is not None:
-        profiler.start()
     # open_dropout(model)
     # if args.mode == "SNN":
     #     model.max_T = 0
@@ -1231,17 +1151,12 @@ def evaluate(data_loader, model, device, snn_aug, mode, args):
                     correct_per_timestep[t].cpu().item() * 100. / batch_size, n=batch_size)
             model.module.reset()
 
-        if profiler is not None:
-            profiler.step()
-        
         # break
 
         # count1 += 1
         # if count1 >= 3:
         #     break
     # gather the stats from all processes
-    if profiler is not None:
-        profiler.stop()
     # accuracy_per_timestep = correct_per_timestep.float().cpu().data / float(total_num)
     print("Evaluation End")
     metric_logger.synchronize_between_processes()

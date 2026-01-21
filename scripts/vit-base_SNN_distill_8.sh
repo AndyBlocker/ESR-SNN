@@ -1,29 +1,9 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-# Usage:
-#   PROFILE=1 PROFILE_DIR=./torch_profiler NSYS=0 ./scripts/vit-base_SNN_distill_8.sh
-
 OMP_NUM_THREADS="${OMP_NUM_THREADS:-1}"
 CUDA_VISIBLE_DEVICES="${CUDA_VISIBLE_DEVICES:-0}"
 MASTER_PORT="${MASTER_PORT:-29500}"
-
-PROFILE="${PROFILE:-0}"
-PROFILE_DIR="${PROFILE_DIR:-./torch_profiler}"
-PROFILE_ARGS=()
-if [ "$PROFILE" -eq 1 ]; then
-  PROFILE_ARGS=(
-    --profile
-    --profile_dir "$PROFILE_DIR"
-    --profile_epoch 0
-    --profile_wait 1
-    --profile_warmup 1
-    --profile_active 5
-    --profile_repeat 1
-    --profile_record_shapes
-    --profile_profile_memory
-  )
-fi
 
 NSYS="${NSYS:-0}"
 NSYS_ARGS=()
@@ -50,5 +30,4 @@ OMP_NUM_THREADS="$OMP_NUM_THREADS" CUDA_VISIBLE_DEVICES="$CUDA_VISIBLE_DEVICES" 
     --data_path ~/gpfs-share/data/ \
     --output_dir ~/gpfs-share/code/SpikeZIP_transformer_Hybrid_CVPR/output \
     --log_dir ~/gpfs-share/code/SpikeZIP_transformer_Hybrid_CVPR/output \
-    --mode "SNN" --level 10 --global_pool --act_layer relu --weight_quantization_bit 32 --print_freq 10 \
-    "${PROFILE_ARGS[@]}"
+    --mode "SNN" --level 10 --global_pool --act_layer relu --weight_quantization_bit 32 --print_freq 10

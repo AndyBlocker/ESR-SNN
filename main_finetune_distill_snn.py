@@ -325,32 +325,6 @@ def get_args_parser():
                         help='snn_model_path')
     parser.add_argument('--suppress_over_fire', action='store_true', default=False,
                         help='suppress_over_fire')
-    parser.add_argument('--profile', action='store_true', default=False,
-                        help='enable torch profiler')
-    parser.add_argument('--profile_eval', action='store_true', default=False,
-                        help='profile evaluation loop')
-    parser.add_argument('--profile_dir', default='', type=str,
-                        help='output dir for profiler traces (default: log_dir/profile)')
-    parser.add_argument('--profile_epoch', default=0, type=int,
-                        help='epoch to profile, -1 for all epochs')
-    parser.add_argument('--profile_wait', default=1, type=int,
-                        help='profiler schedule: wait steps')
-    parser.add_argument('--profile_warmup', default=1, type=int,
-                        help='profiler schedule: warmup steps')
-    parser.add_argument('--profile_active', default=3, type=int,
-                        help='profiler schedule: active steps')
-    parser.add_argument('--profile_repeat', default=1, type=int,
-                        help='profiler schedule: repeat cycles')
-    parser.add_argument('--profile_record_shapes', action='store_true', default=False,
-                        help='record tensor shapes in profiler')
-    parser.add_argument('--profile_profile_memory', action='store_true', default=False,
-                        help='record memory in profiler')
-    parser.add_argument('--profile_with_stack', action='store_true', default=False,
-                        help='record python stacks in profiler')
-    parser.add_argument('--profile_with_flops', action='store_true', default=False,
-                        help='record flops in profiler (if supported)')
-    parser.add_argument('--profile_all_ranks', action='store_true', default=False,
-                        help='profile all ranks (default: rank 0 only)')
     return parser
 
 
