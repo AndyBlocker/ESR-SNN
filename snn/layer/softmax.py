@@ -44,27 +44,17 @@ class spiking_softmax(nn.Module):
             # 累加操作
             input = torch.cumsum(input, dim=0)
 
-            # 【修改部分开始】
-            # 使用列表收集每一时刻的结果，避免原位修改(in-place)导致的梯度报错
-            processed_input = []
-            limit = min(self.step, self.T)
-
-            for i in range(self.T):
-                if i < limit:
-                    # 对前 step 个时间步进行加权（非原位操作）
-                    processed_input.append(input[i] * self.biasAllocator[i])
-                else:
-                    # 其他时间步保持不变
-                    processed_input.append(input[i])
-
-            # 将列表重新堆叠回张量
-            input = torch.stack(processed_input, dim=0)
-            # 【修改部分结束】
+            limit = min(self.step, self.T, int(self.biasAllocator.numel()))
+            if limit > 0:
+                weights = input.new_ones((self.T,))
+                weights[:limit] = self.biasAllocator[:limit].to(dtype=input.dtype, device=input.device)
+                view_shape = (self.T,) + (1,) * (input.dim() - 1)
+                input = input * weights.view(view_shape)
 
             output = F.softmax(input, dim=-1)
 
             # 差分操作 (这里保持原样，prepend的处理是安全的)
-            output = torch.diff(output, dim=0, prepend=(output[0]*0.0).unsqueeze(0))
+            output = torch.diff(output, dim=0, prepend=(output[0:1] * 0.0))
 
             return output.reshape(ori_shape)
 

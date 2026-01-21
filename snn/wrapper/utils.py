@@ -1,6 +1,12 @@
 import math
 import torch
 
+try:
+    from torch._dynamo import allow_in_graph
+except Exception:
+    def allow_in_graph(fn):
+        return fn
+
 from snn.layer import (
     IFNeuron,
     LLConv2d,
@@ -39,12 +45,21 @@ _RESET_TYPES = (
 _WORK_TYPES = (IFNeuron, LLLinear, LLConv2d)
 
 
-def get_subtensors(tensor, mean, std, sample_grain=255, time_step=4):
+@allow_in_graph
+def get_subtensors(tensor, mean, std, sample_grain=255, time_step=4, out=None):
     time_step = int(time_step)
     if time_step <= 0:
         return tensor.new_zeros((0,) + tensor.shape)
     scaled = tensor / sample_grain
-    accu = tensor.new_zeros((time_step,) + tensor.shape)
+    use_out = out is not None and not torch.is_grad_enabled()
+    if use_out:
+        if out.shape != (time_step,) + tensor.shape or out.device != tensor.device or out.dtype != tensor.dtype:
+            accu = tensor.new_zeros((time_step,) + tensor.shape)
+        else:
+            accu = out
+            accu.zero_()
+    else:
+        accu = tensor.new_zeros((time_step,) + tensor.shape)
     valid = min(time_step, int(math.ceil(sample_grain)))
     if valid > 0:
         accu[:valid] = scaled

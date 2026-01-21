@@ -5,9 +5,24 @@ from .utils import theta_backward, theta, theta_eq
 from snn.nvtx import nvtx_range
 
 try:
-    from neuron_cupy.st_bif_ss_cuda import ST_BIFNodeATGF_SS_CUDA
+    from torch._dynamo import allow_in_graph
 except Exception:
-    ST_BIFNodeATGF_SS_CUDA = None
+    def allow_in_graph(fn):
+        return fn
+
+@allow_in_graph
+def _bif_step_torch(x_t, v_t_1, t_t_1, v_th, t_max, t_min):
+    h_t = v_t_1 + x_t
+    spike_condition = (h_t >= v_th) & (t_t_1 - t_max < 0)
+    neg_spike_condition = (h_t < 0) & (t_t_1 - t_min > 0)
+
+    one = h_t.new_ones(())
+    zero = h_t.new_zeros(())
+    spike = torch.where(spike_condition, one, torch.where(neg_spike_condition, -one, zero))
+
+    v_t = h_t - v_th * spike
+    t_t = t_t_1 + spike
+    return spike, v_t, t_t
 
 
 class ST_BIFNodeATGF_SS(torch.autograd.Function):
@@ -63,6 +78,47 @@ class ST_BIFNodeATGF_SS(torch.autograd.Function):
             # print("t:",t,"grad_V_t_1",grad_X_t.mean().item(),"grad_T_t_1",grad_T_t_1.mean().item(),"grad_v_t",grad_v_t.mean().item(),"grad_T_t",grad_T_t.mean().item())
             return grad_X_t, grad_V_t_1, grad_T_t_1, None, None, None, None
 
+
+class ST_BIFNodeATGF_SS_Torch(torch.autograd.Function):
+    @staticmethod
+    def forward(ctx, x_t: torch.Tensor, V_t_1: torch.Tensor, T_t_1: torch.Tensor, v_th: torch.Tensor, T_max: torch.Tensor, T_min: torch.Tensor):
+        with nvtx_range("snn.layer.st_bifneuron_ss.ST_BIFNodeATGF_SS_Torch.forward"):
+            H_t = V_t_1 + x_t
+
+            spike_condition = (H_t >= v_th) & (T_t_1 - T_max < 0)
+            neg_spike_condition = (H_t < 0) & (T_t_1 - T_min > 0)
+
+            one = H_t.new_ones(())
+            zero = H_t.new_zeros(())
+            spike = torch.where(spike_condition, one, torch.where(neg_spike_condition, -one, zero))
+
+            V_t = H_t - v_th * spike
+            T_t = T_t_1 + spike
+
+            ctx.save_for_backward(T_t_1, H_t, v_th, T_max, T_min)
+            return spike, V_t, T_t
+
+    @staticmethod
+    def backward(ctx, grad_spike_t: torch.Tensor, grad_v_t: torch.Tensor, grad_T_t: torch.Tensor):
+        with nvtx_range("snn.layer.st_bifneuron_ss.ST_BIFNodeATGF_SS_Torch.backward"):
+            T_t_1, H_t, v_th, T_max, T_min = ctx.saved_tensors
+
+            grad_T_t_to_H_t = (theta_backward(H_t - v_th) * theta(T_max - T_t_1) +
+                               theta_backward(-H_t) * theta(T_t_1 - T_min))
+            grad_Y_t_to_T_t_1 = -(theta_eq(H_t - v_th) * theta_backward(T_max - T_t_1) +
+                                  theta(-H_t) * theta_backward(T_t_1 - T_min))
+
+            tmp = grad_spike_t - v_th * grad_v_t + grad_T_t
+            grad_X_t = tmp * grad_T_t_to_H_t + grad_v_t
+            grad_T_t_1 = tmp * grad_Y_t_to_T_t_1 + grad_T_t
+            grad_V_t_1 = grad_X_t + 0.0
+            return grad_X_t, grad_V_t_1, grad_T_t_1, None, None, None
+
+
+@allow_in_graph
+def bif_step_surrogate(x_t, v_t_1, t_t_1, v_th, t_max, t_min):
+    return ST_BIFNodeATGF_SS_Torch.apply(x_t, v_t_1, t_t_1, v_th, t_max, t_min)
+
 class ST_BIFNeuron_SS(nn.Module):
     def __init__(self, q_threshold, level, sym=False, need_spike_tracer=False, T=None, C=None):
         super(ST_BIFNeuron_SS, self).__init__()
@@ -90,7 +146,6 @@ class ST_BIFNeuron_SS(nn.Module):
         self.t = 0
         self.init_state = 0
         self.init_batch = 20
-        self._t_buf = None
 
     # def __repr__(self):
     #         return f"ST_BIFNeuron_SS(level={self.level}, sym={self.sym}, pos_max={self.pos_max}, neg_min={self.neg_min}, q_threshold={self.q_threshold})"
@@ -101,13 +156,6 @@ class ST_BIFNeuron_SS(nn.Module):
         self.acc_q = 0.0
         self.t = 0
         self.init_state = 0
-        if self._t_buf is not None:
-            self._t_buf.zero_()
-
-    def _get_t_buf(self, device):
-        if self._t_buf is None or self._t_buf.device != device:
-            self._t_buf = torch.zeros((), device=device, dtype=torch.int64)
-        return self._t_buf
 
     def forward(self,input):
         with nvtx_range("snn.layer.st_bifneuron_ss.ST_BIFNeuron_SS.forward"):
@@ -125,8 +173,7 @@ class ST_BIFNeuron_SS(nn.Module):
             #         self.init = False
 
             if not torch.is_tensor(self.q) and not torch.is_tensor(self.acc_q):
-                self.q = input * 0.0 + 0.5*self.q_threshold
-                # self.q = input * 0.0
+                self.q = input * 0.0 + 0.5 * self.q_threshold
                 self.acc_q = input * 0.0
 
             # if self.steps > 0:
@@ -135,48 +182,17 @@ class ST_BIFNeuron_SS(nn.Module):
 
             # s_scale = grad_scale(self.q_threshold, s_grad_scale)
             self.t = self.t + 1
-            t_buf = self._get_t_buf(input.device)
-            t_buf.fill_(self.t)
-            if ST_BIFNodeATGF_SS_CUDA is not None and input.is_cuda:
-                spikes, self.q, self.acc_q = ST_BIFNodeATGF_SS_CUDA.apply(
-                    input,
-                    self.q,
-                    self.acc_q,
-                    self.q_threshold,
-                    self.pos_max,
-                    self.neg_min,
-                    t_buf,
-                )
-            else:
-                spikes, self.q, self.acc_q = ST_BIFNodeATGF_SS.apply(
-                    input,
-                    self.q,
-                    self.acc_q,
-                    self.q_threshold,
-                    self.pos_max,
-                    self.neg_min,
-                    t_buf,
-                )
+            spikes, self.q, self.acc_q = bif_step_surrogate(
+                input,
+                self.q,
+                self.acc_q,
+                self.q_threshold,
+                self.pos_max,
+                self.neg_min,
+            )
 
             return spikes * self.q_threshold
 
 
 class ST_BIFNeuron_SS_Torch(ST_BIFNeuron_SS):
-    def forward(self, input):
-        with nvtx_range("snn.layer.st_bifneuron_ss.ST_BIFNeuron_SS_Torch.forward"):
-            if not torch.is_tensor(self.q) and not torch.is_tensor(self.acc_q):
-                self.q = input * 0.0 + 0.5 * self.q_threshold
-                self.acc_q = input * 0.0
-
-            self.t = self.t + 1
-            H_t = self.q + input
-            spike_condition = (H_t >= self.q_threshold) & (self.acc_q - self.pos_max < 0)
-            neg_spike_condition = (H_t < 0) & (self.acc_q - self.neg_min > 0)
-
-            one = H_t.new_ones(())
-            zero = H_t.new_zeros(())
-            spike = torch.where(spike_condition, one, torch.where(neg_spike_condition, -one, zero))
-
-            self.q = H_t - self.q_threshold * spike
-            self.acc_q = self.acc_q + spike
-            return spike * self.q_threshold
+    pass

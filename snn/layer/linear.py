@@ -18,6 +18,7 @@ class LLConv2d(nn.Module):
         self.realize_time = self.steps
         self.weight = self.conv.weight
         self.bias = self.conv.bias
+        self._zero_output_meta = None
         # self.quan_w_fn = self.conv.quan_w_fn
         
     def reset(self):
@@ -25,11 +26,17 @@ class LLConv2d(nn.Module):
         self.first = True
         self.zero_output = None
         self.realize_time = self.steps
+        self._zero_output_meta = None
 
     def forward(self,input):
         with nvtx_range("snn.layer.linear.LLConv2d.forward"):
             # print("LLConv2d.steps",self.steps)
             x = input
+            if not torch.is_tensor(x):
+                if x == 0.0:
+                    self.is_work = False
+                    return self.zero_output if self.zero_output is not None else x
+                return x
             N,C,H,W = x.shape
             F_h,F_w = self.conv.kernel_size
             S_h,S_w = self.conv.stride
@@ -38,14 +45,21 @@ class LLConv2d(nn.Module):
             H = math.floor((H - F_h + 2*P_h)/S_h)+1
             W = math.floor((W - F_w + 2*P_w)/S_w)+1
 
-            if self.zero_output is None:
+            out_shape = (N, C, H, W)
+            meta = (out_shape, x.device, x.dtype)
+            if self.zero_output is None or self._zero_output_meta != meta:
                 # self.zero_output = 0.0
-                self.zero_output = torch.zeros(size=(N,C,H,W),device=x.device,dtype=x.dtype)
+                self.zero_output = torch.zeros(size=out_shape, device=x.device, dtype=x.dtype)
+                self._zero_output_meta = meta
 
-            if (not torch.is_tensor(x) and (x == 0.0)) or ((x==0.0).all()):
+            if not torch.any(x):
                 self.is_work = False
                 if self.realize_time > 0:
-                    output = self.zero_output + (self.conv.bias.data.unsqueeze(0).unsqueeze(-1).unsqueeze(-1)/self.steps if self.conv.bias is not None else 0.0)
+                    if self.conv.bias is None:
+                        output = self.zero_output
+                    else:
+                        bias = self.conv.bias.detach() / self.steps
+                        output = bias.view(1, -1, 1, 1).expand(out_shape)
                     self.realize_time = self.realize_time - 1
                     self.is_work = True
                     return output
@@ -177,6 +191,7 @@ class LLLinear(nn.Module):
         self.realize_time = self.steps
         self.weight = self.linear.weight
         self.bias = self.linear.bias
+        self._zero_output_meta = None
         # self.quan_w_fn = self.linear.quan_w_fn
         
     def reset(self):
@@ -185,29 +200,27 @@ class LLLinear(nn.Module):
         self.first = True
         self.zero_output = None
         self.realize_time = self.steps
+        self._zero_output_meta = None
 
     def forward(self,input):
         with nvtx_range("snn.layer.linear.LLLinear.forward"):
             # print("LLLinear", input.mean())
             # print("LLLinear.steps",self.steps)
             x = input
-            if x.ndim == 2:
-                B,N = x.shape
-            elif x.ndim == 3:
-                B,C,N = x.shape
-            N = self.linear.out_features
             if x.dim() == 3:
                 B, N, _ = x.shape
-                D = self.linear.out_features
-                shape_new = (B, N, D)
+                shape_new = (B, N, self.linear.out_features)
             elif x.dim() == 2:
                 B, _ = x.shape
-                D = self.linear.out_features
-                shape_new = (B, D)
-            if self.zero_output is None:
-                self.zero_output = torch.zeros(size=shape_new,device=x.device,dtype=x.dtype)
+                shape_new = (B, self.linear.out_features)
+            else:
+                raise ValueError("Input must be 2D or 3D tensor")
+            meta = (shape_new, x.device, x.dtype)
+            if self.zero_output is None or self._zero_output_meta != meta:
+                self.zero_output = torch.zeros(size=shape_new, device=x.device, dtype=x.dtype)
+                self._zero_output_meta = meta
 
-            if (not torch.is_tensor(x) and (x == 0.0)) or ((x==0.0).all()):
+            if not torch.any(x):
                 self.is_work = False
                 return self.zero_output
 

@@ -40,22 +40,28 @@ class Spiking_LayerNorm(nn.Module):
         
     def forward(self,input):
         with nvtx_range("snn.layer.norm.Spiking_LayerNorm.forward"):
-            output = []
+            ori_shape = input.shape
             input = input.reshape(torch.Size([self.T, input.shape[0]//self.T]) + input.shape[1:])
             # print("input.sum(dim=0).abs().mean()",input.sum(dim=0).abs().mean(), "after layernorm:", self.layernorm(input.sum(dim=0)).abs().mean())
-            for t in range(self.T):
-                self.X = input[t] + self.X
-                if t < self.step:
-                    Y = self.layernorm(self.X)*self.biasAllocator[t]
-                else:
-                    Y = self.layernorm(self.X)
-                if self.Y_pre is not None:
-                    Y_pre = self.Y_pre.detach().clone()
-                else:
-                    Y_pre = 0.0
-                self.Y_pre = Y
-                output.append(Y - Y_pre)
-            return torch.cat(output, dim=0)
+            cum = torch.cumsum(input, dim=0)
+            if torch.is_tensor(self.X):
+                cum = cum + self.X
+
+            limit = min(self.step, self.T, int(self.biasAllocator.numel()))
+            if limit > 0:
+                weights = cum.new_ones((self.T,))
+                weights[:limit] = self.biasAllocator[:limit].to(dtype=cum.dtype, device=cum.device)
+                view_shape = (self.T,) + (1,) * (cum.dim() - 1)
+                Y = self.layernorm(cum) * weights.view(view_shape)
+            else:
+                Y = self.layernorm(cum)
+
+            Y_pre = torch.cat([Y[0:1] * 0.0, Y[:-1]], dim=0)
+            output = Y - Y_pre
+
+            self.X = cum[-1].detach()
+            self.Y_pre = Y[-1].detach()
+            return output.reshape(ori_shape)
 
 
 class Spiking_LayerNorm_SS(nn.Module):
@@ -171,6 +177,18 @@ class MyBatchNorm1d(nn.BatchNorm1d):
         self.step = 0
         self.momentum = 0.1
         self.eps = 1e-5
+        self._zero_mean = None
+        self._zero_bias = None
+
+    def _get_zero_buffers(self):
+        if self._zero_mean is None or self._zero_mean.device != self.running_mean.device or self._zero_mean.dtype != self.running_mean.dtype:
+            self._zero_mean = torch.zeros_like(self.running_mean)
+        if self.bias is not None:
+            if self._zero_bias is None or self._zero_bias.device != self.bias.device or self._zero_bias.dtype != self.bias.dtype:
+                self._zero_bias = torch.zeros_like(self.bias)
+        else:
+            self._zero_bias = None
+        return self._zero_mean, self._zero_bias
     
     def forward(self,x):
         with nvtx_range("snn.layer.norm.MyBatchNorm1d.forward"):
@@ -193,8 +211,9 @@ class MyBatchNorm1d(nn.BatchNorm1d):
                 if self.step >= self.T:
                     x = F.batch_norm(x,self.running_mean,self.running_var,self.weight,self.bias,False,self.momentum,self.eps)
                 else:
+                    zero_mean, zero_bias = self._get_zero_buffers()
                     x = torch.cat([F.batch_norm(x[:int(Fd*(self.step/self.T))],self.running_mean,self.running_var,self.weight,self.bias,False,self.momentum,self.eps), \
-                                F.batch_norm(x[int(Fd*(self.step/self.T)):],torch.zeros_like(self.running_mean),self.running_var,self.weight,torch.zeros_like(self.bias),False,self.momentum,self.eps)])
+                                F.batch_norm(x[int(Fd*(self.step/self.T)):],zero_mean,self.running_var,self.weight,zero_bias,False,self.momentum,self.eps)])
             # if self.spike:
             #     print("after mybatchnorm1d:",x.reshape(torch.Size([self.T,x.shape[0]//self.T]) + x.shape[1:]).sum(dim=0).abs().mean())
             # else:

@@ -2,6 +2,12 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 
+try:
+    from torch._dynamo import allow_in_graph
+except Exception:
+    def allow_in_graph(fn):
+        return fn
+
 import glo
 from snn.nvtx import nvtx_range
 from .quant import MyQuan
@@ -188,9 +194,11 @@ class AttentionMulti1(nn.Module):
     def forward(self, x1_t,x2_t,x1_sum_t,x2_sum_t):
         return  (x1_t + x1_sum_t) @ x2_t + x1_t @ x2_sum_t
 
+@allow_in_graph
 def multi(x1_t,x2_t,x1_sum_t,x2_sum_t):
     return (x1_t + x1_sum_t) @ x2_t.transpose(-2, -1) + x1_t @ x2_sum_t.transpose(-2, -1)
 
+@allow_in_graph
 def multi1(x1_t,x2_t,x1_sum_t,x2_sum_t):
     return  (x1_t + x1_sum_t) @ x2_t + x1_t @ x2_sum_t
 
@@ -290,38 +298,44 @@ class SAttention(nn.Module):
             qkv = self.qkv(x).reshape(B, N, 3, self.num_heads, self.head_dim).permute(2, 0, 3, 1, 4) # 3 B self.num_heads N self.head_dim
 
             q, k, v = qkv.unbind(0)
-            q = self.q_IF(q)
-            k = self.k_IF(k)
-            v = self.v_IF(v)
+            q_if = self.q_IF
+            k_if = self.k_IF
+            v_if = self.v_IF
+            q = q_if(q)
+            k = k_if(k)
+            v = v_if(v)
 
-            q = q * self.scale
-            q_acc = self.q_IF.acc_q * self.scale * self.q_IF.q_threshold
-            attn = multi(q,k,q_acc - q.detach(),self.k_IF.acc_q*self.k_IF.q_threshold - k.detach())
-
-            if not self.is_softmax:
-                attn = self.attn_IF(attn)
+            scale = self.scale
+            q = q * scale
+            q_acc = q_if.acc_q * q_if.q_threshold * scale
+            k_acc = k_if.acc_q * k_if.q_threshold
+            v_acc = v_if.acc_q * v_if.q_threshold
+            q_det = q.detach()
+            k_det = k.detach()
+            v_det = v.detach()
+            attn = multi(q, k, q_acc - q_det, k_acc - k_det)
 
             if self.is_softmax:
                 attn = self.Ssoftmax(attn)
-                attn = self.attn_softmax_IF(attn)
-                B,H,N,_ = attn.shape
-                # attn_print = attn.reshape(4,B//4,H,N,N)
+                attn_if = self.attn_softmax_IF
+                # attn_print = attn.reshape(4,B//4,self.num_heads,N,N)
                 # for t in range(4):
                 #     print(f"ST_BIFNeuron_MS attn_print[{t}].abs().mean()",attn_print[t].abs().mean(),attn_print.dtype)
+            else:
+                attn_if = self.attn_IF
 
+            attn = attn_if(attn)
             if not self.is_softmax:
-                attn = attn/N
+                attn = attn * (1.0 / float(N))
 
             attn = self.attn_drop(attn)
 
-            if not self.is_softmax:
-                x = multi1(attn,v,(self.attn_IF.acc_q*self.attn_IF.q_threshold - attn.detach()),(self.v_IF.acc_q*self.v_IF.q_threshold - v.detach()))
-            else:
-                x = multi1(attn,v,(self.attn_softmax_IF.acc_q*self.attn_softmax_IF.q_threshold - attn.detach()),(self.v_IF.acc_q*self.v_IF.q_threshold - v.detach()))
-                B,H,N,C1 = x.shape
-                # x_print = x.reshape(4,B//4,H,N,C1)
-                # for t in range(4):
-                #     print(f"ST_BIFNeuron_MS x_print[{t}].abs().mean()",x_print[t].abs().mean(),x_print.dtype)
+            attn_acc = attn_if.acc_q * attn_if.q_threshold
+            attn_det = attn.detach()
+            x = multi1(attn, v, attn_acc - attn_det, v_acc - v_det)
+            # x_print = x.reshape(4,B//4,self.num_heads,N,self.head_dim)
+            # for t in range(4):
+            #     print(f"ST_BIFNeuron_MS x_print[{t}].abs().mean()",x_print[t].abs().mean(),x_print.dtype)
 
             x = self.after_attn_IF(x)
 

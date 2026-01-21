@@ -339,7 +339,9 @@ def evaluate(data_loader, model, device, snn_aug, args, profiler=None):
             output = model(images)
         else:
             snn_model = _unwrap_snn_model(model)
-            output, count, _, accu_per_timestep = snn_model(images, verbose=True)
+            output, count, _, accu_per_timestep = snn_model(
+                images, verbose=True, return_output_per_timestep=False
+            )
             overfire_loss = cal_overfire_loss(model) * 0.1
             print(overfire_loss)
 
@@ -439,8 +441,18 @@ def get_args_parser():
     parser.add_argument('--weight_quantization_bit', default=32, type=int)
     parser.add_argument('--neuron_type', default="ST-BIF", type=str,
                         help='neuron type["ST-BIF", "IF"]')
-    parser.add_argument('--neuron_impl', default="auto", type=str, choices=["auto", "torch"],
+    parser.add_argument('--neuron_impl', default="torch", type=str, choices=["auto", "torch"],
                         help='neuron implementation: auto uses CUDA/custom path when available; torch uses pure torch ops')
+    parser.add_argument('--compile', action='store_true', default=False,
+                        help='enable torch.compile for model forward (enables operator fusion)')
+    parser.add_argument('--compile_backend', default='inductor', type=str,
+                        help='torch.compile backend')
+    parser.add_argument('--compile_mode', default=None, type=str,
+                        help='torch.compile mode (e.g., default, reduce-overhead, max-autotune)')
+    parser.add_argument('--compile_fullgraph', action='store_true', default=False,
+                        help='torch.compile fullgraph')
+    parser.add_argument('--compile_dynamic', action='store_true', default=False,
+                        help='torch.compile with dynamic shapes')
     parser.add_argument('--remove_softmax', action='store_true',
                         help='need softmax or not')
     parser.add_argument('--NormType', default='layernorm', type=str,
@@ -451,12 +463,20 @@ def get_args_parser():
                         help='time-step for snn')
     parser.add_argument('--encoding_type', default="analog", type=str,
                         help='encoding type for snn')
+    parser.add_argument('--encoding_time_step', default=4, type=int,
+                        help='time steps used in rate encoding (kept small for memory)')
+    parser.add_argument('--print_timestep', action='store_true', default=False,
+                        help='print timestep progress in SNN forward')
     parser.add_argument('--suppress_over_fire', action='store_true', default=False,
                         help='suppress_over_fire')
     parser.add_argument('--record_inout', action='store_true', default=False,
                         help='record the snn input and output or not')
     parser.add_argument('--hybrid_training', action='store_true', default=False,
                         help='training after conversion')
+    parser.add_argument('--early_exit', action='store_true', default=True,
+                        help='enable early exit in SNN forward')
+    parser.add_argument('--no_early_exit', action='store_false', dest='early_exit',
+                        help='disable early exit in SNN forward')
 
     parser.add_argument('--finetune', default='', help='checkpoint to load before eval')
     parser.add_argument('--resume', default='', help='alternate checkpoint to load before SNN conversion')
