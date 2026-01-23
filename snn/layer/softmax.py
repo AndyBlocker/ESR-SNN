@@ -65,7 +65,7 @@ class spiking_softmax_ss(nn.Module):
         self.X = None
         self.Y_pre = None
         self.step = step
-        self.t = 0
+        self.register_buffer("t", torch.zeros((), dtype=torch.int64))
         self.T = T
 
         init_list = []
@@ -85,20 +85,23 @@ class spiking_softmax_ss(nn.Module):
     def reset(self):
         self.X = None
         self.Y_pre = None
-        self.t = 0
+        self.t.zero_()
 
     def forward(self, input):
         with nvtx_range("snn.layer.softmax.spiking_softmax_ss.forward"):
-            self.t += 1
+            self.t.add_(1)
             if self.X is None:
                 self.X = input * 0.0
             self.X = self.X + input
 
             limit = min(self.step, self.T)
-            if self.t <= limit:
-                output = F.softmax(self.X * self.biasAllocator[self.t - 1], dim=-1)
+            if limit > 0:
+                t_idx = torch.clamp(self.t - 1, 0, limit - 1)
+                bias = self.biasAllocator[t_idx]
+                scale = torch.where(self.t <= limit, bias, bias.new_ones(()))
             else:
-                output = F.softmax(self.X, dim=-1)
+                scale = self.biasAllocator.new_ones(())
+            output = F.softmax(self.X * scale, dim=-1)
 
             if self.Y_pre is None:
                 delta = output

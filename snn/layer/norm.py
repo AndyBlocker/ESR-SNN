@@ -73,7 +73,7 @@ class Spiking_LayerNorm_SS(nn.Module):
         self.weight = None
         self.bias = None
         self.T = T
-        self.t = 0
+        self.register_buffer("t", torch.zeros((), dtype=torch.int64))
         self.step = step
 
         init_list = []
@@ -93,20 +93,23 @@ class Spiking_LayerNorm_SS(nn.Module):
     def reset(self):
         self.X = None
         self.Y_pre = None
-        self.t = 0
+        self.t.zero_()
 
     def forward(self, input):
         with nvtx_range("snn.layer.norm.Spiking_LayerNorm_SS.forward"):
-            self.t += 1
+            self.t.add_(1)
             if self.X is None:
                 self.X = input * 0.0
             self.X = self.X + input
 
             limit = min(self.step, self.T)
-            if self.t <= limit:
-                Y = self.layernorm(self.X) * self.biasAllocator[self.t - 1]
+            if limit > 0:
+                t_idx = torch.clamp(self.t - 1, 0, limit - 1)
+                bias = self.biasAllocator[t_idx]
+                scale = torch.where(self.t <= limit, bias, bias.new_ones(()))
             else:
-                Y = self.layernorm(self.X)
+                scale = self.biasAllocator.new_ones(())
+            Y = self.layernorm(self.X) * scale
 
             Y_pre = self.Y_pre if self.Y_pre is not None else 0.0
             self.Y_pre = Y.detach()
@@ -120,12 +123,12 @@ class MyBatchNorm1d_SS(nn.BatchNorm1d):
         self.step = 0
         self.momentum = 0.1
         self.eps = 1e-5
-        self.t = 0
+        self.register_buffer("t", torch.zeros((), dtype=torch.int64))
         self._zero_mean = None
         self._zero_bias = None
         
     def reset(self):
-        self.t = 0
+        self.t.zero_()
 
     def _get_zero_buffers(self):
         if self._zero_mean is None or self._zero_mean.device != self.running_mean.device or self._zero_mean.dtype != self.running_mean.dtype:
@@ -151,12 +154,15 @@ class MyBatchNorm1d_SS(nn.BatchNorm1d):
             #     print("before mybatchnorm1d:",x.reshape(torch.Size([self.T,x.shape[0]//self.T]) + x.shape[1:]).sum(dim=0).abs().mean())
             # else:
             #     print("before mybatchnorm1d:",x.abs().mean())
-            self.t = self.t + 1
-            if self.t <= self.step:
-                x = F.batch_norm(x,self.running_mean,self.running_var,self.weight,self.bias,self.training,self.momentum,self.eps)
+            self.t.add_(1)
+            use_bias = self.t <= self.step
+            zero_mean, zero_bias = self._get_zero_buffers()
+            mean = torch.where(use_bias, self.running_mean, zero_mean)
+            if self.bias is not None:
+                bias = torch.where(use_bias, self.bias, zero_bias)
             else:
-                zero_mean, zero_bias = self._get_zero_buffers()
-                x = F.batch_norm(x,zero_mean,self.running_var,self.weight,zero_bias,self.training,self.momentum,self.eps)
+                bias = None
+            x = F.batch_norm(x, mean, self.running_var, self.weight, bias, self.training, self.momentum, self.eps)
             # if self.spike:
             #     print("after mybatchnorm1d:",x.reshape(torch.Size([self.T,x.shape[0]//self.T]) + x.shape[1:]).sum(dim=0).abs().mean())
             # else:

@@ -10,6 +10,16 @@ except Exception:
     def allow_in_graph(fn):
         return fn
 
+
+def _is_compiling():
+    try:
+        return torch.compiler.is_compiling()
+    except Exception:
+        try:
+            return torch._dynamo.is_compiling()
+        except Exception:
+            return False
+
 @allow_in_graph
 def _bif_step_torch(x_t, v_t_1, t_t_1, v_th, t_max, t_min):
     h_t = v_t_1 + x_t
@@ -205,7 +215,8 @@ class ST_BIFNeuron_SS(nn.Module):
             #     self.steps = self.steps - 1
 
             # s_scale = grad_scale(self.q_threshold, s_grad_scale)
-            self.t = self.t + 1
+            if not _is_compiling():
+                self.t = self.t + 1
             if input.dim() == 4:
                 spikes, self.q, self.acc_q = bif_step_surrogate_4d(
                     input,

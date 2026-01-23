@@ -32,8 +32,8 @@ class save_module_inout(nn.Module):
                 dimNum = len(x[0].shape) + 1
             else:
                 dimNum = len(x.shape) + 1
-            self.t = self.t + 1
             if self.first:
+                self.t = self.t + 1
                 if isinstance(self.m[0],Addition):
                     self.accu.append(x[0][0].unsqueeze(0)+0)
                 else:

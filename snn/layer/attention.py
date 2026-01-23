@@ -8,6 +8,16 @@ except Exception:
     def allow_in_graph(fn):
         return fn
 
+
+def _is_compiling():
+    try:
+        return torch.compiler.is_compiling()
+    except Exception:
+        try:
+            return torch._dynamo.is_compiling()
+        except Exception:
+            return False
+
 import glo
 from snn.nvtx import nvtx_range
 from .quant import MyQuan
@@ -285,7 +295,8 @@ class SAttention(nn.Module):
 
     def forward(self, x):
         with nvtx_range("snn.layer.attention.SAttention.forward"):
-            self.t = self.t + 1
+            if not _is_compiling():
+                self.t = self.t + 1
             B, N, C = x.shape
 
             if self.first:
@@ -437,7 +448,8 @@ class SAttention_without_softmax(nn.Module):
 
     def forward(self, x):
         with nvtx_range("snn.layer.attention.SAttention_without_softmax.forward"):
-            self.t = self.t + 1
+            if not _is_compiling():
+                self.t = self.t + 1
             B, N, C = x.shape
             qkv = self.qkv(x)
             # print("x.abs().mean()",x.reshape(self.T,8,197,768).sum(dim=0).abs().mean())
@@ -541,7 +553,8 @@ class SAttention_without_softmax_SS(nn.Module):
 
     def forward(self, x):
         with nvtx_range("snn.layer.attention.SAttention_without_softmax_SS.forward"):
-            self.t = self.t + 1
+            if not _is_compiling():
+                self.t = self.t + 1
             B, N, C = x.shape
             qkv = self.qkv(x)
             # print("x.abs().mean()",x.reshape(self.T,8,197,768).sum(dim=0).abs().mean())
