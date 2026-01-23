@@ -51,28 +51,36 @@ class LLConv2d(nn.Module):
                 # self.zero_output = 0.0
                 self.zero_output = torch.zeros(size=out_shape, device=x.device, dtype=x.dtype)
                 self._zero_output_meta = meta
-
-            if not torch.any(x):
-                self.is_work = False
-                if self.realize_time > 0:
-                    if self.conv.bias is None:
-                        output = self.zero_output
-                    else:
-                        bias = self.conv.bias.detach() / self.steps
-                        output = bias.view(1, -1, 1, 1).expand(out_shape)
-                    self.realize_time = self.realize_time - 1
-                    self.is_work = True
-                    return output
-                return self.zero_output
-
-            # output = self.conv(x)
-            if self.realize_time > 0:
-                output = torch.nn.functional.conv2d(input, self.conv.weight, (self.conv.bias/self.steps if self.conv.bias is not None else 0.0), stride=self.conv.stride, \
-                    padding=self.conv.padding, dilation=self.conv.dilation,groups=self.conv.groups)
+            x_is_zero = (x == 0).all()
+            use_bias = self.realize_time > 0
+            if use_bias:
+                output = torch.nn.functional.conv2d(
+                    input,
+                    self.conv.weight,
+                    (self.conv.bias / self.steps if self.conv.bias is not None else 0.0),
+                    stride=self.conv.stride,
+                    padding=self.conv.padding,
+                    dilation=self.conv.dilation,
+                    groups=self.conv.groups,
+                )
+                if self.conv.bias is None:
+                    output_zero = self.zero_output
+                else:
+                    bias = self.conv.bias.detach() / self.steps
+                    output_zero = bias.view(1, -1, 1, 1).expand(out_shape)
                 self.realize_time = self.realize_time - 1
             else:
-                output = torch.nn.functional.conv2d(input, self.conv.weight, None, stride=self.conv.stride, \
-                    padding=self.conv.padding, dilation=self.conv.dilation,groups=self.conv.groups)
+                output = torch.nn.functional.conv2d(
+                    input,
+                    self.conv.weight,
+                    None,
+                    stride=self.conv.stride,
+                    padding=self.conv.padding,
+                    dilation=self.conv.dilation,
+                    groups=self.conv.groups,
+                )
+                output_zero = self.zero_output
+            output = torch.where(x_is_zero, output_zero, output)
             # if self.neuron_type == 'IF':
             #     pass
             # else:
@@ -87,7 +95,14 @@ class LLConv2d(nn.Module):
             #             self.realize_time = self.realize_time - 1
             #             # print("conv2d self.realize_time",self.realize_time)
 
-            self.is_work = True
+            if torch.is_tensor(x_is_zero):
+                if use_bias:
+                    use_bias_tensor = x_is_zero.new_tensor(True)
+                    self.is_work = (~x_is_zero) | (x_is_zero & use_bias_tensor)
+                else:
+                    self.is_work = ~x_is_zero
+            else:
+                self.is_work = True
             self.first = False
 
             return output
@@ -219,16 +234,14 @@ class LLLinear(nn.Module):
             if self.zero_output is None or self._zero_output_meta != meta:
                 self.zero_output = torch.zeros(size=shape_new, device=x.device, dtype=x.dtype)
                 self._zero_output_meta = meta
-
-            if not torch.any(x):
-                self.is_work = False
-                return self.zero_output
-
-            if self.realize_time > 0:
-                output = torch.nn.functional.linear(x,self.linear.weight,self.linear.bias/self.steps)
+            x_is_zero = (x == 0).all()
+            use_bias = self.realize_time > 0
+            if use_bias:
+                output = torch.nn.functional.linear(x, self.linear.weight, self.linear.bias / self.steps)
                 self.realize_time = self.realize_time - 1
             else:
-                output = torch.nn.functional.linear(x,self.linear.weight,None)
+                output = torch.nn.functional.linear(x, self.linear.weight, None)
+            output = torch.where(x_is_zero, self.zero_output, output)
 
             # if self.neuron_type == 'IF':
             #     pass
@@ -242,7 +255,10 @@ class LLLinear(nn.Module):
             #         else:
             #             output = output - (self.linear.bias.data.unsqueeze(0) if self.linear.bias is not None else 0.0)
 
-            self.is_work = True
+            if torch.is_tensor(x_is_zero):
+                self.is_work = ~x_is_zero
+            else:
+                self.is_work = True
             self.first = False
 
             return output

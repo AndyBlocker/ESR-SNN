@@ -47,8 +47,6 @@ class IFNeuron(nn.Module):
                 self.acc_q = torch.zeros(x.shape,dtype=torch.float32).to(x.device)
                 self.q = torch.zeros(x.shape,dtype=torch.float32).to(x.device) + 0.5
 
-            self.is_work = True
-
             self.q = self.q + (x.detach() if torch.is_tensor(x) else x)
             self.acc_q = torch.round(self.acc_q)
 
@@ -64,8 +62,9 @@ class IFNeuron(nn.Module):
             self.q[neg_spike_position] = self.q[neg_spike_position] + 1
 
             # print((x == 0).all(), (self.cur_output==0).all())
-            if (x == 0).all() and (self.cur_output==0).all():
-                self.is_work = False
+            x_is_zero = (x == 0).all()
+            out_is_zero = (self.cur_output == 0).all()
+            self.is_work = ~(x_is_zero & out_is_zero)
 
             # print("self.cur_output",self.cur_output)
             return self.cur_output*self.q_threshold

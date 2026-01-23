@@ -15,10 +15,11 @@ def _bif_step_torch(x_t, v_t_1, t_t_1, v_th, t_max, t_min):
     h_t = v_t_1 + x_t
     spike_condition = (h_t >= v_th) & (t_t_1 < t_max)
     neg_spike_condition = (h_t < 0) & (t_t_1 > t_min)
-
-    spike = torch.zeros_like(h_t)
-    spike.masked_fill_(spike_condition, 1.0)
-    spike.masked_fill_(neg_spike_condition, -1.0)
+    spike = torch.where(
+        neg_spike_condition,
+        h_t.new_full((), -1.0),
+        torch.where(spike_condition, h_t.new_ones(()), h_t.new_zeros(())),
+    )
 
     v_t = torch.addcmul(h_t, spike, v_th, value=-1.0)
     t_t = t_t_1 + spike
@@ -47,13 +48,14 @@ class ST_BIFNodeATGF_SS(torch.autograd.Function):
             # else:
             spike_condition = (H_t >= v_th) & (T_t_1 < T_max)
             neg_spike_condition = (H_t < 0) & (T_t_1 > T_min)
+            spike = torch.where(
+                neg_spike_condition,
+                H_t.new_full((), -1.0),
+                torch.where(spike_condition, H_t.new_ones(()), H_t.new_zeros(())),
+            )
 
             # spike[torch.logical_and((torch.ge(H_t-v_th,0)), (torch.lt(T_t_1-T_max,0)))] = 1
             # spike[torch.logical_and((torch.lt(H_t,0)), (torch.gt(T_t_1-T_min,0)))] = -1
-
-            spike = torch.zeros_like(H_t)
-            spike.masked_fill_(spike_condition, 1.0)
-            spike.masked_fill_(neg_spike_condition, -1.0)
 
             V_t = torch.addcmul(H_t, spike, v_th, value=-1.0)
             T_t = T_t_1 + spike
@@ -84,13 +86,13 @@ class ST_BIFNodeATGF_SS_Torch(torch.autograd.Function):
     def forward(ctx, x_t: torch.Tensor, V_t_1: torch.Tensor, T_t_1: torch.Tensor, v_th: torch.Tensor, T_max: torch.Tensor, T_min: torch.Tensor):
         with nvtx_range("snn.layer.st_bifneuron_ss.ST_BIFNodeATGF_SS_Torch.forward"):
             H_t = V_t_1 + x_t
-
             spike_condition = (H_t >= v_th) & (T_t_1 < T_max)
             neg_spike_condition = (H_t < 0) & (T_t_1 > T_min)
-
-            spike = torch.zeros_like(H_t)
-            spike.masked_fill_(spike_condition, 1.0)
-            spike.masked_fill_(neg_spike_condition, -1.0)
+            spike = torch.where(
+                neg_spike_condition,
+                H_t.new_full((), -1.0),
+                torch.where(spike_condition, H_t.new_ones(()), H_t.new_zeros(())),
+            )
 
             V_t = torch.addcmul(H_t, spike, v_th, value=-1.0)
             T_t = T_t_1 + spike
@@ -99,9 +101,9 @@ class ST_BIFNodeATGF_SS_Torch(torch.autograd.Function):
             return spike, V_t, T_t
 
     @staticmethod
-        def backward(ctx, grad_spike_t: torch.Tensor, grad_v_t: torch.Tensor, grad_T_t: torch.Tensor):
-            with nvtx_range("snn.layer.st_bifneuron_ss.ST_BIFNodeATGF_SS_Torch.backward"):
-                T_t_1, H_t, v_th, T_max, T_min = ctx.saved_tensors
+    def backward(ctx, grad_spike_t: torch.Tensor, grad_v_t: torch.Tensor, grad_T_t: torch.Tensor):
+        with nvtx_range("snn.layer.st_bifneuron_ss.ST_BIFNodeATGF_SS_Torch.backward"):
+            T_t_1, H_t, v_th, T_max, T_min = ctx.saved_tensors
 
             grad_T_t_to_H_t = (theta_backward(H_t - v_th) * theta(T_max - T_t_1) +
                                theta_backward(-H_t) * theta(T_t_1 - T_min))
