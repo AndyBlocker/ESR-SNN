@@ -33,8 +33,23 @@ def _nvtx_available() -> bool:
     return _NVTX_AVAILABLE
 
 
+def _is_compiling() -> bool:
+    if torch is None:
+        return False
+    try:
+        return torch.compiler.is_compiling()
+    except Exception:
+        try:
+            return torch._dynamo.is_compiling()
+        except Exception:
+            return False
+
+
 @contextmanager
 def nvtx_range(message: str):
+    if _is_compiling():
+        yield
+        return
     pushed = False
     if _nvtx_available():
         try:

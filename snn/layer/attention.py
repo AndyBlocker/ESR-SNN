@@ -295,9 +295,8 @@ class SAttention(nn.Module):
                     del self.accu_input
 
             # print("x.abs().mean()",x.reshape(self.T,32,197,384).sum(dim=0).abs().mean())
-            qkv = self.qkv(x).reshape(B, N, 3, self.num_heads, self.head_dim).permute(2, 0, 3, 1, 4) # 3 B self.num_heads N self.head_dim
-
-            q, k, v = qkv.unbind(0)
+            qkv = self.qkv(x)
+            q, k, v = qkv.chunk(3, dim=-1)
             q_if = self.q_IF
             k_if = self.k_IF
             v_if = self.v_IF
@@ -306,10 +305,16 @@ class SAttention(nn.Module):
             v = v_if(v)
 
             scale = self.scale
+            q = q.reshape(B, N, self.num_heads, self.head_dim).permute(0, 2, 1, 3)
+            k = k.reshape(B, N, self.num_heads, self.head_dim).permute(0, 2, 1, 3)
+            v = v.reshape(B, N, self.num_heads, self.head_dim).permute(0, 2, 1, 3)
             q = q * scale
-            q_acc = q_if.acc_q * q_if.q_threshold * scale
+            q_acc = q_if.acc_q * q_if.q_threshold
             k_acc = k_if.acc_q * k_if.q_threshold
             v_acc = v_if.acc_q * v_if.q_threshold
+            q_acc = q_acc.reshape(B, N, self.num_heads, self.head_dim).permute(0, 2, 1, 3) * scale
+            k_acc = k_acc.reshape(B, N, self.num_heads, self.head_dim).permute(0, 2, 1, 3)
+            v_acc = v_acc.reshape(B, N, self.num_heads, self.head_dim).permute(0, 2, 1, 3)
             q_det = q.detach()
             k_det = k.detach()
             v_det = v.detach()
@@ -337,9 +342,8 @@ class SAttention(nn.Module):
             # for t in range(4):
             #     print(f"ST_BIFNeuron_MS x_print[{t}].abs().mean()",x_print[t].abs().mean(),x_print.dtype)
 
-            x = self.after_attn_IF(x)
-
             x = x.transpose(1, 2).reshape(B, N, C)
+            x = self.after_attn_IF(x)
 
             x = self.proj(x)
             # print("after proj",x.abs().mean())
@@ -435,11 +439,11 @@ class SAttention_without_softmax(nn.Module):
         with nvtx_range("snn.layer.attention.SAttention_without_softmax.forward"):
             self.t = self.t + 1
             B, N, C = x.shape
-            qkv = self.qkv(x).reshape(B, N, 3, self.num_heads, self.head_dim).permute(2, 0, 3, 1, 4) # 3 B self.num_heads N self.head_dim
+            qkv = self.qkv(x)
             # print("x.abs().mean()",x.reshape(self.T,8,197,768).sum(dim=0).abs().mean())
             # print("x.abs().mean()",x.abs().mean())
 
-            q, k, v = qkv.unbind(0)
+            q, k, v = qkv.chunk(3, dim=-1)
             q = self.q_IF(q)
             k = self.k_IF(k)
             v = self.v_IF(v)
@@ -450,10 +454,18 @@ class SAttention_without_softmax(nn.Module):
             # print("k.abs().mean()",k.abs().mean())
             # print("v.abs().mean()",v.abs().mean())
 
+            q = q.reshape(B, N, self.num_heads, self.head_dim).permute(0, 2, 1, 3)
+            k = k.reshape(B, N, self.num_heads, self.head_dim).permute(0, 2, 1, 3)
+            v = v.reshape(B, N, self.num_heads, self.head_dim).permute(0, 2, 1, 3)
             q = q * self.scale
-            q_acc = self.q_IF.acc_q * self.scale * self.q_IF.q_threshold
+            q_acc = self.q_IF.acc_q * self.q_IF.q_threshold
+            k_acc = self.k_IF.acc_q * self.k_IF.q_threshold
+            v_acc = self.v_IF.acc_q * self.v_IF.q_threshold
+            q_acc = q_acc.reshape(B, N, self.num_heads, self.head_dim).permute(0, 2, 1, 3) * self.scale
+            k_acc = k_acc.reshape(B, N, self.num_heads, self.head_dim).permute(0, 2, 1, 3)
+            v_acc = v_acc.reshape(B, N, self.num_heads, self.head_dim).permute(0, 2, 1, 3)
 
-            attn = self.multi(q,k,q_acc - q.detach(),self.k_IF.acc_q*self.k_IF.q_threshold - k.detach())
+            attn = self.multi(q, k, q_acc - q.detach(), k_acc - k.detach())
             attn = self.attn_drop(attn)
             # print("attn.abs().mean() before",attn.reshape(self.T,8,12,197,197).sum(dim=0).abs().mean())
             # print("attn.abs().mean() before",attn.abs().mean())
@@ -461,10 +473,11 @@ class SAttention_without_softmax(nn.Module):
             # print("attn.abs().mean()",attn.reshape(self.T,8,12,197,197).sum(dim=0).abs().mean())
             # print("attn.abs().mean()",attn.abs().mean())
 
-            x = self.multi1(attn,v,(self.attn_IF.acc_q*self.attn_IF.q_threshold - attn.detach()),(self.v_IF.acc_q*self.v_IF.q_threshold - v.detach()))
+            attn_acc = self.attn_IF.acc_q * self.attn_IF.q_threshold
+            x = self.multi1(attn, v, (attn_acc - attn.detach()), (v_acc - v.detach()))
 
-            x = self.after_attn_IF(x)
             x = x.transpose(1, 2).reshape(B, N, C)
+            x = self.after_attn_IF(x)
             # print("x.abs().mean()",x.reshape(self.T,8,197,768).sum(dim=0).abs().mean())
             # print("x.abs().mean()",x.abs().mean())
 
@@ -530,10 +543,10 @@ class SAttention_without_softmax_SS(nn.Module):
         with nvtx_range("snn.layer.attention.SAttention_without_softmax_SS.forward"):
             self.t = self.t + 1
             B, N, C = x.shape
-            qkv = self.qkv(x).reshape(B, N, 3, self.num_heads, self.head_dim).permute(2, 0, 3, 1, 4) # 3 B self.num_heads N self.head_dim
+            qkv = self.qkv(x)
             # print("x.abs().mean()",x.reshape(self.T,8,197,768).sum(dim=0).abs().mean())
 
-            q, k, v = qkv.unbind(0)
+            q, k, v = qkv.chunk(3, dim=-1)
             q = self.q_IF(q)
             k = self.k_IF(k)
             v = self.v_IF(v)
@@ -541,19 +554,28 @@ class SAttention_without_softmax_SS(nn.Module):
             # print("k.abs().mean()",k.reshape(self.T,8,12,197,64).sum(dim=0).abs().mean())
             # print("v.abs().mean()",v.reshape(self.T,8,12,197,64).sum(dim=0).abs().mean())
 
+            q = q.reshape(B, N, self.num_heads, self.head_dim).permute(0, 2, 1, 3)
+            k = k.reshape(B, N, self.num_heads, self.head_dim).permute(0, 2, 1, 3)
+            v = v.reshape(B, N, self.num_heads, self.head_dim).permute(0, 2, 1, 3)
             q = q * self.scale
-            q_acc = self.q_IF.acc_q * self.scale * self.q_IF.q_threshold
+            q_acc = self.q_IF.acc_q * self.q_IF.q_threshold
+            k_acc = self.k_IF.acc_q * self.k_IF.q_threshold
+            v_acc = self.v_IF.acc_q * self.v_IF.q_threshold
+            q_acc = q_acc.reshape(B, N, self.num_heads, self.head_dim).permute(0, 2, 1, 3) * self.scale
+            k_acc = k_acc.reshape(B, N, self.num_heads, self.head_dim).permute(0, 2, 1, 3)
+            v_acc = v_acc.reshape(B, N, self.num_heads, self.head_dim).permute(0, 2, 1, 3)
 
-            attn = multi(q,k,q_acc - q.detach(),self.k_IF.acc_q*self.k_IF.q_threshold - k.detach())
+            attn = multi(q, k, q_acc - q.detach(), k_acc - k.detach())
             attn = self.attn_drop(attn)
             # print("attn.abs().mean() before",attn.reshape(self.T,8,12,197,197).sum(dim=0).abs().mean())
             attn = self.attn_IF(attn/N)
             # print("attn.abs().mean()",attn.reshape(self.T,8,12,197,197).sum(dim=0).abs().mean())
 
-            x = multi1(attn,v,(self.attn_IF.acc_q*self.attn_IF.q_threshold - attn.detach()),(self.v_IF.acc_q*self.v_IF.q_threshold - v.detach()))
+            attn_acc = self.attn_IF.acc_q * self.attn_IF.q_threshold
+            x = multi1(attn, v, (attn_acc - attn.detach()), (v_acc - v.detach()))
 
-            x = self.after_attn_IF(x)
             x = x.transpose(1, 2).reshape(B, N, C)
+            x = self.after_attn_IF(x)
             # print("x.abs().mean()",x.reshape(self.T,8,197,768).sum(dim=0).abs().mean())
 
             x = self.proj(x)

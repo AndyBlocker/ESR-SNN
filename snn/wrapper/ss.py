@@ -82,6 +82,7 @@ class SNNWrapper(nn.Module):
         self._replace_weight(self.model)
         self._compile_requested = False
         self._compile_cfg = None
+        self._drop_path_disabled = False
         if self.cfg is not None and getattr(self.cfg, "compile", False):
             self._compile_requested = True
             self._compile_cfg = {
@@ -125,6 +126,16 @@ class SNNWrapper(nn.Module):
                 self._x_seq_meta = meta
             out = self._x_seq_cache
         return get_subtensors(x, self.mean, self.std, sample_grain=self.step, time_step=time_step, out=out)
+
+    def _disable_drop_path_for_eval(self):
+        if self._drop_path_disabled:
+            return
+        for module in self.model.modules():
+            if hasattr(module, "drop_path"):
+                drop_path = getattr(module, "drop_path")
+                if isinstance(drop_path, nn.Module):
+                    module.drop_path = nn.Identity()
+        self._drop_path_disabled = True
     
     def hook_mid_feature(self):
         self.feature_list = []
@@ -266,6 +277,8 @@ class SNNWrapper(nn.Module):
     def forward(self, x, verbose=False, return_output_per_timestep=True):
         with nvtx_range("snn.wrapper.ss.SNNWrapper.forward"):
             if self._compile_requested and self.model_compiled is None:
+                if not self.model.training and not self._drop_path_disabled:
+                    self._disable_drop_path_for_eval()
                 if not hasattr(torch, "compile"):
                     print("[SNNWrapper][WARN] torch.compile not available in this torch version.")
                     self._compile_requested = False

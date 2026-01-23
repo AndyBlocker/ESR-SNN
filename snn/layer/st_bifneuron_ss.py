@@ -13,14 +13,14 @@ except Exception:
 @allow_in_graph
 def _bif_step_torch(x_t, v_t_1, t_t_1, v_th, t_max, t_min):
     h_t = v_t_1 + x_t
-    spike_condition = (h_t >= v_th) & (t_t_1 - t_max < 0)
-    neg_spike_condition = (h_t < 0) & (t_t_1 - t_min > 0)
+    spike_condition = (h_t >= v_th) & (t_t_1 < t_max)
+    neg_spike_condition = (h_t < 0) & (t_t_1 > t_min)
 
-    one = h_t.new_ones(())
-    zero = h_t.new_zeros(())
-    spike = torch.where(spike_condition, one, torch.where(neg_spike_condition, -one, zero))
+    spike = torch.zeros_like(h_t)
+    spike.masked_fill_(spike_condition, 1.0)
+    spike.masked_fill_(neg_spike_condition, -1.0)
 
-    v_t = h_t - v_th * spike
+    v_t = torch.addcmul(h_t, spike, v_th, value=-1.0)
     t_t = t_t_1 + spike
     return spike, v_t, t_t
 
@@ -45,17 +45,17 @@ class ST_BIFNodeATGF_SS(torch.autograd.Function):
             #     spike_condition = spike_condition.reshape(B,H,C)
             #     neg_spike_condition = neg_spike_condition.reshape(B,H,C)
             # else:
-            spike_condition = (H_t >= v_th) & (T_t_1-T_max < 0)
-            neg_spike_condition = (H_t < 0) & (T_t_1-T_min > 0)
+            spike_condition = (H_t >= v_th) & (T_t_1 < T_max)
+            neg_spike_condition = (H_t < 0) & (T_t_1 > T_min)
 
             # spike[torch.logical_and((torch.ge(H_t-v_th,0)), (torch.lt(T_t_1-T_max,0)))] = 1
             # spike[torch.logical_and((torch.lt(H_t,0)), (torch.gt(T_t_1-T_min,0)))] = -1
 
-            spike = torch.where(spike_condition, torch.ones_like(H_t),
-                                          torch.where(neg_spike_condition, -torch.ones_like(H_t),
-                                                      torch.zeros_like(H_t)))
+            spike = torch.zeros_like(H_t)
+            spike.masked_fill_(spike_condition, 1.0)
+            spike.masked_fill_(neg_spike_condition, -1.0)
 
-            V_t = H_t - v_th * spike
+            V_t = torch.addcmul(H_t, spike, v_th, value=-1.0)
             T_t = T_t_1 + spike
 
             ctx.save_for_backward(T_t_1,H_t,v_th,T_max,T_min,t)
@@ -85,23 +85,23 @@ class ST_BIFNodeATGF_SS_Torch(torch.autograd.Function):
         with nvtx_range("snn.layer.st_bifneuron_ss.ST_BIFNodeATGF_SS_Torch.forward"):
             H_t = V_t_1 + x_t
 
-            spike_condition = (H_t >= v_th) & (T_t_1 - T_max < 0)
-            neg_spike_condition = (H_t < 0) & (T_t_1 - T_min > 0)
+            spike_condition = (H_t >= v_th) & (T_t_1 < T_max)
+            neg_spike_condition = (H_t < 0) & (T_t_1 > T_min)
 
-            one = H_t.new_ones(())
-            zero = H_t.new_zeros(())
-            spike = torch.where(spike_condition, one, torch.where(neg_spike_condition, -one, zero))
+            spike = torch.zeros_like(H_t)
+            spike.masked_fill_(spike_condition, 1.0)
+            spike.masked_fill_(neg_spike_condition, -1.0)
 
-            V_t = H_t - v_th * spike
+            V_t = torch.addcmul(H_t, spike, v_th, value=-1.0)
             T_t = T_t_1 + spike
 
             ctx.save_for_backward(T_t_1, H_t, v_th, T_max, T_min)
             return spike, V_t, T_t
 
     @staticmethod
-    def backward(ctx, grad_spike_t: torch.Tensor, grad_v_t: torch.Tensor, grad_T_t: torch.Tensor):
-        with nvtx_range("snn.layer.st_bifneuron_ss.ST_BIFNodeATGF_SS_Torch.backward"):
-            T_t_1, H_t, v_th, T_max, T_min = ctx.saved_tensors
+        def backward(ctx, grad_spike_t: torch.Tensor, grad_v_t: torch.Tensor, grad_T_t: torch.Tensor):
+            with nvtx_range("snn.layer.st_bifneuron_ss.ST_BIFNodeATGF_SS_Torch.backward"):
+                T_t_1, H_t, v_th, T_max, T_min = ctx.saved_tensors
 
             grad_T_t_to_H_t = (theta_backward(H_t - v_th) * theta(T_max - T_t_1) +
                                theta_backward(-H_t) * theta(T_t_1 - T_min))
@@ -115,9 +115,30 @@ class ST_BIFNodeATGF_SS_Torch(torch.autograd.Function):
             return grad_X_t, grad_V_t_1, grad_T_t_1, None, None, None
 
 
+def _bif_step_surrogate_impl(x_t, v_t_1, t_t_1, v_th, t_max, t_min):
+    if not torch.is_grad_enabled():
+        return _bif_step_torch(x_t, v_t_1, t_t_1, v_th, t_max, t_min)
+    return ST_BIFNodeATGF_SS_Torch.apply(x_t, v_t_1, t_t_1, v_th, t_max, t_min)
+
+
+@allow_in_graph
+def bif_step_surrogate_2d(x_t, v_t_1, t_t_1, v_th, t_max, t_min):
+    return _bif_step_surrogate_impl(x_t, v_t_1, t_t_1, v_th, t_max, t_min)
+
+
+@allow_in_graph
+def bif_step_surrogate_3d(x_t, v_t_1, t_t_1, v_th, t_max, t_min):
+    return _bif_step_surrogate_impl(x_t, v_t_1, t_t_1, v_th, t_max, t_min)
+
+
+@allow_in_graph
+def bif_step_surrogate_4d(x_t, v_t_1, t_t_1, v_th, t_max, t_min):
+    return _bif_step_surrogate_impl(x_t, v_t_1, t_t_1, v_th, t_max, t_min)
+
+
 @allow_in_graph
 def bif_step_surrogate(x_t, v_t_1, t_t_1, v_th, t_max, t_min):
-    return ST_BIFNodeATGF_SS_Torch.apply(x_t, v_t_1, t_t_1, v_th, t_max, t_min)
+    return _bif_step_surrogate_impl(x_t, v_t_1, t_t_1, v_th, t_max, t_min)
 
 class ST_BIFNeuron_SS(nn.Module):
     def __init__(self, q_threshold, level, sym=False, need_spike_tracer=False, T=None, C=None):
@@ -160,6 +181,7 @@ class ST_BIFNeuron_SS(nn.Module):
     def forward(self,input):
         with nvtx_range("snn.layer.st_bifneuron_ss.ST_BIFNeuron_SS.forward"):
             # print("input.mean()",input.abs().mean().item(),"self.q_threshold",self.q_threshold.data.item())
+            input = input.contiguous()
 
             # s_grad_scale = 1.0 / (((input).detach().abs().mean() * input.numel()) ** 0.5)
             # if self.init:
@@ -182,14 +204,42 @@ class ST_BIFNeuron_SS(nn.Module):
 
             # s_scale = grad_scale(self.q_threshold, s_grad_scale)
             self.t = self.t + 1
-            spikes, self.q, self.acc_q = bif_step_surrogate(
-                input,
-                self.q,
-                self.acc_q,
-                self.q_threshold,
-                self.pos_max,
-                self.neg_min,
-            )
+            if input.dim() == 4:
+                spikes, self.q, self.acc_q = bif_step_surrogate_4d(
+                    input,
+                    self.q,
+                    self.acc_q,
+                    self.q_threshold,
+                    self.pos_max,
+                    self.neg_min,
+                )
+            elif input.dim() == 3:
+                spikes, self.q, self.acc_q = bif_step_surrogate_3d(
+                    input,
+                    self.q,
+                    self.acc_q,
+                    self.q_threshold,
+                    self.pos_max,
+                    self.neg_min,
+                )
+            elif input.dim() == 2:
+                spikes, self.q, self.acc_q = bif_step_surrogate_2d(
+                    input,
+                    self.q,
+                    self.acc_q,
+                    self.q_threshold,
+                    self.pos_max,
+                    self.neg_min,
+                )
+            else:
+                spikes, self.q, self.acc_q = bif_step_surrogate(
+                    input,
+                    self.q,
+                    self.acc_q,
+                    self.q_threshold,
+                    self.pos_max,
+                    self.neg_min,
+                )
 
             return spikes * self.q_threshold
 
