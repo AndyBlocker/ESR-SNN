@@ -305,6 +305,7 @@ class SNNWrapper(nn.Module):
                         self._compile_requested = False
 
             model_fn = self.model_compiled if self.model_compiled is not None else self.model
+            early_exit_enabled = self.enable_early_exit and (self.model_compiled is None)
             accu = None
             accu_per_timestep = None
             output_per_timestep = None
@@ -339,7 +340,7 @@ class SNNWrapper(nn.Module):
                     zero_at = self.step
 
             for count1 in range(self.T):
-                if self.enable_early_exit:
+                if early_exit_enabled:
                     self.finish_judger.reset_network_finish_flag()
                     self.finish_judger.judge_finish(self)
                     if count1 > 0 and self.finish_judger.network_finish:

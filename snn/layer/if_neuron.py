@@ -3,6 +3,16 @@ import torch.nn as nn
 
 from snn.nvtx import nvtx_range
 
+def _is_compiling():
+    try:
+        return torch.compiler.is_compiling()
+    except Exception:
+        try:
+            return torch._dynamo.is_compiling()
+        except Exception:
+            return False
+
+
 class IFNeuron(nn.Module):
     def __init__(self,q_threshold,level,sym=False):
         super(IFNeuron,self).__init__()
@@ -62,9 +72,10 @@ class IFNeuron(nn.Module):
             self.q[neg_spike_position] = self.q[neg_spike_position] + 1
 
             # print((x == 0).all(), (self.cur_output==0).all())
-            x_is_zero = (x == 0).all()
-            out_is_zero = (self.cur_output == 0).all()
-            self.is_work = ~(x_is_zero & out_is_zero)
+            if not _is_compiling():
+                x_is_zero = (x == 0).all()
+                out_is_zero = (self.cur_output == 0).all()
+                self.is_work = not (bool(x_is_zero) and bool(out_is_zero))
 
             # print("self.cur_output",self.cur_output)
             return self.cur_output*self.q_threshold

@@ -5,6 +5,16 @@ import torch.nn.functional as F
 
 from snn.nvtx import nvtx_range
 
+def _is_compiling():
+    try:
+        return torch.compiler.is_compiling()
+    except Exception:
+        try:
+            return torch._dynamo.is_compiling()
+        except Exception:
+            return False
+
+
 class LLConv2d(nn.Module):
     def __init__(self,conv:nn.Conv2d,**kwargs):
         super(LLConv2d,self).__init__()
@@ -95,14 +105,9 @@ class LLConv2d(nn.Module):
             #             self.realize_time = self.realize_time - 1
             #             # print("conv2d self.realize_time",self.realize_time)
 
-            if torch.is_tensor(x_is_zero):
-                if use_bias:
-                    use_bias_tensor = x_is_zero.new_tensor(True)
-                    self.is_work = (~x_is_zero) | (x_is_zero & use_bias_tensor)
-                else:
-                    self.is_work = ~x_is_zero
-            else:
-                self.is_work = True
+            if not _is_compiling():
+                x_is_zero_val = bool(x_is_zero)
+                self.is_work = (not x_is_zero_val) or (x_is_zero_val and use_bias)
             self.first = False
 
             return output
@@ -255,10 +260,8 @@ class LLLinear(nn.Module):
             #         else:
             #             output = output - (self.linear.bias.data.unsqueeze(0) if self.linear.bias is not None else 0.0)
 
-            if torch.is_tensor(x_is_zero):
-                self.is_work = ~x_is_zero
-            else:
-                self.is_work = True
+            if not _is_compiling():
+                self.is_work = not bool(x_is_zero)
             self.first = False
 
             return output
