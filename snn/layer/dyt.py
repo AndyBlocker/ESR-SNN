@@ -118,7 +118,7 @@ class SDyHT_SS(nn.Module):
         super(SDyHT_SS, self).__init__()
         self.step = 1
         self.T = 1
-        self.t = 0
+        self.register_buffer("t", torch.zeros((), dtype=torch.int64))
         self.alpha = nn.Parameter(torch.tensor(torch.ones(C) * init_alpha))
         self.gamma = nn.Parameter(torch.tensor(torch.ones(1)))
         self.beta = nn.Parameter(torch.tensor(torch.zeros(C)))
@@ -126,14 +126,15 @@ class SDyHT_SS(nn.Module):
         self.accu2 = 0.0
     
     def reset(self):
-        self.t = 0
+        self.t.zero_()
     
     def forward(self,x):
         with nvtx_range("snn.layer.dyt.SDyHT_SS.forward"):
-            self.t = self.t + 1
+            self.t.add_(1)
             x = self.alpha * self.gamma * x
-            if self.t <= self.step:
-                x = x + self.beta * self.gamma/self.step
+            use_bias = self.t <= self.step
+            bias = self.beta * self.gamma / self.step
+            x = x + torch.where(use_bias, bias, bias.new_zeros(()))
             return x
 
 class SDyHT(nn.Module):

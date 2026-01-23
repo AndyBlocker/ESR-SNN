@@ -25,12 +25,14 @@ class SpikeMaxPooling_SS(nn.Module):
     def forward(self,input):
         with nvtx_range("snn.layer.pooling.SpikeMaxPooling_SS.forward"):
             if self.X is None:
-                output = self.maxpool(input)
                 self.X = input
-            else:
-                output = self.maxpool(self.X + input) - self.maxpool(self.X)
-                self.X = self.X + input
-            return output
+                self.Y_pre = self.maxpool(input)
+                return self.Y_pre
+            self.X = self.X + input
+            output = self.maxpool(self.X)
+            delta = output - self.Y_pre
+            self.Y_pre = output
+            return delta
 
 class SpikeMaxPooling(nn.Module):
     def __init__(self,maxpool:nn.MaxPool2d,step,T):

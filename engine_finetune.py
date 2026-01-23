@@ -30,7 +30,6 @@ import re
 from torch.utils.checkpoint import checkpoint
 
 
-
 def get_logits_loss(fc_t, fc_s, one_hot_label, temp, num_classes=1000):
     s_input_for_softmax = fc_s / temp
     t_input_for_softmax = fc_t / temp
@@ -677,10 +676,10 @@ def train_one_epoch_distill_snn(model: torch.nn.Module, model_teacher: torch.nn.
 
     
     for data_iter_step, (samples, targets) in enumerate(metric_logger.log_every(data_loader, print_freq, header)):
-        
+    
         # if data_iter_step > 2000:
         #     break
-        
+    
         # we use a per iteration (instead of per epoch) lr scheduler
         if data_iter_step % accum_iter == 0:
             lr_sched.adjust_learning_rate(optimizer, data_iter_step / len(data_loader) + epoch, args)
@@ -1151,7 +1150,7 @@ def evaluate(data_loader, model, device, snn_aug, mode, args):
                 metric_logger.meters['acc@{}'.format(t + 1)].update(
                     correct_per_timestep[t].cpu().item() * 100. / batch_size, n=batch_size)
             model.module.reset()
-        
+
         # break
 
         # count1 += 1
