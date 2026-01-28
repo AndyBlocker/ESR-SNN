@@ -26,12 +26,16 @@ class VisionTransformer(timm.models.vision_transformer.VisionTransformer):
         self.spike = False
         self.T = 0
         self.step = 0
+        self.grad_checkpointing = False
         if self.global_pool:
             norm_layer = kwargs['norm_layer']
             embed_dim = kwargs['embed_dim']
             self.fc_norm = norm_layer(embed_dim)
 
             del self.norm  # remove the original norm
+
+    def set_grad_checkpointing(self, enable: bool = True):
+        self.grad_checkpointing = bool(enable)
 
     def forward(self, x):
         x = self.forward_features(x)
@@ -90,8 +94,17 @@ class VisionTransformer(timm.models.vision_transformer.VisionTransformer):
         # print(self.pos_embed)
         x = self.pos_drop(x)
 
-        for i, blk in enumerate(self.blocks):
-            x = blk(x)
+        use_checkpoint = bool(getattr(self, "grad_checkpointing", False)) and self.training
+        if use_checkpoint:
+            from torch.utils.checkpoint import checkpoint
+            for blk in self.blocks:
+                try:
+                    x = checkpoint(blk, x, use_reentrant=False)
+                except TypeError:  # older torch
+                    x = checkpoint(blk, x)
+        else:
+            for blk in self.blocks:
+                x = blk(x)
 
         if self.global_pool:
             x = x[:, 1:, :].mean(dim=1)  # global pool without cls token

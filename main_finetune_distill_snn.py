@@ -33,7 +33,7 @@ from timm.loss import LabelSmoothingCrossEntropy, SoftTargetCrossEntropy
 
 import util.lr_decay as lrd
 import util.misc as misc
-from util.datasets import build_dataset
+from util.datasets import TransformFirstDataset, build_dataset
 from util.pos_embed import interpolate_pos_embed
 from util.misc import NativeScalerWithGradNormCount as NativeScaler
 from snn.layer import DyHT, DyHT_ReLU, DyT, MyBatchNorm1d, MyLayerNorm, set_init_false
@@ -159,6 +159,8 @@ def get_args_parser():
     parser.add_argument('--batch_size', default=64, type=int,
                         help='Batch size per GPU (effective batch size is batch_size * accum_iter * # gpus')
     parser.add_argument('--epochs', default=50, type=int)
+    parser.add_argument('--max_train_steps', default=-1, type=int,
+                        help='Limit number of training iterations per epoch (<=0 means no limit). Useful for benchmarking.')
     parser.add_argument('--print_freq', default=1000, type=int,
                         help='print_frequency')
     parser.add_argument('--accum_iter', default=1, type=int,
@@ -296,10 +298,27 @@ def get_args_parser():
     parser.add_argument('--dist_on_itp', action='store_true')
     parser.add_argument('--dist_url', default='env://',
                         help='url used to set up distributed training')
+    parser.add_argument('--ddp_find_unused_parameters', default=1, type=int, choices=[0, 1],
+                        help='DDP find_unused_parameters (0/1). Disable (0) for better performance if safe.')
+    parser.add_argument('--freeze_bias_allocator', default=0, type=int, choices=[0, 1],
+                        help='Freeze all parameters named "*biasAllocator*" (set requires_grad=False). '
+                             'Useful to avoid unused-parameter issues under DDP when disabling find_unused_parameters.')
 
     # training mode
     parser.add_argument('--mode', default="ANN", type=str,
                         help='the running mode of the script["ANN", "QANN_PTQ", "QANN_QAT", "SNN"]')
+    parser.add_argument('--skip_eval', action='store_true', default=False,
+                        help='Skip evaluation during training (no test/val loop).')
+    parser.add_argument('--no_save', action='store_true', default=False,
+                        help='Disable saving checkpoints during training.')
+    parser.add_argument('--no_log', action='store_true', default=False,
+                        help='Disable TensorBoard/W&B logging and log.txt writing (useful for benchmarking).')
+    parser.add_argument('--benchmark', action='store_true', default=False,
+                        help='Print peak GPU memory and average time per step for training.')
+    parser.add_argument('--snn_verbose', default=1, type=int, choices=[0, 1],
+                        help='SNN forward verbose mode (may early-exit and return extra tensors). Use 0 for full-T training without unused parameters.')
+    parser.add_argument('--grad_checkpointing', action='store_true', default=False,
+                        help='Enable activation checkpointing for transformer blocks (reduces memory, increases compute).')
 
     # LSQ quantization
     parser.add_argument('--level', default=32, type=int,
@@ -311,6 +330,8 @@ def get_args_parser():
                         help='need softmax or not')
     parser.add_argument('--NormType', default='layernorm', type=str,
                         help='the normalization type')
+    parser.add_argument('--neuron_impl', default='auto', type=str, choices=['auto', 'torch'],
+                        help='MS neuron operator implementation to use for SNN/MS (auto prefers CUDA/CuPy when available).')
     parser.add_argument('--prune', action='store_true',
                         help='prune or not')
     parser.add_argument('--prune_ratio', type=float, default="3e8",
@@ -346,6 +367,23 @@ def main(args):
     dataset_train = build_dataset(is_train=True, args=args)
     dataset_val = build_dataset(is_train=False, args=args)
 
+    # For DVS-style frame datasets, run augmentations inside DataLoader workers
+    # (avoid per-batch Python loops in the training/eval loops).
+    if args.dataset in {"cifar10dvs", "dvs128"}:
+        train_snn_aug = transforms.Compose([
+            transforms.Resize(size=(args.input_size, args.input_size)),
+            transforms.RandomHorizontalFlip(p=0.5),
+        ])
+        train_trivalaug = SNNAugmentWide()
+        dataset_train = TransformFirstDataset(
+            dataset_train, transforms.Compose([train_snn_aug, train_trivalaug])
+        )
+
+        test_snn_aug = transforms.Compose([
+            transforms.Resize(size=(args.input_size, args.input_size)),
+        ])
+        dataset_val = TransformFirstDataset(dataset_val, test_snn_aug)
+
     if True:  # args.distributed:
         num_tasks = misc.get_world_size()
         global_rank = misc.get_rank()
@@ -372,11 +410,14 @@ def main(args):
         args.log_dir = os.path.join(args.log_dir,
                                     "{}_{}_{}_{}_{}_act{}_weightbit{}".format(args.project_name, args.model, args.dataset, args.act_layer, args.mode, args.level,args.weight_quantization_bit))
         os.makedirs(args.log_dir, exist_ok=True)
-        log_writer = SummaryWriter(log_dir=args.log_dir)
-        if args.wandb:
-            wandb.init(config=args, project=args.project_name,
-                       name="{}_{}_{}_{}_{}_act{}_weightbit{}".format(args.project_name, args.model, args.dataset, args.act_layer, args.mode, args.level,args.weight_quantization_bit),
-                       dir=args.output_dir)
+        if args.no_log:
+            log_writer = None
+        else:
+            log_writer = SummaryWriter(log_dir=args.log_dir)
+            if args.wandb:
+                wandb.init(config=args, project=args.project_name,
+                           name="{}_{}_{}_{}_{}_act{}_weightbit{}".format(args.project_name, args.model, args.dataset, args.act_layer, args.mode, args.level,args.weight_quantization_bit),
+                           dir=args.output_dir)
     else:
         log_writer = None
 
@@ -476,6 +517,11 @@ def main(args):
     if args.convEmbedding:
         add_convEmbed(model)
 
+    if args.grad_checkpointing and hasattr(model, "set_grad_checkpointing"):
+        model.set_grad_checkpointing(True)
+    elif args.grad_checkpointing:
+        setattr(model, "grad_checkpointing", True)
+
     # if "swin_tiny" in args.model:
     #     model_teacher = timm.create_model("swin_tiny_patch4_window7_224",pretrained=False, checkpoint_path="/data/kang_you1/swin_tiny_patch4_window7_224.pth",act_layer=activation_teacher)
     # elif "swin_base" in args.model:
@@ -546,14 +592,14 @@ def main(args):
         # if not args.mode == "QANN-QAT":
         #     trunc_normal_(model.head.weight, std=2e-5)
 
-    if args.rank == 0:
+    if args.rank == 0 and not args.no_log:
         print("======================== ANN model ========================")
         f = open(f"{args.log_dir}/ann_model_arch.txt", "w+")
         f.write(str(model))
         f.close()
     if args.mode.count("QANN") > 0:
         myquan_replace(model, args.level, args.weight_quantization_bit, is_softmax = not args.remove_softmax)
-        if args.rank == 0:
+        if args.rank == 0 and not args.no_log:
             print("======================== QANN model =======================")
             f = open(f"{args.log_dir}/qann_model_arch.txt", "w+")
             f.write(str(model))
@@ -619,7 +665,7 @@ def main(args):
         model = SNNWrapper_MS(ann_model=model, cfg=args, time_step=args.time_step, \
                            Encoding_type=args.encoding_type, level=args.level, neuron_type=args.neuron_type, \
                            model_name=args.model, is_softmax = not args.remove_softmax, suppress_over_fire = args.suppress_over_fire, \
-                           record_inout=args.record_inout,learnable=args.hybrid_training,record_dir=args.log_dir+f"/output_bin_snn_{args.model}_w{args.weight_quantization_bit}_a{int(torch.log2(torch.tensor(args.level)))}_T{args.time_step}/")
+                           record_inout=args.record_inout,learnable=args.hybrid_training,neuron_impl=args.neuron_impl,record_dir=args.log_dir+f"/output_bin_snn_{args.model}_w{args.weight_quantization_bit}_a{int(torch.log2(torch.tensor(args.level)))}_T{args.time_step}/")
         # print(model)
         
         if len(args.snn_model_path) > 0:
@@ -632,7 +678,7 @@ def main(args):
             msg = model.load_state_dict(new_state_dict, strict=False)
             print(msg)
 
-        if args.rank == 0:
+        if args.rank == 0 and not args.no_log:
             print("======================== SNN model =======================")
             f = open(f"snn_model_arch.txt", "w+")
             f.write(str(model))
@@ -643,6 +689,15 @@ def main(args):
             model.patch_embed.proj = torch.nn.Sequential(torch.nn.Conv2d(2, 3, kernel_size=(1, 1), stride=(1, 1), bias=False), model.patch_embed.proj)        
         else:
             model.patch_embed.proj_conv = torch.nn.Sequential(torch.nn.Conv2d(2, 3, kernel_size=(1, 1), stride=(1, 1), bias=False), model.patch_embed.proj_conv) 
+
+    if bool(getattr(args, "freeze_bias_allocator", 0)):
+        frozen = []
+        for name, param in model.named_parameters():
+            if "biasAllocator" in name and getattr(param, "requires_grad", False):
+                param.requires_grad = False
+                frozen.append(name)
+        if getattr(args, "rank", 0) == 0:
+            print(f"[BiasAllocator] frozen {len(frozen)} params (freeze_bias_allocator=1)")
 
     model.to(device)
     # model_teacher.to(device)
@@ -665,7 +720,9 @@ def main(args):
     print("effective batch size: %d" % eff_batch_size)
 
     if args.distributed:
-        model = torch.nn.parallel.DistributedDataParallel(model, device_ids=[args.gpu],find_unused_parameters=True)
+        model = torch.nn.parallel.DistributedDataParallel(
+            model, device_ids=[args.gpu], find_unused_parameters=bool(args.ddp_find_unused_parameters)
+        )
         # model_teacher = torch.nn.parallel.DistributedDataParallel(model_teacher, device_ids=[args.gpu],find_unused_parameters=True)
         model_without_ddp = model.module if args.mode != "SNN" else model.module.model
 
@@ -728,20 +785,27 @@ def main(args):
     print(f"Start training for {args.epochs} epochs")
     start_time = time.time()
     max_accuracy = 0.0
+    mem_baseline = None
+    if args.benchmark and torch.cuda.is_available():
+        try:
+            torch.cuda.synchronize()
+        except Exception:
+            pass
+        try:
+            torch.cuda.reset_peak_memory_stats()
+        except Exception:
+            pass
+        mem_baseline = (torch.cuda.memory_allocated(), torch.cuda.memory_reserved())
+        if misc.is_main_process():
+            def _fmt_bytes(num: int) -> str:
+                for unit in ("B", "KiB", "MiB", "GiB", "TiB"):
+                    if abs(num) < 1024.0:
+                        return f"{num:3.2f}{unit}"
+                    num /= 1024.0
+                return f"{num:.2f}PiB"
+            print(f"[Mem][baseline] allocated={_fmt_bytes(mem_baseline[0])} reserved={_fmt_bytes(mem_baseline[1])}")
 
-    if args.dataset == "cifar10dvs" or args.dataset == "dvs128":
-        train_snn_aug = transforms.Compose([
-                        transforms.Resize(size=(args.input_size, args.input_size)),
-                        transforms.RandomHorizontalFlip(p=0.5)
-                        ])
-        train_trivalaug = SNNAugmentWide()    
-        test_snn_aug = transforms.Compose([
-                        transforms.Resize(size=(args.input_size, args.input_size)),
-                        ])
-    else:
-        train_snn_aug = None
-        train_trivalaug = None
-        test_snn_aug = None
+    # DVS augmentations are applied in DataLoader workers via TransformFirstDataset above.
 
     # if not args.energy:
     #     # print("args.time_step",args.time_step)
@@ -807,52 +871,101 @@ def main(args):
         if args.distributed:
             data_loader_train.sampler.set_epoch(epoch)
 
+        if args.benchmark and torch.cuda.is_available():
+            try:
+                torch.cuda.synchronize()
+            except Exception:
+                pass
+        t0 = time.perf_counter()
         train_stats = train_one_epoch_distill_snn(
             model, model_teacher, criterion, data_loader_train,
             optimizer, device, epoch, loss_scaler,
             args.clip_grad, mixup_fn,
-            log_writer=log_writer, aug=train_snn_aug, trival_aug=train_trivalaug,
+            log_writer=log_writer, aug=None, trival_aug=None,
             args=args
         )
-        if args.output_dir and (epoch % 10 == 0 or epoch == args.epochs - 1):
+        if args.benchmark and torch.cuda.is_available():
+            try:
+                torch.cuda.synchronize()
+            except Exception:
+                pass
+        t1 = time.perf_counter()
+        steps = int(train_stats.get("steps", 0) or 0)
+        if args.benchmark and misc.is_main_process() and steps > 0:
+            avg_ms = (t1 - t0) * 1000.0 / steps
+            print(f"[Time][train] steps={steps} total={(t1 - t0):.3f}s avg={avg_ms:.3f}ms/step")
+
+        if not args.no_save and args.output_dir and (epoch % 10 == 0 or epoch == args.epochs - 1):
             misc.save_model(
                 args=args, model=model, model_without_ddp=model_without_ddp, optimizer=optimizer,
                 loss_scaler=loss_scaler, epoch=epoch)
 
-        test_stats = evaluate(data_loader_val, model, device, test_snn_aug, args.mode ,args)
-        print(f"Accuracy of the network on the {len(dataset_val)} test images: {test_stats['acc1']:.1f}%")
-        max_accuracy = max(max_accuracy, test_stats["acc1"])
-        print(f'Max accuracy: {max_accuracy:.2f}%')
-        args.choose_prune = 1.0 if max_accuracy == test_stats["acc1"] else 0.0
-        if max_accuracy == test_stats["acc1"]:
-            print("find the best accuracy, save model")
-            misc.save_model(
-                args=args, model=model, model_without_ddp=model_without_ddp, optimizer=optimizer,
-                loss_scaler=loss_scaler, epoch="best")
+        if not args.skip_eval:
+            test_stats = evaluate(data_loader_val, model, device, None, args.mode, args)
+            print(f"Accuracy of the network on the {len(dataset_val)} test images: {test_stats['acc1']:.1f}%")
+            max_accuracy = max(max_accuracy, test_stats["acc1"])
+            print(f'Max accuracy: {max_accuracy:.2f}%')
+            args.choose_prune = 1.0 if max_accuracy == test_stats["acc1"] else 0.0
+            if max_accuracy == test_stats["acc1"]:
+                print("find the best accuracy, save model")
+                if not args.no_save:
+                    misc.save_model(
+                        args=args, model=model, model_without_ddp=model_without_ddp, optimizer=optimizer,
+                        loss_scaler=loss_scaler, epoch="best")
 
-        if log_writer is not None:
-            log_writer.add_scalar('perf/test_acc1', test_stats['acc1'], epoch)
-            log_writer.add_scalar('perf/test_acc5', test_stats['acc5'], epoch)
-            log_writer.add_scalar('perf/test_loss', test_stats['loss'], epoch)
-            if args.wandb:
-                epoch_1000x = int(((len(data_loader_train) - 1) / len(data_loader_train) + epoch) * 1000)
-                wandb.log({'test_acc1_curve': test_stats['acc1']}, step=epoch_1000x)
-                wandb.log({'test_acc5_curve': test_stats['acc5']}, step=epoch_1000x)
-                wandb.log({'test_loss_curve': test_stats['loss']}, step=epoch_1000x)
-                if args.mode == "SNN":
-                    for t in range(model.max_T):
-                        wandb.log({'acc1@{}_curve'.format(t + 1): test_stats['acc@{}'.format(t + 1)]}, step=epoch_1000x)
+            if log_writer is not None:
+                log_writer.add_scalar('perf/test_acc1', test_stats['acc1'], epoch)
+                log_writer.add_scalar('perf/test_acc5', test_stats['acc5'], epoch)
+                log_writer.add_scalar('perf/test_loss', test_stats['loss'], epoch)
+                if args.wandb:
+                    epoch_1000x = int(((len(data_loader_train) - 1) / len(data_loader_train) + epoch) * 1000)
+                    wandb.log({'test_acc1_curve': test_stats['acc1']}, step=epoch_1000x)
+                    wandb.log({'test_acc5_curve': test_stats['acc5']}, step=epoch_1000x)
+                    wandb.log({'test_loss_curve': test_stats['loss']}, step=epoch_1000x)
+                    if args.mode == "SNN":
+                        for t in range(model.max_T):
+                            wandb.log({'acc1@{}_curve'.format(t + 1): test_stats['acc@{}'.format(t + 1)]}, step=epoch_1000x)
 
-        log_stats = {**{f'train_{k}': v for k, v in train_stats.items()},
-                     **{f'test_{k}': v for k, v in test_stats.items()},
-                     'epoch': epoch,
-                     'n_parameters': n_parameters}
+            log_stats = {**{f'train_{k}': v for k, v in train_stats.items()},
+                         **{f'test_{k}': v for k, v in test_stats.items()},
+                         'epoch': epoch,
+                         'n_parameters': n_parameters}
+        else:
+            log_stats = {**{f'train_{k}': v for k, v in train_stats.items()},
+                         'epoch': epoch,
+                         'n_parameters': n_parameters}
 
-        if args.output_dir and misc.is_main_process():
+        if args.output_dir and misc.is_main_process() and not args.no_log:
             if log_writer is not None:
                 log_writer.flush()
             with open(os.path.join(args.output_dir, "log.txt"), mode="a", encoding="utf-8") as f:
                 f.write(json.dumps(log_stats) + "\n")
+
+    if args.benchmark and torch.cuda.is_available():
+        try:
+            torch.cuda.synchronize()
+        except Exception:
+            pass
+        peak_alloc = torch.cuda.max_memory_allocated()
+        peak_reserved = torch.cuda.max_memory_reserved()
+        cur_alloc = torch.cuda.memory_allocated()
+        cur_reserved = torch.cuda.memory_reserved()
+        if misc.is_main_process():
+            def _fmt_bytes(num: int) -> str:
+                for unit in ("B", "KiB", "MiB", "GiB", "TiB"):
+                    if abs(num) < 1024.0:
+                        return f"{num:3.2f}{unit}"
+                    num /= 1024.0
+                return f"{num:.2f}PiB"
+            if mem_baseline is not None:
+                base_alloc, base_reserved = mem_baseline
+                print(
+                    f"[Mem][peak] allocated={_fmt_bytes(peak_alloc)} reserved={_fmt_bytes(peak_reserved)} "
+                    f"(baseline allocated={_fmt_bytes(base_alloc)} reserved={_fmt_bytes(base_reserved)})"
+                )
+            else:
+                print(f"[Mem][peak] allocated={_fmt_bytes(peak_alloc)} reserved={_fmt_bytes(peak_reserved)}")
+            print(f"[Mem][end] allocated={_fmt_bytes(cur_alloc)} reserved={_fmt_bytes(cur_reserved)}")
 
     total_time = time.time() - start_time
     total_time_str = str(datetime.timedelta(seconds=int(total_time)))

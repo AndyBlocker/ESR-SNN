@@ -265,7 +265,6 @@ class SNNWrapper(nn.Module):
                 neurons.neg_min = child.neg_min_buf
                 neurons.init = True
                 self.first_neuron = False
-                neurons.cuda()
                 model._modules[name] = neurons
                 is_need = True
             elif isinstance(child, nn.ReLU):

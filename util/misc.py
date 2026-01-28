@@ -295,22 +295,6 @@ class NativeScalerWithGradNormCount:
 
     def __call__(self, loss, optimizer, clip_grad=None, parameters=None, create_graph=False, update_grad=True, data_iter_step=0):
         self._scaler.scale(loss).backward(create_graph=create_graph)
-        with torch.no_grad():
-            for group in optimizer.param_groups:
-                for param in group["params"]:
-                    if param.grad is None:
-                        continue
-                    if param.grad.is_sparse:
-                        if param.grad.dtype is torch.float16:
-                            param.grad = param.grad.coalesce()
-                        to_unscale = param.grad._values()
-                    else:
-                        to_unscale = param.grad
-                    v = to_unscale.clone().abs().max()
-                    # if torch.isinf(v) or torch.isnan(v):
-                    #     print('INF in', group['layer_name'], 'of step', data_iter_step, '!!!')
-
-
         if update_grad:
             if clip_grad is not None:
                 assert parameters is not None

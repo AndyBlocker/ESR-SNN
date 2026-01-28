@@ -175,10 +175,8 @@ class SDyHT(nn.Module):
                 x = x.reshape(self.T,B//self.T,N,C)
                 x = self.alpha * self.gamma * x
                 bias_term = biasAllocator.view(-1, 1, 1, 1) * self.gamma * self.beta.view(1, 1, 1, -1)
-                x = torch.cat([
-                    x[:effect_T] + bias_term,
-                    x[effect_T:]
-                ], dim=0)
+                if effect_T > 0:
+                    x[:effect_T] = x[:effect_T] + bias_term
                 x = x.reshape(B,N,C)
                 # print("SNN DyHT.abs().mean()",x.reshape(32,8,-1).sum(dim=0).abs().mean())
             else:
@@ -187,10 +185,8 @@ class SDyHT(nn.Module):
                 x = x.reshape(self.T,B//self.T,C)
                 x = self.alpha * self.gamma * x
                 bias_term = biasAllocator.view(-1, 1, 1) * self.gamma * self.beta.view(1, 1, -1)
-                x = torch.cat([
-                    x[:effect_T] + bias_term,
-                    x[effect_T:]
-                ], dim=0)
+                if effect_T > 0:
+                    x[:effect_T] = x[:effect_T] + bias_term
                 x = x.reshape(B,C)
             # print("self.beta",self.beta.data)
             return x

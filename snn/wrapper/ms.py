@@ -6,7 +6,7 @@ import torch.nn as nn
 import torch.nn.functional as F
 
 import glo
-from snn.nvtx import nvtx_range
+from snn.nvtx import nvtx_range, profiler_range
 from snn.layer import (
     DyHT,
     DyHT_ReLU,
@@ -46,6 +46,7 @@ class SNNWrapper_MS(nn.Module):
         self.level = kwargs["level"]
         self.step = 2
         self.neuron_type = kwargs["neuron_type"]
+        self.neuron_impl = kwargs.get("neuron_impl", "auto")
         self.model = ann_model
 
         self.model.spike = True
@@ -115,9 +116,28 @@ class SNNWrapper_MS(nn.Module):
             
     def reset(self):
         # self.model = deepcopy(self.model_reset).cuda()
-        if self.model_name.count("vit")>0:
-            self.model.pos_embed.data = deepcopy(self.pos_embed).cuda()
-            self.model.cls_token.data = deepcopy(self.cls_token).cuda()
+        if self.model_name.count("vit") > 0:
+            with torch.no_grad():
+                if (
+                    self.pos_embed.device != self.model.pos_embed.device
+                    or self.pos_embed.dtype != self.model.pos_embed.dtype
+                ):
+                    self.pos_embed = self.pos_embed.to(
+                        device=self.model.pos_embed.device, dtype=self.model.pos_embed.dtype
+                    )
+                if (
+                    self.cls_token.device != self.model.cls_token.device
+                    or self.cls_token.dtype != self.model.cls_token.dtype
+                ):
+                    self.cls_token = self.cls_token.to(
+                        device=self.model.cls_token.device, dtype=self.model.cls_token.dtype
+                    )
+                self.model.pos_embed.data.copy_(
+                    self.pos_embed
+                )
+                self.model.cls_token.data.copy_(
+                    self.cls_token
+                )
         # print(self.model.pos_embed)
         # print(self.model.cls_token)
         reset_model(self)
@@ -222,7 +242,15 @@ class SNNWrapper_MS(nn.Module):
                 # model._modules[name].register_full_backward_hook(modify_gradient_for_spiking_layernorm_softmax(self.T))
                 is_need = True
             elif isinstance(child, MyQuan):
-                neurons = ST_BIFNeuron_MS(q_threshold = torch.tensor(1.0),sym=child.sym,level = self.level, first_neuron=self.first_neuron, T = self.T, C=child.channel_num)
+                neurons = ST_BIFNeuron_MS(
+                    q_threshold=torch.tensor(1.0),
+                    sym=child.sym,
+                    level=self.level,
+                    first_neuron=self.first_neuron,
+                    T=self.T,
+                    C=child.channel_num,
+                    neuron_impl=self.neuron_impl,
+                )
                 neurons.q_threshold.data = min(child.s.data, child.s_max.data)
                 neurons.bias_channel.data = child.bias_channel
                 neurons.level = self.level
@@ -230,7 +258,6 @@ class SNNWrapper_MS(nn.Module):
                 neurons.neg_min = child.neg_min_buf
                 neurons.init = True
                 self.first_neuron = False
-                neurons.cuda()
                 model._modules[name] = neurons
                 is_need = True
             elif isinstance(child, nn.ReLU):
@@ -241,31 +268,39 @@ class SNNWrapper_MS(nn.Module):
 
     def forward(self,x, verbose=False):
         with nvtx_range("snn.wrapper.ms.SNNWrapper_MS.forward"):
+            profile_enabled = getattr(self.cfg, "profile", False)
             if self.cfg.dataset == "dvs128":
-                input = x.transpose(0,1)/self.T
+                with profiler_range("ms_wrapper/encode_dvs", enabled=profile_enabled):
+                    input = x.transpose(0,1)/self.T
             else:
-                input = get_subtensors(x,0.0,0.0,sample_grain=self.step, time_step=self.T)
+                with profiler_range("ms_wrapper/get_subtensors", enabled=profile_enabled):
+                    input = get_subtensors(x,0.0,0.0,sample_grain=self.step, time_step=self.T)
             # input = input * self.step
             if self.cfg.model.count("vit") > 0:
-                self.model.pos_embed.data = self.model.pos_embed/self.step
-                self.model.cls_token.data = self.model.cls_token/self.step
+                with torch.no_grad():
+                    self.model.pos_embed.data.div_(self.step)
+                    self.model.cls_token.data.div_(self.step)
             elif self.cfg.model.count("swin") > 0:
                 self.model.pos_drop.p = 0
             T,B,C,H,W = input.shape
             # biasAllocator = torch.cat([1 - torch.sum(self.biasAllocator,dim=0,keepdim=True), self.biasAllocator], dim=0)
             # input = torch.cat([input[0].unsqueeze(0) * biasAllocator.reshape(-1,1,1,1,1), input[self.param_number:]], dim=0)
 
-            input = input.reshape(T*B,C,H,W)
-            with nvtx_range("snn.wrapper.ms.SNNWrapper_MS.model"):
-                output = self.model(input)
-            output = output.reshape(torch.Size([T,B]) + output.shape[1:])
+            with profiler_range("ms_wrapper/reshape_in", enabled=profile_enabled):
+                input = input.reshape(T*B,C,H,W)
+            with profiler_range("ms_wrapper/model_forward", enabled=profile_enabled):
+                with nvtx_range("snn.wrapper.ms.SNNWrapper_MS.model"):
+                    output = self.model(input)
+            with profiler_range("ms_wrapper/reshape_out", enabled=profile_enabled):
+                output = output.reshape(torch.Size([T,B]) + output.shape[1:])
 
             if not self.training:
                 print(output.abs().sum(dim=[-1,-2]))
 
             accu_per_t = []
             accu = 0.0
-            self.reset()
+            with profiler_range("ms_wrapper/reset", enabled=profile_enabled):
+                self.reset()
             if verbose == True:
                 for t in range(T):
                     accu = accu + output[t]

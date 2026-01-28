@@ -28,6 +28,35 @@ from torch.utils.data import Dataset
 from datasets import load_dataset
 from PIL import Image
 
+class TransformFirstDataset(Dataset):
+    """
+    Apply a transform to the first element of a dataset sample.
+
+    This is useful for datasets that return (data, target, *extras), where we want
+    data augmentation to run inside DataLoader workers (instead of the training loop).
+    """
+
+    def __init__(self, dataset: Dataset, transform=None):
+        self.dataset = dataset
+        self.transform = transform
+
+    def __len__(self):
+        return len(self.dataset)
+
+    def __getitem__(self, idx):
+        sample = self.dataset[idx]
+        if self.transform is None:
+            return sample
+
+        if isinstance(sample, tuple) and len(sample) > 0:
+            x = self.transform(sample[0])
+            return (x,) + sample[1:]
+        if isinstance(sample, list) and len(sample) > 0:
+            sample = list(sample)
+            sample[0] = self.transform(sample[0])
+            return sample
+        return sample
+
 def build_dataset(is_train, args):
     transform = build_transform(is_train, args)
 

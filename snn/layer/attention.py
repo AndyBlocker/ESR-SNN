@@ -248,12 +248,38 @@ class SAttention(nn.Module):
         # self.spikeBN_v = spiking_BatchNorm2d(bn=torch.nn.BatchNorm1d(self.head_dim),level=self.level//2-1,input_allcate=False)
         self.attn_drop = nn.Dropout(attn_drop)
         # self.attn_ReLU = nn.ReLU()
-        self.attn_IF = self.neuron_layer(q_threshold=torch.tensor(1.0),level=self.level,sym=False, need_spike_tracer=not is_softmax, T=T, C=dim)
-        # self.attn_IF.prefire.data = torch.tensor(0.2)
-        # self.spikeBN_attn = spiking_BatchNorm2d(bn=torch.nn.BatchNorm1d(197),level=self.level,input_allcate=False)
-        # if self.is_softmax:
-        self.attn_softmax_IF = self.neuron_layer(q_threshold=torch.tensor(1.0),level=self.level,sym=True, need_spike_tracer=is_softmax, T=T, C=dim)
-        self.attn_softmax_IF.prefire.data = torch.tensor(0.2)
+        # Keep only the branch-specific neuron to avoid unused parameters under DDP
+        # (e.g., when is_softmax=True, attn_IF would otherwise never be used).
+        self.attn_IF = None
+        self.attn_softmax_IF = None
+        if self.is_softmax:
+            self.attn_softmax_IF = self.neuron_layer(
+                q_threshold=torch.tensor(1.0),
+                level=self.level,
+                sym=True,
+                need_spike_tracer=True,
+                T=T,
+                C=dim,
+            )
+            self.attn_softmax_IF.prefire.data = torch.tensor(0.2)
+            # attn_softmax_IF processes square attention matrices [B, H, N, N], where the
+            # channel-wise bias allocation is not applied; keep its biasAllocator frozen
+            # to avoid unused-parameter issues under DDP when find_unused_parameters=0.
+            if hasattr(self.attn_softmax_IF, "biasAllocator"):
+                self.attn_softmax_IF.biasAllocator.requires_grad_(False)
+        else:
+            self.attn_IF = self.neuron_layer(
+                q_threshold=torch.tensor(1.0),
+                level=self.level,
+                sym=False,
+                need_spike_tracer=True,
+                T=T,
+                C=dim,
+            )
+            # attn_IF processes square attention matrices [B, H, N, N] (no softmax branch);
+            # its biasAllocator (if any) is not used, so freeze it for DDP safety.
+            if hasattr(self.attn_IF, "biasAllocator"):
+                self.attn_IF.biasAllocator.requires_grad_(False)
         # self.spikeBN_after_attn = spiking_BatchNorm2d(bn=torch.nn.BatchNorm1d(self.head_dim),level=self.level//2-1,input_allcate=False)
         self.after_attn_IF = self.neuron_layer(q_threshold=torch.tensor(1.0),level=self.level,sym=True, T=T, C=dim)
         self.proj = nn.Linear(dim, dim,bias=True)
@@ -279,8 +305,10 @@ class SAttention(nn.Module):
         self.q_IF.reset()
         self.k_IF.reset()
         self.v_IF.reset()
-        self.attn_IF.reset()
-        self.attn_softmax_IF.reset()
+        if self.attn_IF is not None:
+            self.attn_IF.reset()
+        if self.attn_softmax_IF is not None:
+            self.attn_softmax_IF.reset()
         self.after_attn_IF.reset()
         # self.proj_IF.reset()
         if self.is_softmax:
@@ -339,6 +367,8 @@ class SAttention(nn.Module):
                 #     print(f"ST_BIFNeuron_MS attn_print[{t}].abs().mean()",attn_print[t].abs().mean(),attn_print.dtype)
             else:
                 attn_if = self.attn_IF
+            if attn_if is None:
+                raise RuntimeError("SAttention: attn neuron is None (is_softmax configuration mismatch).")
 
             attn = attn_if(attn)
             if not self.is_softmax:
@@ -400,8 +430,11 @@ class SAttention_without_softmax(nn.Module):
         self.attn_drop = nn.Dropout(attn_drop)
         self.attn_IF = self.neuron_layer(q_threshold=torch.tensor(1.0),level=self.level,sym=False, need_spike_tracer=not is_softmax, T = self.T, C=768)
         self.attn_IF.prefire.data = torch.tensor(0.2)
+        # attn_IF processes square attention matrices [B, H, N, N]; its biasAllocator (if any)
+        # is not used, so freeze it for DDP safety when find_unused_parameters=0.
+        if hasattr(self.attn_IF, "biasAllocator"):
+            self.attn_IF.biasAllocator.requires_grad_(False)
         self.after_attn_IF = self.neuron_layer(q_threshold=torch.tensor(1.0),level=self.level,sym=True, T = self.T, C=768)
-        self.feature_IF = self.neuron_layer(q_threshold=torch.tensor(1.0),level=self.level,sym=True, T = self.T)
         self.proj = nn.Linear(dim, dim,bias=True)
         self.proj_drop = nn.Dropout(proj_drop)
         # self.proj_IF = self.neuron_layer(q_threshold=torch.tensor(1.0),level=self.level,sym=True, T = self.T, C=197)
@@ -534,6 +567,10 @@ class SAttention_without_softmax_SS(nn.Module):
         self.v_IF = self.neuron_layer(q_threshold=torch.tensor(1.0),level=self.level,sym=True)
         self.attn_drop = nn.Dropout(attn_drop)
         self.attn_IF = self.neuron_layer(q_threshold=torch.tensor(1.0),level=self.level,sym=False)
+        # attn_IF processes square attention matrices [B, H, N, N]; its biasAllocator (if any)
+        # is not used, so freeze it for DDP safety when find_unused_parameters=0.
+        if hasattr(self.attn_IF, "biasAllocator"):
+            self.attn_IF.biasAllocator.requires_grad_(False)
         self.after_attn_IF = self.neuron_layer(q_threshold=torch.tensor(1.0),level=self.level,sym=True)
         self.proj = nn.Linear(dim, dim,bias=True)
         self.proj_drop = nn.Dropout(proj_drop)

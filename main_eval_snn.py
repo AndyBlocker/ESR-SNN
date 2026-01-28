@@ -536,6 +536,15 @@ def main(args):
     np.random.seed(seed)
 
     cudnn.benchmark = True
+    # Performance: enable Tensor Core friendly FP32 matmul (TF32) on Ampere+ GPUs.
+    # This keeps the model in FP32 but allows faster GEMM/conv with minimal accuracy impact.
+    if torch.cuda.is_available():
+        try:
+            torch.set_float32_matmul_precision("high")
+        except Exception:
+            pass
+        torch.backends.cuda.matmul.allow_tf32 = True
+        torch.backends.cudnn.allow_tf32 = True
 
     dataset_val = build_dataset(is_train=False, args=args)
 

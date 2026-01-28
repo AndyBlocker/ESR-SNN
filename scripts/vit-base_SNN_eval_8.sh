@@ -51,15 +51,15 @@ OMP_NUM_THREADS="$OMP_NUM_THREADS" CUDA_VISIBLE_DEVICES="$CUDA_VISIBLE_DEVICES" 
     main_eval_snn.py \
     --batch_size 1 \
     --model vit_base_patch16 \
-    --finetune ~/gpfs-share/ckpts/vit-base/checkpoint-19.pth \
-    --resume ~/gpfs-share/ckpts/vit-base/checkpoint-19.pth \
+    --finetune /home/andyblocker/ESR-SNN/checkpoint-19.pth \
+    --resume /home/andyblocker/ESR-SNN/checkpoint-19.pth \
     --num_workers 8 \
     --time_step 10 --encoding_type analog \
     --weight_quantization_bit 32 \
     --level 10 \
-    --data_path ~/gpfs-share/data/ \
-    --output_dir ~/gpfs-share/code/SpikeZIP_transformer_Hybrid_CVPR/output \
-    --log_dir ~/gpfs-share/code/SpikeZIP_transformer_Hybrid_CVPR/output \
+    --data_path /home/andyblocker/data \
+    --output_dir /home/andyblocker/ESR-SNN/output \
+    --log_dir /home/andyblocker/ESR-SNN/output \
     --mode "SNN" --global_pool --act_layer relu \
-    --dist_eval \
+    --dist_eval --compile \
     "${PROFILE_ARGS[@]}"

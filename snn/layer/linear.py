@@ -141,16 +141,19 @@ class LLLinear_MS(nn.Module):
     
     def forward(self, input):
         with nvtx_range("snn.layer.linear.LLLinear_MS.forward"):
-            # 输入可能是 [B*T, C] 或 [B*T, N, C]
+            # input can be [B*T, C] or [B*T, N, C]
             if input.dim() == 3:
                 BT, N, C = input.shape
                 B = BT // self.T
-                input = input.view(self.T, B, N, C)  # [T, B, N, C]
+                flat_in = input.reshape(BT * N, C)
+                flat_out = F.linear(flat_in, self.linear.weight, None)
+                output = flat_out.view(self.T, B, N, -1)
             elif input.dim() == 2:
                 BT, C = input.shape
                 B = BT // self.T
                 N = 1
-                input = input.view(self.T, B, N, C)  # [T, B, 1, C]
+                flat_out = F.linear(input, self.linear.weight, None)
+                output = flat_out.view(self.T, B, N, -1)
             else:
                 raise ValueError("Input must be [B*T, C] or [B*T, N, C]")
 
@@ -160,10 +163,6 @@ class LLLinear_MS(nn.Module):
                 1 - torch.sum(self.biasAllocator, dim=0, keepdim=True),
                 self.biasAllocator
             ], dim=0)[:effect_T]  # [T, out_features]
-
-            # 线性变换 (向量化)
-            weight = self.linear.weight  # [out_features, in_features]
-            output = torch.einsum('tbnc,oc->tbno', input, weight)  # [T, B, N, out_features]
 
             # 加偏置
             if self.linear.bias is not None:
@@ -191,12 +190,25 @@ class LLConv2d_MS(nn.Module):
     
     def forward(self,input):
         with nvtx_range("snn.layer.linear.LLConv2d_MS.forward"):
-            B = input.shape[0]//self.T
-            # print("LLConv2d_MS.input",input.reshape(torch.Size([self.T,B])+input.shape[1:]).sum(dim=0).abs().mean())
-            output = torch.cat([nn.functional.conv2d(input[:B*self.steps], self.conv.weight, self.conv.bias, stride=self.conv.stride, padding=self.conv.padding, dilation=self.conv.dilation,groups=self.conv.groups),\
-                                nn.functional.conv2d(input[B*self.steps:], self.conv.weight, stride=self.conv.stride, padding=self.conv.padding, dilation=self.conv.dilation,groups=self.conv.groups)],dim=0)
-            # print("LLConv2d_MS.output",output.reshape(torch.Size([self.T,B])+output.shape[1:]).sum(dim=0).abs().mean())
-            return output
+            B = input.shape[0] // self.T
+            out = F.conv2d(
+                input,
+                self.conv.weight,
+                None,
+                stride=self.conv.stride,
+                padding=self.conv.padding,
+                dilation=self.conv.dilation,
+                groups=self.conv.groups,
+            )
+            if self.conv.bias is not None and self.steps > 0 and B > 0:
+                steps = min(int(self.steps), int(self.T))
+                if steps > 0:
+                    cutoff = B * steps
+                    if cutoff > 0:
+                        bias = self.conv.bias.to(dtype=out.dtype, device=out.device).view(1, -1, 1, 1)
+                        # Bias is applied only on the first `steps` timesteps (bias has already been scaled upstream).
+                        out[:cutoff] = out[:cutoff] + bias
+            return out
 
 class LLLinear(nn.Module):
     def __init__(self,linear,**kwargs):

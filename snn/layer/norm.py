@@ -56,7 +56,9 @@ class Spiking_LayerNorm(nn.Module):
             else:
                 Y = self.layernorm(cum)
 
-            Y_pre = torch.cat([Y[0:1] * 0.0, Y[:-1]], dim=0)
+            Y_pre = torch.empty_like(Y)
+            Y_pre[0].zero_()
+            Y_pre[1:] = Y[:-1]
             output = Y - Y_pre
 
             self.X = cum[-1].detach()
@@ -214,12 +216,41 @@ class MyBatchNorm1d(nn.BatchNorm1d):
                 x = F.batch_norm(x,self.running_mean,self.running_var,self.weight,self.bias,self.training,self.momentum,self.eps)
             else:
                 Fd = x.shape[0]
-                if self.step >= self.T:
-                    x = F.batch_norm(x,self.running_mean,self.running_var,self.weight,self.bias,False,self.momentum,self.eps)
-                else:
-                    zero_mean, zero_bias = self._get_zero_buffers()
-                    x = torch.cat([F.batch_norm(x[:int(Fd*(self.step/self.T))],self.running_mean,self.running_var,self.weight,self.bias,False,self.momentum,self.eps), \
-                                F.batch_norm(x[int(Fd*(self.step/self.T)):],zero_mean,self.running_var,self.weight,zero_bias,False,self.momentum,self.eps)])
+                x_bn = F.batch_norm(
+                    x,
+                    self.running_mean,
+                    self.running_var,
+                    self.weight,
+                    self.bias,
+                    False,
+                    self.momentum,
+                    self.eps,
+                )
+                if self.step < self.T:
+                    cut = int(Fd * (float(self.step) / float(self.T)))
+                    if cut < Fd:
+                        dtype = x_bn.dtype
+                        device = x_bn.device
+
+                        running_mean = self.running_mean.to(device=device, dtype=dtype)
+                        running_var = self.running_var.to(device=device, dtype=dtype)
+                        inv_std = torch.rsqrt(running_var + self.eps)
+
+                        delta = running_mean * inv_std
+                        if self.weight is not None:
+                            delta = delta * self.weight.to(device=device, dtype=dtype)
+                        if self.bias is not None:
+                            delta = delta - self.bias.to(device=device, dtype=dtype)
+
+                        # Apply the (mean,bias)->(0,0) correction only to later timesteps,
+                        # avoiding a second batch_norm + cat.
+                        if cut == 0:
+                            x_bn = x_bn + delta.view(1, -1, 1)
+                        else:
+                            mask = x_bn.new_zeros((Fd,), dtype=dtype)
+                            mask[cut:] = 1.0
+                            x_bn = x_bn + mask.view(Fd, 1, 1) * delta.view(1, -1, 1)
+                x = x_bn
             # if self.spike:
             #     print("after mybatchnorm1d:",x.reshape(torch.Size([self.T,x.shape[0]//self.T]) + x.shape[1:]).sum(dim=0).abs().mean())
             # else:

@@ -6,3 +6,6 @@ output_dir
 *.sqlite
 
 __pycache__/
+
+output/
+torch_profiler/
