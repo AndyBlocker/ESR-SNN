@@ -1,4 +1,11 @@
+import math
 import torch
+
+try:
+    from torch._dynamo import allow_in_graph
+except Exception:
+    def allow_in_graph(fn):
+        return fn
 
 from snn.layer import (
     IFNeuron,
@@ -18,49 +25,93 @@ from snn.layer import (
 )
 
 
-def get_subtensors(tensor,mean,std,sample_grain=255,time_step=4):
-    for i in range(int(time_step)):
-        # output = (tensor).unsqueeze(0)
-        output = (tensor/sample_grain).unsqueeze(0)
-        if i == 0:
-            accu = output
-        elif i < sample_grain:
-            accu = torch.cat((accu,output),dim=0)
+_RESET_TYPES = (
+    IFNeuron,
+    SpikeMaxPooling_SS,
+    MyBatchNorm1d_SS,
+    LLConv2d,
+    LLLinear,
+    SWindowAttention_SS,
+    SWindowAttention,
+    Spiking_LayerNorm,
+    Spiking_LayerNorm_SS,
+    SpikeMaxPooling,
+    SDyHT_SS,
+    ST_BIFNeuron_MS,
+    ST_BIFNeuron_SS,
+    spiking_softmax_ss,
+)
+
+_WORK_TYPES = (IFNeuron, LLLinear, LLConv2d)
+
+
+@allow_in_graph
+def get_subtensors(tensor, mean, std, sample_grain=255, time_step=4, out=None):
+    time_step = int(time_step)
+    if time_step <= 0:
+        return tensor.new_zeros((0,) + tensor.shape)
+    scaled = tensor / sample_grain
+    use_out = out is not None and not torch.is_grad_enabled()
+    if use_out:
+        if out.shape != (time_step,) + tensor.shape or out.device != tensor.device or out.dtype != tensor.dtype:
+            accu = tensor.new_zeros((time_step,) + tensor.shape)
         else:
-            accu = torch.cat((accu,output*0.0),dim=0)
+            accu = out
+            accu.zero_()
+    else:
+        accu = tensor.new_zeros((time_step,) + tensor.shape)
+    valid = min(time_step, int(math.ceil(sample_grain)))
+    if valid > 0:
+        accu[:valid] = scaled
     return accu
 
+
+def _collect_reset_modules(model):
+    modules = []
+
+    def _walk(module):
+        for child in module.children():
+            if isinstance(child, _RESET_TYPES):
+                modules.append(child)
+            else:
+                _walk(child)
+
+    _walk(model)
+    return modules
+
 def reset_model(model):
-    children = list(model.named_children())
-    for name, child in children:
-        is_need = False
-        if isinstance(child, IFNeuron) or isinstance(child, SpikeMaxPooling_SS) or \
-            isinstance(child, MyBatchNorm1d_SS) or \
-            isinstance(child, LLConv2d) or isinstance(child, LLLinear) or isinstance(child, SWindowAttention_SS) or \
-            isinstance(child, SWindowAttention) or isinstance(child, Spiking_LayerNorm) or \
-            isinstance(child, Spiking_LayerNorm_SS) or \
-            isinstance(child, SpikeMaxPooling) or isinstance(child, SDyHT_SS) or \
-            isinstance(child, ST_BIFNeuron_MS) or isinstance(child, ST_BIFNeuron_SS) or \
-            isinstance(child, spiking_softmax_ss):
-            model._modules[name].reset()
-            is_need = True
-        if not is_need:
-            reset_model(child)
+    reset_modules = getattr(model, "_snn_reset_modules", None)
+    if reset_modules is None:
+        reset_modules = _collect_reset_modules(model)
+        setattr(model, "_snn_reset_modules", reset_modules)
+    for module in reset_modules:
+        module.reset()
 
-class Judger():
-	def __init__(self):
-		self.network_finish=True
 
-	def judge_finish(self,model):
-		children = list(model.named_children())
-		for name, child in children:
-			is_need = False
-			if isinstance(child, IFNeuron) or isinstance(child, LLLinear) or isinstance(child, LLConv2d):
-				self.network_finish = self.network_finish and (not model._modules[name].is_work)
-				# print("child",child,"network_finish",self.network_finish,"model._modules[name].is_work",(model._modules[name].is_work))
-				is_need = True
-			if not is_need:
-				self.judge_finish(child)
+class Judger:
+    def __init__(self):
+        self.network_finish = True
+        self._work_modules = None
+        self._work_modules_owner = None
 
-	def reset_network_finish_flag(self):
-		self.network_finish = True
+    def _collect_work_modules(self, model):
+        modules = []
+
+        def _walk(module):
+            for child in module.children():
+                if isinstance(child, _WORK_TYPES):
+                    modules.append(child)
+                else:
+                    _walk(child)
+
+        _walk(model)
+        self._work_modules = modules
+        self._work_modules_owner = id(model)
+
+    def judge_finish(self, model):
+        if self._work_modules is None or self._work_modules_owner != id(model):
+            self._collect_work_modules(model)
+        self.network_finish = all(not module.is_work for module in self._work_modules)
+
+    def reset_network_finish_flag(self):
+        self.network_finish = True

@@ -5,6 +5,16 @@ import torch.nn.functional as F
 
 from snn.nvtx import nvtx_range
 
+def _is_compiling():
+    try:
+        return torch.compiler.is_compiling()
+    except Exception:
+        try:
+            return torch._dynamo.is_compiling()
+        except Exception:
+            return False
+
+
 class LLConv2d(nn.Module):
     def __init__(self,conv:nn.Conv2d,**kwargs):
         super(LLConv2d,self).__init__()
@@ -18,6 +28,7 @@ class LLConv2d(nn.Module):
         self.realize_time = self.steps
         self.weight = self.conv.weight
         self.bias = self.conv.bias
+        self._zero_output_meta = None
         # self.quan_w_fn = self.conv.quan_w_fn
         
     def reset(self):
@@ -25,11 +36,17 @@ class LLConv2d(nn.Module):
         self.first = True
         self.zero_output = None
         self.realize_time = self.steps
+        self._zero_output_meta = None
 
     def forward(self,input):
         with nvtx_range("snn.layer.linear.LLConv2d.forward"):
             # print("LLConv2d.steps",self.steps)
             x = input
+            if not torch.is_tensor(x):
+                if x == 0.0:
+                    self.is_work = False
+                    return self.zero_output if self.zero_output is not None else x
+                return x
             N,C,H,W = x.shape
             F_h,F_w = self.conv.kernel_size
             S_h,S_w = self.conv.stride
@@ -38,27 +55,42 @@ class LLConv2d(nn.Module):
             H = math.floor((H - F_h + 2*P_h)/S_h)+1
             W = math.floor((W - F_w + 2*P_w)/S_w)+1
 
-            if self.zero_output is None:
+            out_shape = (N, C, H, W)
+            meta = (out_shape, x.device, x.dtype)
+            if self.zero_output is None or self._zero_output_meta != meta:
                 # self.zero_output = 0.0
-                self.zero_output = torch.zeros(size=(N,C,H,W),device=x.device,dtype=x.dtype)
-
-            if (not torch.is_tensor(x) and (x == 0.0)) or ((x==0.0).all()):
-                self.is_work = False
-                if self.realize_time > 0:
-                    output = self.zero_output + (self.conv.bias.data.unsqueeze(0).unsqueeze(-1).unsqueeze(-1)/self.steps if self.conv.bias is not None else 0.0)
-                    self.realize_time = self.realize_time - 1
-                    self.is_work = True
-                    return output
-                return self.zero_output
-
-            # output = self.conv(x)
-            if self.realize_time > 0:
-                output = torch.nn.functional.conv2d(input, self.conv.weight, (self.conv.bias/self.steps if self.conv.bias is not None else 0.0), stride=self.conv.stride, \
-                    padding=self.conv.padding, dilation=self.conv.dilation,groups=self.conv.groups)
+                self.zero_output = torch.zeros(size=out_shape, device=x.device, dtype=x.dtype)
+                self._zero_output_meta = meta
+            x_is_zero = (x == 0).all()
+            use_bias = self.realize_time > 0
+            if use_bias:
+                output = torch.nn.functional.conv2d(
+                    input,
+                    self.conv.weight,
+                    (self.conv.bias / self.steps if self.conv.bias is not None else 0.0),
+                    stride=self.conv.stride,
+                    padding=self.conv.padding,
+                    dilation=self.conv.dilation,
+                    groups=self.conv.groups,
+                )
+                if self.conv.bias is None:
+                    output_zero = self.zero_output
+                else:
+                    bias = self.conv.bias.detach() / self.steps
+                    output_zero = bias.view(1, -1, 1, 1).expand(out_shape)
                 self.realize_time = self.realize_time - 1
             else:
-                output = torch.nn.functional.conv2d(input, self.conv.weight, None, stride=self.conv.stride, \
-                    padding=self.conv.padding, dilation=self.conv.dilation,groups=self.conv.groups)
+                output = torch.nn.functional.conv2d(
+                    input,
+                    self.conv.weight,
+                    None,
+                    stride=self.conv.stride,
+                    padding=self.conv.padding,
+                    dilation=self.conv.dilation,
+                    groups=self.conv.groups,
+                )
+                output_zero = self.zero_output
+            output = torch.where(x_is_zero, output_zero, output)
             # if self.neuron_type == 'IF':
             #     pass
             # else:
@@ -73,7 +105,9 @@ class LLConv2d(nn.Module):
             #             self.realize_time = self.realize_time - 1
             #             # print("conv2d self.realize_time",self.realize_time)
 
-            self.is_work = True
+            if not _is_compiling():
+                x_is_zero_val = bool(x_is_zero)
+                self.is_work = (not x_is_zero_val) or (x_is_zero_val and use_bias)
             self.first = False
 
             return output
@@ -107,16 +141,19 @@ class LLLinear_MS(nn.Module):
     
     def forward(self, input):
         with nvtx_range("snn.layer.linear.LLLinear_MS.forward"):
-            # 输入可能是 [B*T, C] 或 [B*T, N, C]
+            # input can be [B*T, C] or [B*T, N, C]
             if input.dim() == 3:
                 BT, N, C = input.shape
                 B = BT // self.T
-                input = input.view(self.T, B, N, C)  # [T, B, N, C]
+                flat_in = input.reshape(BT * N, C)
+                flat_out = F.linear(flat_in, self.linear.weight, None)
+                output = flat_out.view(self.T, B, N, -1)
             elif input.dim() == 2:
                 BT, C = input.shape
                 B = BT // self.T
                 N = 1
-                input = input.view(self.T, B, N, C)  # [T, B, 1, C]
+                flat_out = F.linear(input, self.linear.weight, None)
+                output = flat_out.view(self.T, B, N, -1)
             else:
                 raise ValueError("Input must be [B*T, C] or [B*T, N, C]")
 
@@ -126,10 +163,6 @@ class LLLinear_MS(nn.Module):
                 1 - torch.sum(self.biasAllocator, dim=0, keepdim=True),
                 self.biasAllocator
             ], dim=0)[:effect_T]  # [T, out_features]
-
-            # 线性变换 (向量化)
-            weight = self.linear.weight  # [out_features, in_features]
-            output = torch.einsum('tbnc,oc->tbno', input, weight)  # [T, B, N, out_features]
 
             # 加偏置
             if self.linear.bias is not None:
@@ -157,12 +190,25 @@ class LLConv2d_MS(nn.Module):
     
     def forward(self,input):
         with nvtx_range("snn.layer.linear.LLConv2d_MS.forward"):
-            B = input.shape[0]//self.T
-            # print("LLConv2d_MS.input",input.reshape(torch.Size([self.T,B])+input.shape[1:]).sum(dim=0).abs().mean())
-            output = torch.cat([nn.functional.conv2d(input[:B*self.steps], self.conv.weight, self.conv.bias, stride=self.conv.stride, padding=self.conv.padding, dilation=self.conv.dilation,groups=self.conv.groups),\
-                                nn.functional.conv2d(input[B*self.steps:], self.conv.weight, stride=self.conv.stride, padding=self.conv.padding, dilation=self.conv.dilation,groups=self.conv.groups)],dim=0)
-            # print("LLConv2d_MS.output",output.reshape(torch.Size([self.T,B])+output.shape[1:]).sum(dim=0).abs().mean())
-            return output
+            B = input.shape[0] // self.T
+            out = F.conv2d(
+                input,
+                self.conv.weight,
+                None,
+                stride=self.conv.stride,
+                padding=self.conv.padding,
+                dilation=self.conv.dilation,
+                groups=self.conv.groups,
+            )
+            if self.conv.bias is not None and self.steps > 0 and B > 0:
+                steps = min(int(self.steps), int(self.T))
+                if steps > 0:
+                    cutoff = B * steps
+                    if cutoff > 0:
+                        bias = self.conv.bias.to(dtype=out.dtype, device=out.device).view(1, -1, 1, 1)
+                        # Bias is applied only on the first `steps` timesteps (bias has already been scaled upstream).
+                        out[:cutoff] = out[:cutoff] + bias
+            return out
 
 class LLLinear(nn.Module):
     def __init__(self,linear,**kwargs):
@@ -177,6 +223,7 @@ class LLLinear(nn.Module):
         self.realize_time = self.steps
         self.weight = self.linear.weight
         self.bias = self.linear.bias
+        self._zero_output_meta = None
         # self.quan_w_fn = self.linear.quan_w_fn
         
     def reset(self):
@@ -185,37 +232,33 @@ class LLLinear(nn.Module):
         self.first = True
         self.zero_output = None
         self.realize_time = self.steps
+        self._zero_output_meta = None
 
     def forward(self,input):
         with nvtx_range("snn.layer.linear.LLLinear.forward"):
             # print("LLLinear", input.mean())
             # print("LLLinear.steps",self.steps)
             x = input
-            if x.ndim == 2:
-                B,N = x.shape
-            elif x.ndim == 3:
-                B,C,N = x.shape
-            N = self.linear.out_features
             if x.dim() == 3:
                 B, N, _ = x.shape
-                D = self.linear.out_features
-                shape_new = (B, N, D)
+                shape_new = (B, N, self.linear.out_features)
             elif x.dim() == 2:
                 B, _ = x.shape
-                D = self.linear.out_features
-                shape_new = (B, D)
-            if self.zero_output is None:
-                self.zero_output = torch.zeros(size=shape_new,device=x.device,dtype=x.dtype)
-
-            if (not torch.is_tensor(x) and (x == 0.0)) or ((x==0.0).all()):
-                self.is_work = False
-                return self.zero_output
-
-            if self.realize_time > 0:
-                output = torch.nn.functional.linear(x,self.linear.weight,self.linear.bias/self.steps)
+                shape_new = (B, self.linear.out_features)
+            else:
+                raise ValueError("Input must be 2D or 3D tensor")
+            meta = (shape_new, x.device, x.dtype)
+            if self.zero_output is None or self._zero_output_meta != meta:
+                self.zero_output = torch.zeros(size=shape_new, device=x.device, dtype=x.dtype)
+                self._zero_output_meta = meta
+            x_is_zero = (x == 0).all()
+            use_bias = self.realize_time > 0
+            if use_bias:
+                output = torch.nn.functional.linear(x, self.linear.weight, self.linear.bias / self.steps)
                 self.realize_time = self.realize_time - 1
             else:
-                output = torch.nn.functional.linear(x,self.linear.weight,None)
+                output = torch.nn.functional.linear(x, self.linear.weight, None)
+            output = torch.where(x_is_zero, self.zero_output, output)
 
             # if self.neuron_type == 'IF':
             #     pass
@@ -229,7 +272,8 @@ class LLLinear(nn.Module):
             #         else:
             #             output = output - (self.linear.bias.data.unsqueeze(0) if self.linear.bias is not None else 0.0)
 
-            self.is_work = True
+            if not _is_compiling():
+                self.is_work = not bool(x_is_zero)
             self.first = False
 
             return output

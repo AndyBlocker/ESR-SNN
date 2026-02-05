@@ -30,35 +30,31 @@ import re
 from torch.utils.checkpoint import checkpoint
 
 
-
 def get_logits_loss(fc_t, fc_s, one_hot_label, temp, num_classes=1000):
+    if one_hot_label.dim() == 1:
+        one_hot_label = F.one_hot(one_hot_label, num_classes=num_classes).float()
+    one_hot_label = one_hot_label.to(device=fc_s.device, dtype=fc_s.dtype)
+
     s_input_for_softmax = fc_s / temp
     t_input_for_softmax = fc_t / temp
 
-    softmax = torch.nn.Softmax(dim=1)
-    logsoftmax = torch.nn.LogSoftmax()
-
-    t_soft_label = softmax(t_input_for_softmax)
-
-    softmax_loss = - torch.sum(t_soft_label * logsoftmax(s_input_for_softmax), 1, keepdim=True)
+    t_soft_label = F.softmax(t_input_for_softmax, dim=1)
+    softmax_loss = -(t_soft_label * F.log_softmax(s_input_for_softmax, dim=1)).sum(dim=1, keepdim=True)
 
     fc_s_auto = fc_s.detach()
     fc_t_auto = fc_t.detach()
-    log_softmax_s = logsoftmax(fc_s_auto)
-    log_softmax_t = logsoftmax(fc_t_auto)
-    # one_hot_label = F.one_hot(label, num_classes=num_classes).float()
-    softmax_loss_s = - torch.sum(one_hot_label * log_softmax_s, 1, keepdim=True)
-    softmax_loss_t = - torch.sum(one_hot_label * log_softmax_t, 1, keepdim=True)
+    log_softmax_s = F.log_softmax(fc_s_auto, dim=1)
+    log_softmax_t = F.log_softmax(fc_t_auto, dim=1)
+
+    softmax_loss_s = -(one_hot_label * log_softmax_s).sum(dim=1, keepdim=True)
+    softmax_loss_t = -(one_hot_label * log_softmax_t).sum(dim=1, keepdim=True)
 
     focal_weight = softmax_loss_s / (softmax_loss_t + 1e-7)
-    ratio_lower = torch.zeros(1).cuda()
-    focal_weight = torch.max(focal_weight, ratio_lower)
-    focal_weight = 1 - torch.exp(- focal_weight)
+    focal_weight = focal_weight.clamp_min(0.0)
+    focal_weight = 1.0 - torch.exp(-focal_weight)
     softmax_loss = focal_weight * softmax_loss
 
-    soft_loss = (temp ** 2) * torch.mean(softmax_loss)
-
-    return soft_loss
+    return (temp ** 2) * softmax_loss.mean()
 
 def train_one_epoch(model: torch.nn.Module, criterion: torch.nn.Module,
                     data_loader: Iterable, optimizer: torch.optim.Optimizer,
@@ -119,8 +115,6 @@ def train_one_epoch(model: torch.nn.Module, criterion: torch.nn.Module,
         # loss_scaler.update()
         if (data_iter_step + 1) % accum_iter == 0:
             optimizer.zero_grad()
-
-        torch.cuda.synchronize()
 
         metric_logger.update(loss=loss_value)
         min_lr = 10.
@@ -258,8 +252,6 @@ def train_one_epoch_distill_prune(model: torch.nn.Module, model_teacher: torch.n
                     update_grad=(data_iter_step + 1) % accum_iter == 0)
         if (data_iter_step + 1) % accum_iter == 0:
             optimizer.zero_grad()
-
-        torch.cuda.synchronize()
 
         metric_logger.update(loss_all=loss_all_value, loss=loss_value, loss_distill=loss_distill_value)
         min_lr = 10.
@@ -492,8 +484,6 @@ def train_one_epoch_distill(model: torch.nn.Module, model_teacher: torch.nn.Modu
         if (data_iter_step + 1) % accum_iter == 0:
             optimizer.zero_grad()
 
-        torch.cuda.synchronize()
-
         if hasattr(args, "suppress_over_fire") and args.suppress_over_fire:
             metric_logger.update(loss_all=loss_all_value, loss=loss_value, loss_distill=loss_distill_value, overfire_loss = overfire_loss_value)
         else:
@@ -642,7 +632,7 @@ def train_one_epoch_distill_snn(model: torch.nn.Module, model_teacher: torch.nn.
                     data_loader: Iterable, optimizer: torch.optim.Optimizer,
                     device: torch.device, epoch: int, loss_scaler, max_norm: float = 0,
                     mixup_fn: Optional[Mixup] = None, log_writer=None, aug=None, trival_aug=None,
-                    args=None):
+                    args=None, profiler=None):
     model.train(True)
     if model_teacher is not None:
         model_teacher.eval()
@@ -657,30 +647,25 @@ def train_one_epoch_distill_snn(model: torch.nn.Module, model_teacher: torch.nn.
     if log_writer is not None:
         print('log_dir: {}'.format(log_writer.log_dir))
 
-    keep_keyword = "biasAllocator"
-    for name, param in model.named_parameters():
-        if keep_keyword not in name:
-            param.requires_grad = False
-        else:
-            # parts = name.split(".")
-            # try:
-            #     block_id = int(parts[3])  # e.g. "12"
-            # except (IndexError, ValueError, TypeError):
-            #     block_id = 0  # 默认值
-            
-            # if block_id <= 7:
-            if param.requires_grad:
-                print(name) 
-            # param.requires_grad = True
-            # else:
-            #     param.requires_grad = False
+    freeze_except_bias_allocator = bool(getattr(args, "freeze_except_bias_allocator", False))
+    if freeze_except_bias_allocator:
+        keep_keyword = "biasAllocator"
+        for name, param in model.named_parameters():
+            if keep_keyword not in name:
+                param.requires_grad = False
+    params_for_grad = [p for p in model.parameters() if p.requires_grad]
 
     
+    max_train_steps = getattr(args, "max_train_steps", -1)
+    steps_executed = 0
     for data_iter_step, (samples, targets) in enumerate(metric_logger.log_every(data_loader, print_freq, header)):
-        
+        if max_train_steps is not None and max_train_steps > 0 and data_iter_step >= max_train_steps:
+            break
+        steps_executed += 1
+    
         # if data_iter_step > 2000:
         #     break
-        
+    
         # we use a per iteration (instead of per epoch) lr scheduler
         if data_iter_step % accum_iter == 0:
             lr_sched.adjust_learning_rate(optimizer, data_iter_step / len(data_loader) + epoch, args)
@@ -717,13 +702,30 @@ def train_one_epoch_distill_snn(model: torch.nn.Module, model_teacher: torch.nn.
                 # outputs_teacher = model_teacher(samples)
                 loss = criterion(outputs.float(), targets)
             else:
-                outputs, counts, output_ts, _ = model(samples, verbose=True)
+                snn_verbose = bool(getattr(args, "snn_verbose", True))
+                out = model(samples, verbose=snn_verbose)
+                if isinstance(out, (tuple, list)):
+                    if len(out) == 4:
+                        outputs, counts, output_ts, _ = out
+                    elif len(out) == 3:
+                        outputs, counts, output_ts = out
+                    elif len(out) == 2:
+                        outputs, counts = out
+                        output_ts = None
+                    else:
+                        outputs = out[0]
+                        counts = None
+                        output_ts = None
+                else:
+                    outputs = out
+                    counts = None
+                    output_ts = None
                 # print("training images.abs().mean()",samples.abs().mean(),outputs.abs().mean())
                 # outputs_teacher = model_teacher(samples)
                 # loss = criterion(output_ts[7].float(), targets) + (torch.abs(output_ts[8]) - torch.abs(output_ts[7])).sum()/output_ts[8:].numel()
                 loss = criterion((outputs).float(), targets)
-                loss_value = loss.item()
                 # loss = loss*0.0
+            loss_value = loss.item()
             # loss_distill = get_logits_loss(outputs_teacher, outputs, targets_one_hot, args.temp, num_classes=args.nb_classes)
             loss_distill = torch.tensor(0.0).to(loss.device)
             # loss_distill = time_decay_loss(output_ts, mode='hinge', reduction='mean',hinge_margin=0.0)
@@ -742,13 +744,11 @@ def train_one_epoch_distill_snn(model: torch.nn.Module, model_teacher: torch.nn.
 
         loss_all /= accum_iter
         loss_scaler(loss_all, optimizer, clip_grad=max_norm,
-                    parameters=model.parameters(), create_graph=False,
+                    parameters=params_for_grad, create_graph=False,
                     update_grad=(data_iter_step + 1) % accum_iter == 0,data_iter_step=data_iter_step)
 
         if (data_iter_step + 1) % accum_iter == 0:
             optimizer.zero_grad()
-
-        torch.cuda.synchronize()
 
         if hasattr(args, "suppress_over_fire") and args.suppress_over_fire:
             metric_logger.update(loss_all=loss_all_value, loss=loss_value, loss_distill=loss_distill_value, overfire_loss = overfire_loss_value)
@@ -761,6 +761,9 @@ def train_one_epoch_distill_snn(model: torch.nn.Module, model_teacher: torch.nn.
             max_lr = max(max_lr, group["lr"])
 
         metric_logger.update(lr=max_lr)
+
+        if profiler is not None:
+            profiler.step()
 
         loss_all_value_reduce = misc.all_reduce_mean(loss_all_value)
         loss_value_reduce = misc.all_reduce_mean(loss_value)
@@ -789,7 +792,9 @@ def train_one_epoch_distill_snn(model: torch.nn.Module, model_teacher: torch.nn.
     # gather the stats from all processes
     metric_logger.synchronize_between_processes()
     print("Averaged stats:", metric_logger)
-    return {k: meter.global_avg for k, meter in metric_logger.meters.items()}
+    stats = {k: meter.global_avg for k, meter in metric_logger.meters.items()}
+    stats["steps"] = steps_executed
+    return stats
 
 
 def train_one_epoch_distill_mse(model: torch.nn.Module, model_teacher: torch.nn.Module, criterion: torch.nn.Module,
@@ -846,8 +851,6 @@ def train_one_epoch_distill_mse(model: torch.nn.Module, model_teacher: torch.nn.
                     update_grad=(data_iter_step + 1) % accum_iter == 0)
         if (data_iter_step + 1) % accum_iter == 0:
             optimizer.zero_grad()
-
-        torch.cuda.synchronize()
 
         metric_logger.update(loss_all=loss_all_value, loss=loss_value, loss_distill=loss_distill_value)
         min_lr = 10.
@@ -1020,8 +1023,6 @@ def Align_QANN_SNN(model: torch.nn.Module, QANN_model: torch.nn.Module, criterio
             
             optimizer.zero_grad()
 
-            torch.cuda.synchronize()
-
             metric_logger.update(loss=loss_value)
             min_lr = 10.
             max_lr = 0.
@@ -1065,7 +1066,7 @@ def Align_QANN_SNN(model: torch.nn.Module, QANN_model: torch.nn.Module, criterio
 
 
 @torch.no_grad()
-def evaluate(data_loader, model, device, snn_aug, mode, args):
+def evaluate(data_loader, model, device, snn_aug, mode, args, profiler=None):
     criterion = torch.nn.CrossEntropyLoss()
 
     metric_logger = misc.MetricLogger(delimiter="  ")
@@ -1151,7 +1152,10 @@ def evaluate(data_loader, model, device, snn_aug, mode, args):
                 metric_logger.meters['acc@{}'.format(t + 1)].update(
                     correct_per_timestep[t].cpu().item() * 100. / batch_size, n=batch_size)
             model.module.reset()
-        
+
+        if profiler is not None:
+            profiler.step()
+
         # break
 
         # count1 += 1

@@ -65,31 +65,33 @@ def attn_convert_QAttention(QAttn:QAttention,SAttn:SAttention,level,neuron_type,
     elif isinstance(SAttn.v_IF,ST_BIFNeuron_SS) or isinstance(SAttn.v_IF,ST_BIFNeuron_MS):
         SAttn.v_IF.init = True
 
-    SAttn.attn_IF.neuron_type= neuron_type
-    SAttn.attn_IF.level = level
-    SAttn.attn_IF.q_threshold.data = QAttn.attn_quan.s.data
-    SAttn.attn_IF.bias_channel.data = QAttn.attn_quan.bias_channel.data
-    SAttn.attn_IF.T = T
-    SAttn.attn_IF.pos_max = QAttn.attn_quan.pos_max_buf
-    SAttn.attn_IF.neg_min = QAttn.attn_quan.neg_min_buf
-    if isinstance(SAttn.attn_IF,IFNeuron):
-        SAttn.attn_IF.is_init = False
-    elif isinstance(SAttn.attn_IF,ST_BIFNeuron_SS) or isinstance(SAttn.attn_IF,ST_BIFNeuron_MS):
-        SAttn.attn_IF.init = True
-        # SAttn.attn_IF.q_threshold.data = torch.tensor(0.125)
+    if getattr(SAttn, "attn_IF", None) is not None:
+        SAttn.attn_IF.neuron_type = neuron_type
+        SAttn.attn_IF.level = level
+        SAttn.attn_IF.q_threshold.data = QAttn.attn_quan.s.data
+        SAttn.attn_IF.bias_channel.data = QAttn.attn_quan.bias_channel.data
+        SAttn.attn_IF.T = T
+        SAttn.attn_IF.pos_max = QAttn.attn_quan.pos_max_buf
+        SAttn.attn_IF.neg_min = QAttn.attn_quan.neg_min_buf
+        if isinstance(SAttn.attn_IF,IFNeuron):
+            SAttn.attn_IF.is_init = False
+        elif isinstance(SAttn.attn_IF,ST_BIFNeuron_SS) or isinstance(SAttn.attn_IF,ST_BIFNeuron_MS):
+            SAttn.attn_IF.init = True
+            # SAttn.attn_IF.q_threshold.data = torch.tensor(0.125)
 
-    SAttn.attn_softmax_IF.neuron_type= neuron_type
-    SAttn.attn_softmax_IF.level = level
-    SAttn.attn_softmax_IF.q_threshold.data = QAttn.attn_softmax_quan.s.data
-    SAttn.attn_softmax_IF.bias_channel.data = QAttn.attn_softmax_quan.bias_channel.data
-    SAttn.attn_softmax_IF.T = T
-    SAttn.attn_softmax_IF.pos_max = QAttn.attn_softmax_quan.pos_max_buf
-    SAttn.attn_softmax_IF.neg_min = QAttn.attn_softmax_quan.neg_min_buf
-    SAttn.attn_softmax_IF.suppress_over_fire = suppress_over_fire
-    if isinstance(SAttn.attn_softmax_IF,IFNeuron):
-        SAttn.attn_softmax_IF.is_init = False
-    elif isinstance(SAttn.attn_softmax_IF,ST_BIFNeuron_SS) or isinstance(SAttn.attn_softmax_IF,ST_BIFNeuron_MS):
-        SAttn.attn_softmax_IF.init = True
+    if getattr(SAttn, "attn_softmax_IF", None) is not None:
+        SAttn.attn_softmax_IF.neuron_type= neuron_type
+        SAttn.attn_softmax_IF.level = level
+        SAttn.attn_softmax_IF.q_threshold.data = QAttn.attn_softmax_quan.s.data
+        SAttn.attn_softmax_IF.bias_channel.data = QAttn.attn_softmax_quan.bias_channel.data
+        SAttn.attn_softmax_IF.T = T
+        SAttn.attn_softmax_IF.pos_max = QAttn.attn_softmax_quan.pos_max_buf
+        SAttn.attn_softmax_IF.neg_min = QAttn.attn_softmax_quan.neg_min_buf
+        SAttn.attn_softmax_IF.suppress_over_fire = suppress_over_fire
+        if isinstance(SAttn.attn_softmax_IF,IFNeuron):
+            SAttn.attn_softmax_IF.is_init = False
+        elif isinstance(SAttn.attn_softmax_IF,ST_BIFNeuron_SS) or isinstance(SAttn.attn_softmax_IF,ST_BIFNeuron_MS):
+            SAttn.attn_softmax_IF.init = True
 
     SAttn.after_attn_IF.neuron_type= neuron_type
     SAttn.after_attn_IF.level = level
@@ -156,28 +158,30 @@ def attn_convert_QAttention_SS(QAttn:QAttention,SAttn:SAttention,level,neuron_ty
     elif isinstance(SAttn.v_IF, ST_BIFNeuron_SS) or isinstance(SAttn.v_IF, ST_BIFNeuron_MS):
         SAttn.v_IF.init = True
 
-    SAttn.attn_IF.neuron_type = neuron_type
-    SAttn.attn_IF.level = level
-    SAttn.attn_IF.q_threshold.data = QAttn.attn_quan.s.data
-    SAttn.attn_IF.T = T
-    SAttn.attn_IF.pos_max = QAttn.attn_quan.pos_max_buf
-    SAttn.attn_IF.neg_min = QAttn.attn_quan.neg_min_buf
-    if isinstance(SAttn.attn_IF, IFNeuron):
-        SAttn.attn_IF.is_init = False
-    elif isinstance(SAttn.attn_IF, ST_BIFNeuron_SS) or isinstance(SAttn.attn_IF, ST_BIFNeuron_MS):
-        SAttn.attn_IF.init = True
+    if getattr(SAttn, "attn_IF", None) is not None:
+        SAttn.attn_IF.neuron_type = neuron_type
+        SAttn.attn_IF.level = level
+        SAttn.attn_IF.q_threshold.data = QAttn.attn_quan.s.data
+        SAttn.attn_IF.T = T
+        SAttn.attn_IF.pos_max = QAttn.attn_quan.pos_max_buf
+        SAttn.attn_IF.neg_min = QAttn.attn_quan.neg_min_buf
+        if isinstance(SAttn.attn_IF, IFNeuron):
+            SAttn.attn_IF.is_init = False
+        elif isinstance(SAttn.attn_IF, ST_BIFNeuron_SS) or isinstance(SAttn.attn_IF, ST_BIFNeuron_MS):
+            SAttn.attn_IF.init = True
 
     if hasattr(QAttn, "attn_softmax_quan"):
-        SAttn.attn_softmax_IF.neuron_type = neuron_type
-        SAttn.attn_softmax_IF.level = level
-        SAttn.attn_softmax_IF.q_threshold.data = QAttn.attn_softmax_quan.s.data
-        SAttn.attn_softmax_IF.T = T
-        SAttn.attn_softmax_IF.pos_max = QAttn.attn_softmax_quan.pos_max_buf
-        SAttn.attn_softmax_IF.neg_min = QAttn.attn_softmax_quan.neg_min_buf
-        if isinstance(SAttn.attn_softmax_IF, IFNeuron):
-            SAttn.attn_softmax_IF.is_init = False
-        elif isinstance(SAttn.attn_softmax_IF, ST_BIFNeuron_SS) or isinstance(SAttn.attn_softmax_IF, ST_BIFNeuron_MS):
-            SAttn.attn_softmax_IF.init = True
+        if getattr(SAttn, "attn_softmax_IF", None) is not None:
+            SAttn.attn_softmax_IF.neuron_type = neuron_type
+            SAttn.attn_softmax_IF.level = level
+            SAttn.attn_softmax_IF.q_threshold.data = QAttn.attn_softmax_quan.s.data
+            SAttn.attn_softmax_IF.T = T
+            SAttn.attn_softmax_IF.pos_max = QAttn.attn_softmax_quan.pos_max_buf
+            SAttn.attn_softmax_IF.neg_min = QAttn.attn_softmax_quan.neg_min_buf
+            if isinstance(SAttn.attn_softmax_IF, IFNeuron):
+                SAttn.attn_softmax_IF.is_init = False
+            elif isinstance(SAttn.attn_softmax_IF, ST_BIFNeuron_SS) or isinstance(SAttn.attn_softmax_IF, ST_BIFNeuron_MS):
+                SAttn.attn_softmax_IF.init = True
 
     SAttn.after_attn_IF.neuron_type = neuron_type
     SAttn.after_attn_IF.level = level

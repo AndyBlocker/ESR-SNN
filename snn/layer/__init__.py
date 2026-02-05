@@ -36,7 +36,7 @@ from .record import (
 )
 from .softmax import spiking_softmax, spiking_softmax_ss
 from .st_bifneuron_ms import ST_BIFNeuron_MS
-from .st_bifneuron_ss import ST_BIFNodeATGF_SS, ST_BIFNeuron_SS
+from .st_bifneuron_ss import ST_BIFNodeATGF_SS, ST_BIFNeuron_SS, ST_BIFNeuron_SS_Torch
 from .utils import (
     cal_overfire_loss,
     clip,
@@ -90,6 +90,7 @@ __all__ = [
     "ST_BIFNodeATGF_SS",
     "ST_BIFNeuron_MS",
     "ST_BIFNeuron_SS",
+    "ST_BIFNeuron_SS_Torch",
     "SWindowAttention",
     "SWindowAttention_SS",
     "WindowAttention_no_softmax",

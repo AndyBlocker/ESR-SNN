@@ -30,14 +30,33 @@ class SmoothedValue(object):
         if fmt is None:
             fmt = "{median:.4f} ({global_avg:.4f})"
         self.deque = deque(maxlen=window_size)
-        self.total = 0.0
+        self.total = None
         self.count = 0
         self.fmt = fmt
+        self._device = None
+
+    def _as_tensor(self, value):
+        if isinstance(value, torch.Tensor):
+            if value.numel() != 1:
+                raise ValueError("SmoothedValue only supports scalar tensors")
+            v = value.detach()
+        else:
+            v = torch.tensor(value)
+        if self._device is None:
+            self._device = v.device
+        if v.device != self._device:
+            v = v.to(self._device)
+        return v.reshape(()).to(dtype=torch.float64)
 
     def update(self, value, n=1):
-        self.deque.append(value)
-        self.count += n
-        self.total += value * n
+        v = self._as_tensor(value)
+        count = int(n)
+        self.deque.append(v)
+        self.count += count
+        if self.total is None:
+            self.total = v * count
+        else:
+            self.total = self.total + v * count
 
     def synchronize_between_processes(self):
         """
@@ -45,34 +64,55 @@ class SmoothedValue(object):
         """
         if not is_dist_avail_and_initialized():
             return
-        t = torch.tensor([self.count, self.total], dtype=torch.float64, device='cuda')
+        if self.total is None:
+            return
+        if self._device is None:
+            self._device = self.total.device
+        reduce_device = self._device
+        if torch.cuda.is_available():
+            reduce_device = torch.device('cuda')
+        total = self.total.to(device=reduce_device, dtype=torch.float64)
+        t = torch.stack([
+            torch.tensor(self.count, dtype=torch.float64, device=reduce_device),
+            total,
+        ])
         dist.barrier()
         dist.all_reduce(t)
-        t = t.tolist()
-        self.count = int(t[0])
-        self.total = t[1]
+        self.count = int(t[0].item())
+        self.total = t[1].to(self._device)
 
     @property
     def median(self):
-        d = torch.tensor(list(self.deque))
+        if not self.deque:
+            return 0.0
+        d = torch.stack(list(self.deque))
         return d.median().item()
 
     @property
     def avg(self):
-        d = torch.tensor(list(self.deque), dtype=torch.float32)
+        if not self.deque:
+            return 0.0
+        d = torch.stack(list(self.deque))
         return d.mean().item()
 
     @property
     def global_avg(self):
-        return self.total / self.count
+        if self.total is None or self.count == 0:
+            return 0.0
+        return (self.total / self.count).item()
 
     @property
     def max(self):
-        return max(self.deque)
+        if not self.deque:
+            return 0.0
+        d = torch.stack(list(self.deque))
+        return d.max().item()
 
     @property
     def value(self):
-        return self.deque[-1]
+        if not self.deque:
+            return 0.0
+        return self.deque[-1].item()
 
     def __str__(self):
         return self.fmt.format(
@@ -92,9 +132,6 @@ class MetricLogger(object):
         for k, v in kwargs.items():
             if v is None:
                 continue
-            if isinstance(v, torch.Tensor):
-                v = v.item()
-            assert isinstance(v, (float, int))
             self.meters[k].update(v)
 
     def __getattr__(self, attr):
@@ -258,22 +295,6 @@ class NativeScalerWithGradNormCount:
 
     def __call__(self, loss, optimizer, clip_grad=None, parameters=None, create_graph=False, update_grad=True, data_iter_step=0):
         self._scaler.scale(loss).backward(create_graph=create_graph)
-        with torch.no_grad():
-            for group in optimizer.param_groups:
-                for param in group["params"]:
-                    if param.grad is None:
-                        continue
-                    if param.grad.is_sparse:
-                        if param.grad.dtype is torch.float16:
-                            param.grad = param.grad.coalesce()
-                        to_unscale = param.grad._values()
-                    else:
-                        to_unscale = param.grad
-                    v = to_unscale.clone().abs().max()
-                    # if torch.isinf(v) or torch.isnan(v):
-                    #     print('INF in', group['layer_name'], 'of step', data_iter_step, '!!!')
-
-
         if update_grad:
             if clip_grad is not None:
                 assert parameters is not None

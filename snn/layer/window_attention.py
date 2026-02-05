@@ -279,6 +279,10 @@ class SWindowAttention(nn.Module):
         trunc_normal_(self.relative_position_bias_table, std=.02)
         self.Ssoftmax = spiking_softmax_ss(self.step, T)
         self.attn_softmax_IF = self.neuron_layer(q_threshold=torch.tensor(1.0),level=self.level,sym=True, need_spike_tracer=True,T=self.T)
+        # attn_softmax_IF acts on square attention matrices; its biasAllocator (if any)
+        # is not used, so freeze it to keep DDP find_unused_parameters=0 safe.
+        if hasattr(self.attn_softmax_IF, "biasAllocator"):
+            self.attn_softmax_IF.biasAllocator.requires_grad_(False)
         self.attn_multi = AttentionMulti()
         self.attn_multi1 = AttentionMulti1()
         # self.attn_softmax_IF.prefire.data = torch.tensor(0.025)
@@ -410,6 +414,10 @@ class SWindowAttention_SS(nn.Module):
         trunc_normal_(self.relative_position_bias_table, std=.02)
         self.Ssoftmax = spiking_softmax(self.step, T)
         self.attn_softmax_IF = self.neuron_layer(q_threshold=torch.tensor(1.0),level=self.level,sym=True)
+        # attn_softmax_IF acts on square attention matrices; its biasAllocator (if any)
+        # is not used, so freeze it to keep DDP find_unused_parameters=0 safe.
+        if hasattr(self.attn_softmax_IF, "biasAllocator"):
+            self.attn_softmax_IF.biasAllocator.requires_grad_(False)
         self.attn_multi = AttentionMulti()
         self.attn_multi1 = AttentionMulti1()
         self.t = 0
